@@ -16,6 +16,9 @@ import Control.Parallel.Strategies
 import Data.Maybe(catMaybes)
 import Data.List(genericLength)
 import Foreign.Marshal.Array
+import Foreign.Marshal.Alloc
+import Foreign.Ptr
+import Foreign.Storable
 import System.IO.Unsafe
 
 
@@ -76,7 +79,7 @@ saveImage filename image = do
                            fpi <- imageTo8Bit image
                            withCString  filename $ \name  -> 
                             withGenImage fpi    $ \cvArr ->
-                            ({#call cvSaveImage #} name cvArr >> return ())
+							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
 
 getSize image = unsafePerformIO $ withImage image $ \i -> do
                  w <- {#call getImageWidth#} i

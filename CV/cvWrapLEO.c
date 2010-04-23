@@ -611,7 +611,7 @@ CvMat src = cvMat(noPts, 2, CV_64FC1, srcPts);
 CvMat dst = cvMat(noPts, 2, CV_64FC1, dstPts);
 CvMat *hmg = cvCreateMat(3,3,CV_32FC1);
 int i;
-cvFindHomography(&src, &dst, hmg);
+cvFindHomography(&src, &dst, hmg, 0, 0, 0);
 for (i=0;i<3*3;++i)
         homography[i] = cvmGet(hmg,i/3,i%3);
 cvReleaseMat(&hmg);

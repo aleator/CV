@@ -37,6 +37,10 @@ mkBinaryImageOp f = \a -> \b -> unsafePerformIO $
 -- I just can't think of a proper name for this
    -- Friday Evening
 abcNullPtr f = \a b c -> f a b c nullPtr
+addOp imageToBeAdded = ImgOp $ \target ->
+              withGenImage target $ \ctarget -> 
+              withGenImage imageToBeAdded $ \cadd ->
+               {#call cvAdd#} ctarget cadd ctarget nullPtr
 
 add = mkBinaryImageOp $ abcNullPtr {#call cvAdd#}
 sub = mkBinaryImageOp $ abcNullPtr {#call cvSub#}
