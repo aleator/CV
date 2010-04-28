@@ -11,6 +11,7 @@ newtype ImageOperation = ImgOp (Image -> IO ())
 nonOp = ImgOp (\i -> return ())
 
 img <# op = unsafeOperate op img
+img <## [] = img
 img <## op = unsafeOperate (foldl1 (#>) op) img
 
 times n op = foldl (#>) nonOp (replicate n op) 
