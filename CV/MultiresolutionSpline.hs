@@ -14,7 +14,7 @@ import CV.Filters
 --      (hw,hh) = (w`div`2,h`div`2)
 
 -- | Do a burt-adelson multiresolution splining for two images.
---   Areas marked as 1 in mask are  
+--   Notice, that the mask should contain a tiny blurred region between images 
 burtAdelsonMerge levels mask img1 img2 
     | badSize = error $ "BAMerge: Images have a bad size. Not divisible by "++show divisor ++" "++show sizes 
     | otherwise = reconstructFromLaplacian pyrMerge
@@ -23,7 +23,7 @@ burtAdelsonMerge levels mask img1 img2
         notDivisible x = x`mod`(divisor) /= 0 
         sizes = map getSize [mask,img1,img2]
         badSize = any (\(x,y) -> notDivisible x || notDivisible y) sizes
-        maskPyr = reverse $ take levels $ iterate pyrDown $ blur (3,3) mask
+        maskPyr = reverse $ take levels $ iterate pyrDown $ mask
         pyr  = laplacianPyramid levels img1
         pyr2 = laplacianPyramid levels img2 
         pyrMerge = zipWith3 IM.maskedMerge maskPyr pyr2 pyr

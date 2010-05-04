@@ -10,7 +10,7 @@ import CV.Transforms
 
 import Utils.Function
 import Utils.Point
-import Utils.Rectangle 
+import Utils.Rectangle hiding (scale)
 
 {#import CV.Image#}
 import C2HSTools
