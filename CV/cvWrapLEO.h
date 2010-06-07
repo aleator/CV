@@ -256,6 +256,10 @@ IplImage *acquireImageSlowComplex(int w, int h, complex double *d);
 void exportImageSlowComplex(IplImage *img, complex double *d);
 void subpixel_blit(IplImage *a, IplImage *b, double offset_y, double offset_x);
 double bicubicInterp(IplImage *tex, double u, double v);
+
+CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color); 
+
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo

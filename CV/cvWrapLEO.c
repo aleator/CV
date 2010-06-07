@@ -28,7 +28,11 @@ void wrapReleaseImage(IplImage *t)
 void wrapReleaseCapture(CvCapture *t)
 {
  cvReleaseCapture(&t);
- images--;
+}
+
+void wrapReleaseVideoWriter(CvCapture *t)
+{
+ cvReleaseCapture(&t);
 }
 
 void wrapReleaseStructuringElement(IplConvKernel *t)
@@ -2161,6 +2165,14 @@ double juliaF(double a, double b,double x, double y) {
         }
     return 0;
     }
+
+CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
+                                     double fps,int w, int h,
+                                     int color) 
+ {
+   CvVideoWriter *res = cvCreateVideoWriter(fn,fourcc,fps,cvSize(w,h), color);
+   return res;
+ }
 
 //@-node:aleator.20051220091717:Matrix multiplication
 //@-all
