@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.2
+Version:             0.2.1
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -22,7 +22,7 @@ Library
                        CV.Drawing, CV.Edges, CV.Filters, CV.Histogram, CV.LightBalance, CV.Morphology,
                        CV.TemplateMatching, CV.Transforms, CV.FunnyStatistics, CV.MultiresolutionSpline, CV.HighGUI,
                        CV.Sampling, CV.Marking, CV.Textures, CV.Gabor, CV.ConnectedComponents, CV.Conversions, 
-                       CV.Thresholding, CV.Binary
+                       CV.Thresholding, CV.Binary, CV.Video
     Other-modules: C2HSTools, C2HS
 
     ghc-options:       -O2 -fglasgow-exts

@@ -25,6 +25,12 @@ void wrapReleaseImage(IplImage *t)
  images--;
 }
 
+void wrapReleaseCapture(CvCapture *t)
+{
+ cvReleaseCapture(&t);
+ images--;
+}
+
 void wrapReleaseStructuringElement(IplConvKernel *t)
 {
  cvReleaseStructuringElement(&t);

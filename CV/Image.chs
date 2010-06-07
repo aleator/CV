@@ -61,6 +61,16 @@ loadImage n = do
                               bw <- imageTo32F i
                               return $ Just bw
 
+cvRGBtoGRAY = 7 -- NOTE: This will break.
+convertToGrayScale img = creatingImage $ do
+    res <- {#call wrapCreateImage32F#} w h 1
+    withImage img $ \cimg -> 
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) cvRGBtoGRAY
+    return res
+
+ where    
+    (w,h) = getSize img
+
 createImage32F (w,h) nChannels = do
     creatingImage $ {#call wrapCreateImage32F#} w h nChannels
 
