@@ -31,8 +31,10 @@ getFrame cap = withCapture cap $ \ccap -> do
 
 cvCAP_PROP_FRAME_COUNT = 7
 cvCAP_POS_FRAMES = 1
-getNumberOfFrames cap = {#call cvGetCaptureProperty#} 
-                         cap cvCAP_PROP_FRAME_COUNT
-getFrameNumber cap = {#call cvGetCaptureProperty#} 
+getNumberOfFrames cap = unsafePerformIO $
+                         {#call cvGetCaptureProperty#} 
+                           cap cvCAP_PROP_FRAME_COUNT
+getFrameNumber cap = unsafePerformIO $
+                      {#call cvGetCaptureProperty#} 
                          cap cvCAP_POS_FRAMES
 
