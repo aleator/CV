@@ -70,13 +70,21 @@ loadColorImage n = do
                               bw <- imageTo32F i
                               return $ Just bw
 
-cvRGBtoGRAY = 7 -- NOTE: This will break.
+cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
+cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 convertToGrayScale img = unsafePerformIO $ creatingImage $ do
     res <- {#call wrapCreateImage32F#} w h 1
     withImage img $ \cimg -> 
         {#call cvCvtColor#} (castPtr cimg) (castPtr res) cvRGBtoGRAY
     return res
+ where    
+    (w,h) = getSize img
 
+convertTo code channels img = unsafePerformIO $ creatingImage $ do
+    res <- {#call wrapCreateImage32F#} w h channels
+    withImage img $ \cimg -> 
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+    return res
  where    
     (w,h) = getSize img
 
@@ -201,6 +209,16 @@ setCOI chnl image = withImage image $ \i ->
                             {#call cvSetImageCOI#} i (fromIntegral chnl)
 resetCOI image = withImage image $ \i ->
                   {#call cvSetImageCOI#} i 0
+
+getChannel no image = unsafePerformIO $ creatingImage $ do
+
+    let (w,h) = getSize image
+    setCOI no image
+    cres <- {#call wrapCreateImage32F#} w h 1
+    withGenImage image $ \cimage ->
+      {#call cvCopy#} cimage (castPtr cres) (nullPtr)
+    resetCOI image
+    return cres
 
 withIOROI pos size image op = do
             setROI pos size image
