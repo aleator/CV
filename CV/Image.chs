@@ -71,7 +71,7 @@ loadColorImage n = do
                               return $ Just bw
 
 cvRGBtoGRAY = 7 -- NOTE: This will break.
-convertToGrayScale img = creatingImage $ do
+convertToGrayScale img = unsafePerformIO $ creatingImage $ do
     res <- {#call wrapCreateImage32F#} w h 1
     withImage img $ \cimg -> 
         {#call cvCvtColor#} (castPtr cimg) (castPtr res) cvRGBtoGRAY
