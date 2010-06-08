@@ -70,6 +70,7 @@ createVideoWriter filename codec framerate frameSize isColor =
     withCString filename $ \cfilename -> do
         ptr <- {#call wrapCreateVideoWriter#} cfilename fourcc 
                                               framerate w h ccolor
+        if ptr == nullPtr then error "Could not create video writer" else return ()
         fptr <- newForeignPtr releaseVideoWriter ptr
         return . VideoWriter $ fptr
   where
