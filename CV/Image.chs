@@ -52,12 +52,21 @@ composeMultichannelImage c1 c2 c3 c4 = unsafePerformIO $ do
         size = getSize . head . catMaybes $ [c1,c2,c3,c4]
 
 -- Load Image as grayscale image.
+
 loadImage n = do
               exists <- fileExist n
               if not exists then return Nothing
                             else do
                               i <- withCString n $ \name -> 
                                      creatingImage ({#call cvLoadImage #} name (0))
+                              bw <- imageTo32F i
+                              return $ Just bw
+loadColorImage n = do
+              exists <- fileExist n
+              if not exists then return Nothing
+                            else do
+                              i <- withCString n $ \name -> 
+                                     creatingImage ({#call cvLoadImage #} name 1)
                               bw <- imageTo32F i
                               return $ Just bw
 

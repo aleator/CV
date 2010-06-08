@@ -681,11 +681,24 @@ void plainBlit(IplImage *a, IplImage *b, int offset_y, int offset_x)
  int i,j;
  CvSize aSize = cvGetSize(a);
  CvSize bSize = cvGetSize(b);
- for (i=0; i<bSize.height; i++)
+ for (i=0; i<bSize.height; i++) {
     for (j=0; j<bSize.width; j++) {
        if (j+offset_x<0 || j+offset_x>=aSize.width || i+offset_y<0 || i+offset_y>=aSize.height ) continue;
-       FGET(a,j+offset_x,i+offset_y) =FGET(b,j,i);
-    }
+       if (a->nChannels == 1) 
+            {FGET(a,j+offset_x,i+offset_y) =FGET(b,j,i);}
+        else if (a->nChannels ==3) 
+            {
+             int dx = j+offset_x; int dy = i+offset_y;
+             ((float *)(a->imageData + dy*a->widthStep))[dx*a->nChannels + 0] =
+              ((float *)(b->imageData + i*b->widthStep))[j*b->nChannels + 0] ; // B
+             ((float *)(a->imageData + dy*a->widthStep))[dx*a->nChannels + 1] =
+              ((float *)(b->imageData + i*b->widthStep))[j*b->nChannels + 1] ; // G
+             ((float *)(a->imageData + dy*a->widthStep))[dx*a->nChannels + 2] =
+              ((float *)(b->imageData + i*b->widthStep))[j*b->nChannels + 2] ; // R
+            }
+             else {printf("Can't blit this - pic weird number of channels\n"); abort();}
+
+    }}
 }
 
 void subpixel_blit(IplImage *a, IplImage *b, double offset_y, double offset_x)
@@ -2170,7 +2183,7 @@ CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
                                      double fps,int w, int h,
                                      int color) 
  {
-   CvVideoWriter *res = cvCreateVideoWriter(fn,fourcc,fps,cvSize(w,h), color);
+   CvVideoWriter *res = cvCreateVideoWriter(fn,CV_FOURCC('D','I','V','X'),fps,cvSize(w,h), color);
    return res;
  }
 
