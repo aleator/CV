@@ -2183,7 +2183,7 @@ CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
                                      double fps,int w, int h,
                                      int color) 
  {
-   CvVideoWriter *res = cvCreateVideoWriter(fn,CV_FOURCC('D','I','V','X'),fps,cvSize(w,h), color);
+   CvVideoWriter *res = cvCreateVideoWriter(fn,CV_FOURCC('M','P','G','4'),fps,cvSize(w,h), color);
    return res;
  }
 
