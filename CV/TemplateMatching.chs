@@ -70,7 +70,7 @@ subPixelTemplateMatch mt image template n -- TODO: Make iterative #SpeedUp
         region = scale Linear n . getRegion (tx,ty) (otw*2,oth*2)  $ image
         ((sbx,sby),_) = simpleTemplateMatch CV_TM_CCORR_NORMED region bigTempl
      
-regionToInt rec = mkRectangle (floor x,floor y) (ceiling w,ceiling h)
+regionToInt rc = mkRectangle (floor x,floor y) (ceiling w,ceiling h)
     where
-     (x,y) = topLeft rec
-     (w,h) = rSize rec
+        (x,y) = topLeft rc
+        (w,h) = rSize rc

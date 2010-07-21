@@ -10,6 +10,7 @@ import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
 import Control.Parallel.Strategies
+import Control.DeepSeq
 
 -- import C2HSTools
 
