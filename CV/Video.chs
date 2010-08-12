@@ -27,6 +27,11 @@ captureFromFile fn = withCString fn $ \cfn -> do
                       fptr <- newForeignPtr releaseCapture ptr
                       return . Capture $ fptr
 
+captureFromCam int = do
+                      ptr <- {#call cvCreateCameraCapture#} (fromIntegral int)
+                      fptr <- newForeignPtr releaseCapture ptr
+                      return . Capture $ fptr
+
 dropFrame cap = withCapture cap $ \ccap -> {#call cvGrabFrame#} ccap >> return ()
 
 getFrame cap = withCapture cap $ \ccap -> do
