@@ -1848,7 +1848,7 @@ int cur_contour_size(FoundContours *f)
 
 double contour_area(FoundContours *f)
 { 
- return cvContourArea(f->contour,CV_WHOLE_SEQ);
+ return cvContourArea(f->contour,CV_WHOLE_SEQ,0);
 }
 
 CvMoments* contour_moments(FoundContours *f)
@@ -2010,7 +2010,7 @@ IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
 
     for( ; contour != 0; contour = contour->h_next )
     {
-        double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ));
+        double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
         CvScalar color = cvScalar(1,1,1,1);
         cvDrawContours( dst, contour, color, color, -1, CV_FILLED, 8,

@@ -4,9 +4,9 @@
 #ifndef __CVWRAP__
 #define __CVWRAP__
 
-#include <cv.h>
-#include <cxtypes.h>
-#include <highgui.h>
+#include <opencv/cv.h>
+#include <opencv/cxcore.h>
+#include <opencv/highgui.h>
 #include <complex.h>
 
 IplImage* wrapCreateImage32F(const int width, const int height, const int channels);
