@@ -259,6 +259,8 @@ double bicubicInterp(IplImage *tex, double u, double v);
 
 CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color); 
 
+double wrapGet32F2DC(CvArr *arr, int x, int y,int c);
+
 
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h

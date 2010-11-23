@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns#-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns, TypeFamilies #-}
 #include "cvWrapLeo.h"
 module CV.Image where
 
@@ -21,6 +21,19 @@ import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+
+
+data GrayScale
+data RGB
+data LAB
+
+newtype NewImage channels depth = S Image
+
+--data family Pixel channel depth
+--data instance Pixel GrayScale Double = Double
+--data instance Pixel RGB Double = (Double,Double,Double)
+
+unS (S i ) = i -- Unsafe and ugly
 
 
 {#pointer *IplImage as Image foreign newtype#}
@@ -62,6 +75,33 @@ loadImage n = do
                                      creatingImage ({#call cvLoadImage #} name (0))
                               bw <- imageTo32F i
                               return $ Just bw
+
+loadImageNew :: FilePath -> IO (Maybe (NewImage GrayScale Double))
+loadImageNew n = do
+              exists <- fileExist n
+              if not exists then return Nothing
+                            else do
+                              i <- withCString n $ \name -> 
+                                     creatingImage ({#call cvLoadImage #} name (0))
+                              bw <- imageTo32F i
+                              return . Just . S $ bw
+
+loadColorImageNew :: FilePath -> IO (Maybe (NewImage RGB Double))
+loadColorImageNew n = do
+              exists <- fileExist n
+              if not exists then return Nothing
+                            else do
+                              i <- withCString n $ \name -> 
+                                     creatingImage ({#call cvLoadImage #} name 1)
+                              bw <- imageTo32F i
+                              return . Just . S  $ bw
+
+getSizeNew :: (Integral a, Integral b) => NewImage c d -> (a,b)
+getSizeNew image = unsafePerformIO $ withImage (unS image) $ \i -> do
+                 w <- {#call getImageWidth#} i
+                 h <- {#call getImageHeight#} i
+                 return (fromIntegral w,fromIntegral h)
+
 loadColorImage n = do
               exists <- fileExist n
               if not exists then return Nothing
@@ -73,6 +113,7 @@ loadColorImage n = do
 
 cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
 cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
+
 convertToGrayScale img = unsafePerformIO $ creatingImage $ do
     res <- {#call wrapCreateImage32F#} w h 1
     withImage img $ \cimg -> 
@@ -80,6 +121,36 @@ convertToGrayScale img = unsafePerformIO $ creatingImage $ do
     return res
  where    
     (w,h) = getSize img
+
+rgbToLab :: NewImage RGB Double -> NewImage LAB Double
+rgbToLab = S . convertTo cvRGBtoLAB 3 . unS 
+
+rgbToGray :: NewImage RGB Double -> NewImage GrayScale Double
+rgbToGray = S . convertToGrayScale . unS
+
+getRegionNew :: (Integral a) => (a,a) -> (a,a) -> NewImage c d -> NewImage c d
+getRegionNew a b
+    = S . getRegion a b . unS
+
+class GetPixel a where
+    type P a :: *
+    getPixelNew   :: (Integral i) => (i,i) -> a -> P a
+
+instance GetPixel (NewImage GrayScale Double) where
+    type P (NewImage GrayScale Double) = Double 
+    getPixelNew (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $ withGenImage (unS image) $ \img ->
+                              {#call wrapGet32F2D#} img y x
+
+instance  GetPixel (NewImage RGB Double) where
+    type P (NewImage RGB Double) = (Double,Double,Double) 
+    getPixelNew (fromIntegral -> x, fromIntegral -> y) image 
+        = unsafePerformIO $ do 
+                     withGenImage (unS image) $ \img -> do
+                              r <- {#call wrapGet32F2DC#} img y x 0
+                              g <- {#call wrapGet32F2DC#} img y x 1
+                              b <- {#call wrapGet32F2DC#} img y x 2
+                              return (realToFrac r,realToFrac g, realToFrac b)
+
 
 convertTo code channels img = unsafePerformIO $ creatingImage $ do
     res <- {#call wrapCreateImage32F#} w h channels
@@ -212,7 +283,6 @@ resetCOI image = withImage image $ \i ->
                   {#call cvSetImageCOI#} i 0
 
 getChannel no image = unsafePerformIO $ creatingImage $ do
-
     let (w,h) = getSize image
     setCOI no image
     cres <- {#call wrapCreateImage32F#} w h 1

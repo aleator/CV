@@ -273,6 +273,14 @@ double wrapGet32F2D(CvArr *arr, int x, int y)
  return r.val[0];
 }
 
+double wrapGet32F2DC(CvArr *arr, int x, int y,int c)
+{ 
+ CvScalar r;
+ r = cvGet2D(arr,x,y); 
+ return r.val[c];
+}
+
+
 void wrapDrawCircle(CvArr *img, int x, int y, int radius, double color, int thickness)
 {
  cvCircle(img,cvPoint(x,y),radius,CV_RGB(color,color,color),thickness,8,0);
