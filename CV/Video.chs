@@ -38,11 +38,28 @@ getFrame cap = withCapture cap $ \ccap -> do
                 p_frame <- {#call cvQueryFrame#} ccap 
                 creatingImage $ ensure32F p_frame -- NOTE: This works because Image module has generated wrappers for ensure32F
 
-cvCAP_PROP_FRAME_COUNT = 7 -- These are likely to break..
-cvCAP_PROP_FPS = 5
-cvCAP_PROP_FRAME_WIDTH = 3
-cvCAP_PROP_FRAME_HEIGHT = 4
-cvCAP_POS_FRAMES = 1
+-- These are likely to break..
+cvCAP_PROP_POS_MSEC       =0 :: CInt
+cvCAP_PROP_POS_FRAMES     =1 :: CInt
+cvCAP_PROP_POS_AVI_RATIO  =2 :: CInt
+cvCAP_PROP_FRAME_WIDTH    =3 :: CInt
+cvCAP_PROP_FRAME_HEIGHT   =4 :: CInt
+cvCAP_PROP_FPS            =5 :: CInt
+cvCAP_PROP_FOURCC         =6 :: CInt
+cvCAP_PROP_FRAME_COUNT    =7 :: CInt
+cvCAP_PROP_FORMAT         =8 :: CInt
+cvCAP_PROP_MODE           =9 :: CInt
+cvCAP_PROP_BRIGHTNESS    =10 :: CInt
+cvCAP_PROP_CONTRAST      =11 :: CInt
+cvCAP_PROP_SATURATION    =12 :: CInt
+cvCAP_PROP_HUE           =13 :: CInt
+cvCAP_PROP_GAIN          =14 :: CInt
+cvCAP_PROP_EXPOSURE      =15 :: CInt
+cvCAP_PROP_CONVERT_RGB   =16 :: CInt
+cvCAP_PROP_WHITE_BALANCE =17 :: CInt
+cvCAP_PROP_RECTIFICATION =18 :: CInt   
+cvCAP_PROP_MONOCROME     =19 :: CInt
+
 
 getFrameRate cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
@@ -56,6 +73,10 @@ getFrameSize cap = unsafePerformIO $
                          return (w,h)
 
 
+setCapProp cap prop val = withCapture cap $ \ccap ->
+                         {#call cvSetCaptureProperty#} 
+                           ccap prop (realToFrac val)
+
 getNumberOfFrames cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
                          {#call cvGetCaptureProperty#} 
@@ -65,7 +86,7 @@ getNumberOfFrames cap = unsafePerformIO $
 getFrameNumber cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
                          {#call cvGetCaptureProperty#} 
-                          ccap cvCAP_POS_FRAMES >>= return . floor
+                          ccap cvCAP_PROP_POS_FRAMES >>= return . floor
 
 -- Video Writing
 
