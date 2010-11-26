@@ -25,16 +25,15 @@ import System.IO.Unsafe
 
 data GrayScale
 data RGB
+data RGBA
 data LAB
 
 newtype NewImage channels depth = S Image
 
---data family Pixel channel depth
---data instance Pixel GrayScale Double = Double
---data instance Pixel RGB Double = (Double,Double,Double)
-
 unS (S i ) = i -- Unsafe and ugly
 
+withNewImage (S i) op = withImage i op >>= return . S
+withGenNewImage (S i) op = withGenImage i op >>= return . S
 
 {#pointer *IplImage as Image foreign newtype#}
 
@@ -51,9 +50,18 @@ creatingImage fun = do
               return.Image $ fptr
 
 unImage (Image fptr) = fptr
+
+data Tag tp;
+rgb = undefined :: Tag RGB
+lab = undefined :: Tag LAB
+
+
+composeMultichannelImageNew :: Maybe (NewImage GrayScale a) -> Maybe (NewImage GrayScale a) -> Maybe (NewImage GrayScale a) -> Maybe (NewImage GrayScale a) -> Tag tp -> NewImage tp a
+composeMultichannelImageNew c1 c2 c3 c4 totag = S $ composeMultichannelImage (fmap unS c1) (fmap unS c2) (fmap unS c3) (fmap unS c4)
+
 composeMultichannelImage :: Maybe Image -> Maybe Image -> Maybe Image -> Maybe Image -> Image 
 composeMultichannelImage c1 c2 c3 c4 = unsafePerformIO $ do
-        res <- createImage32F (size) 4 -- TODO: Check channel count
+        res <- createImage32F (size) 4 -- TODO: Check channel count -- This is NOT correct
         withMaybe c1 $ \cc1 -> 
          withMaybe c2 $ \cc2 -> 
           withMaybe c3 $ \cc3 -> 

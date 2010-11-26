@@ -19,11 +19,12 @@ Library
     Build-Depends:     haskell98, base >= 3 && < 5, parallel > 1.1, unix > 2.3, array >= 0.2.0.0,
                        mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1, 
                        containers >= 0.2, JYU-Utils, storable-complex, binary >= 0.5, deepseq >= 1.1
-    Exposed-modules:   CV.Image, CV.ColourUtils, CV.ImageMath, CV.ImageMathOp, CV.ImageOp,
-                       CV.Drawing, CV.Edges, CV.Filters, CV.Histogram, CV.LightBalance, CV.Morphology,
-                       CV.TemplateMatching, CV.Transforms, CV.FunnyStatistics, CV.MultiresolutionSpline, CV.HighGUI,
-                       CV.Sampling, CV.Marking, CV.Textures, CV.Gabor, CV.ConnectedComponents, CV.Conversions, 
-                       CV.Thresholding, CV.Binary, CV.Video
+    Exposed-modules:   CV.Image
+                      --   , CV.ColourUtils, CV.ImageMath, CV.ImageMathOp, CV.ImageOp,
+                      --  CV.Drawing, CV.Edges, CV.Filters, CV.Histogram, CV.LightBalance, CV.Morphology,
+                      --  CV.TemplateMatching, CV.Transforms, CV.FunnyStatistics, CV.MultiresolutionSpline, CV.HighGUI,
+                      --  CV.Sampling, CV.Marking, CV.Textures, CV.Gabor, CV.ConnectedComponents, CV.Conversions, 
+                      --  CV.Thresholding, CV.Binary, CV.Video
     Other-modules: C2HSTools, C2HS
 
     ghc-options:       -O2 -fglasgow-exts
