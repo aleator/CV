@@ -1789,6 +1789,20 @@ IplImage *acquireImageSlow(int w, int h, double *d)
  return img;
 }
 
+IplImage *acquireImageSlowF(int w, int h, float *d)
+{
+ IplImage *img;
+ int i,j;
+ img = cvCreateImage(cvSize(w,h), IPL_DEPTH_32F,1);
+ for (i=0; i<h; i++) {
+   for (j=0; j<w; j++) { 
+         //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
+         FGET(img,j,i) = d[j*h+i]; 
+         }
+    }
+ return img;
+}
+
 IplImage *acquireImageSlowComplex(int w, int h, complex double *d)
 {
  IplImage *img;
@@ -1814,6 +1828,16 @@ void exportImageSlowComplex(IplImage *img, complex double *d)
 }
 
 void exportImageSlow(IplImage *img, double *d)
+{
+ int i,j;
+ CvSize s= cvGetSize(img);
+ for (i=0; i<s.height; i++) {
+   for (j=0; j<s.width; j++) { 
+         d[j*s.height+i] = FGET(img,j,i); 
+         }
+    }
+}
+void exportImageSlowF(IplImage *img, float *d)
 {
  int i,j;
  CvSize s= cvGetSize(img);
