@@ -2,7 +2,7 @@
 #include "cvWrapLEO.h"
 module CV.Filters(gaussian,gaussianOp,bilateral
               ,blurOp,blur,blurNS
-              ,median,mkFilter,forWindows,center
+              ,median
               ,susan,getCentralMoment,getAbsCentralMoment
               ,getMoment,secondMomentBinarize,secondMomentBinarizeOp
               ,secondMomentAdaptiveBinarize,secondMomentAdaptiveBinarizeOp
@@ -20,60 +20,6 @@ import Debug.Trace
 import C2HSTools
 {#import CV.Image#}
 
--- higher level api for creating non-convolutional filters
-
--- Type for handling regions of image. Read this as "a function that
--- takes an image with ROI set, and returns a new value for the center pixel
-type RegionOp = Image -> IO CDouble
--- Filter image using RegionOp. RegionOp is applied to
--- given size window, and its results are stored into a new
--- image. Window is specified using ROI
-mkFilter :: (CInt,CInt) -> RegionOp -> ImageOperation 
-mkFilter (w,h) rOp  
-    | odd w && odd h = ImgOp $ \image ->  do
-                        clone  <- cloneImage image
-                        --result <- createImage resultSize imageDepth32F 1 
-                        let (imageW,imageH) = getSize image
-                        let wpad = w `div` 2
-                        let hpad = h `div` 2
-                        let resultSize = (imageW - (2*wpad),imageH - (2*hpad))
-                        let windows = [(i,j) | i<-[0..fst resultSize-1]
-                                             , j<-[0..snd resultSize-1]]
-                        sequence_ [applyOp pos (wpad,hpad) clone image | pos <- windows]
-                        resetROI clone
-                        return ()
-
-    | otherwise = error "Must have odd size window" -- have only odd size windows
-    
-        where
-         (cw,ch) = (fromIntegral w,fromIntegral h)
-         applyOp pos shift src dst = setROI pos (cw,ch) src 
-                           >> (createPixel pos shift src dst)
-         
-         createPixel :: (CInt,CInt) -> (CInt,CInt) -> Image -> Image -> IO ()
-         createPixel (x,y) (dx,dy) src dst = do
-                                val <- rOp src
-                                setPixel (x+dx,y+dy) val dst
-
-forWindows (w,h) (imageW,imageH) op dst
-    | odd w && odd h = do
-                        let wpad = w `div` 2
-                        let hpad = h `div` 2
-                        let resultSize = (imageW - (2*wpad),imageH - (2*hpad))
-                        let positions = [((i,j)) | i<-[0..fst resultSize-1]
-                                                      , j<-[0..snd resultSize-1]]
-                        sequence_ [createPixel pos (wpad,hpad) dst | pos <- positions]
-                        return dst
-
-    | otherwise = error "Must have odd size window"  -- have only odd size windows
-    
-        where
-         (cw,ch) = (fromIntegral w,fromIntegral h)
-         createPixel (x,y) (dx,dy) dst = do
-                                val <- op ((x,y),(cw,ch))
-                                setPixel (x+dx,y+dy) val dst
-
-center ((x,y),(w,h)) = (x+(w `div` 2), y+(h `div` 2))
 -- Low level wrapper for Susan filtering:
 --  IplImage* susanSmooth(IplImage *src, int w, int h
 --                     ,double t, double sigma); 
@@ -122,9 +68,9 @@ data SmoothType = BlurNoScale | Blur
                 deriving(Enum)
 
 {#fun cvSmooth as smooth' 
-    {withGenImage* `Image'
-    ,withGenImage* `Image'
-    ,`Int',`Int',`Int',`Double',`Double'}
+    {withGenImage* `Image GrayScale D32'
+    ,withGenImage* `Image GrayScale D32'
+    ,`Int',`Int',`Int',`Float',`Float'}
     -> `()'#}
 
 gaussianOp (w,h) 
@@ -149,18 +95,25 @@ blur size image = let r = unsafeOperate (blurOp size) image
 blurNS size image = let r = unsafeOperate (blurNSOp size) image
                 in  r
 
--- These work on 8 bit images only! Need a fix. TODO TODO!
-bilateral colorS spaceS img = withClone img $ \clone ->
-                   smooth' img clone  (fromEnum Bilateral)
-                    colorS spaceS 0 0
+-- | TODO: This doesn't give a reasonable result. Investigate
+bilateral :: Int -> Int -> Image GrayScale D8 -> Image GrayScale D8
+bilateral colorS spaceS img = unsafePerformIO $ 
+            withClone img $ \clone ->
+             withGenImage img $ \cimg ->
+              withGenImage clone $ \ccln -> do
+                   {#call cvSmooth#} cimg ccln  (fromIntegral $ fromEnum Bilateral)
+                        (fromIntegral colorS) (fromIntegral spaceS) 0 0
 
 
+median :: (Int,Int) -> Image GrayScale D8 -> Image GrayScale D8
 median (w,h) img 
   | maskIsOk (w,h) = unsafePerformIO $ do
-                    clone1 <- imageTo8Bit img
-                    clone2 <- imageTo8Bit img
-                    smooth' clone1 clone2  (fromEnum Median) w h 0 0
-                    imageTo32F clone2
+                    clone2 <- cloneImage img
+                    withGenImage img $ \c1 -> 
+                     withGenImage clone2 $ \c2 -> 
+                        {#call cvSmooth#} c1 c2  (fromIntegral $ fromEnum Median) 
+                                                 (fromIntegral w) (fromIntegral h) 0 0
+                    return clone2
   | otherwise = error "One of aperture dimensions is incorrect (should be >=1 and odd))"
 
 maskIsOk (w,h) = odd w && odd h && w >0 && h>0
@@ -184,31 +137,34 @@ convolve2DI (x,y) kernel image = unsafePerformIO $
                                        {#call wrapFilter2DImg#} 
                                         img k x y
 
+verticalAverage :: Image GrayScale D32 -> Image GrayScale D32
 verticalAverage image = unsafePerformIO $ do 
                     let (w,h) = getSize image
-                    s <- createImage32F (w,h) 1
+                    s <- create (w,h) 
                     withGenImage image $ \i -> do
                      withGenImage s $ \sum -> do
                       {#call vertical_average#} i sum 
                     return s
 
-newtype IntegralImage = IntegralImage Image
+newtype IntegralImage = IntegralImage (Image GrayScale D64)
 
 getIISize (IntegralImage i) = getSize i
 
+integralImage :: Image GrayScale D32 -> IntegralImage
 integralImage image = unsafePerformIO $ do 
                     let (w,h) = getSize image
-                    s <- createImage64F (w+1,h+1) 1
+                    s <- create (w+1,h+1)
                     withGenImage image $ \i -> do
                      withGenImage s $ \sum -> do
                       {#call cvIntegral#} i sum nullPtr nullPtr
                       return $ IntegralImage s
 
 
+haar :: IntegralImage -> (Int,Int,Int,Int) -> Image GrayScale D32
 haar (IntegralImage image) (a',b',c',d') = unsafePerformIO $ do
                     let (w,h) = getSize image
                     let [a,b,c,d] = map fromIntegral [a',b',c',d']
-                    r <- createImage32F (w,h) 1
+                    r <- create (w,h)
                     withImage image $ \sum ->
                      withImage r $ \res -> do
                             {#call haarFilter#} sum 
