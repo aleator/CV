@@ -126,20 +126,17 @@ loadColorImage n = do
                               bw <- imageTo32F i
                               return . Just . S  $ bw
 
-class Sized a where
-    type SizeT a :: *
-    getSize :: a -> SizeT a
+class IntSized a where
+    getSize :: a -> (Int,Int)
 
-instance Sized BareImage where
-    type SizeT BareImage = (Int,Int)
+instance IntSized BareImage where
    -- getSize :: (Integral a, Integral b) => Image c d -> (a,b)
     getSize image = unsafePerformIO $ withBareImage image $ \i -> do
                  w <- {#call getImageWidth#} i
                  h <- {#call getImageHeight#} i
                  return (fromIntegral w,fromIntegral h)
 
-instance Sized (Image c d) where
-    type SizeT (Image c d) = (Int,Int)
+instance IntSized (Image c d) where
     getSize = getSize . unS
 
 --loadColorImage n = do
@@ -227,32 +224,30 @@ instance CreateImage (Image RGBA D8) where
 
 emptyCopy img = create (getSize img) 
 
+-- | Save image. This will convert the image to 8 bit one before saving
 saveImage :: FilePath -> Image c d -> IO ()
 saveImage filename image = do
-                           fpi <- imageTo8Bit image
+                           fpi <- imageTo8Bit $ unS image
                            withCString  filename $ \name  -> 
-                            withGenImage fpi    $ \cvArr ->
+                            withGenBareImage fpi    $ \cvArr ->
 							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
 
---getSize image = unsafePerformIO $ withImage image $ \i -> do
---                 w <- {#call getImageWidth#} i
---                 h <- {#call getImageHeight#} i
---                 return (fromIntegral w,fromIntegral h)
 
+getArea :: (IntSized a) => a -> Int
 getArea = uncurry (*).getSize
 
-getRegion :: (Integral a) => (a,a) -> (a,a) -> Image c d -> Image c d
+getRegion :: (Int,Int) -> (Int,Int) -> Image c d -> Image c d
 getRegion (fromIntegral -> x,fromIntegral -> y) (fromIntegral -> w,fromIntegral -> h) image 
     | x+w <= width && y+h <= height = S . getRegion' (x,y) (w,h) $ unS image
     | otherwise                   = error $ "Region outside image:"
                                             ++ show (getSize image) ++
                                             "/"++show (x+w,y+h)
  where
-  (width,height) = getSize image
+  (fromIntegral -> width,fromIntegral -> height) = getSize image
     
 getRegion' (x,y) (w,h) image = unsafePerformIO $
-                               withImage image $ \i ->
-                                 creatingImage ({#call getSubImage#} 
+                               withBareImage image $ \i ->
+                                 creatingBareImage ({#call getSubImage#} 
                                                 i x y w h)
 
 
@@ -268,12 +263,12 @@ blit image1 image2 (x,y)
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y) 
     | otherwise = withImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
-                    ({#call plainBlit#} i1 i2 y x)
+                    ({#call plainBlit#} i1 i2 (fromIntegral y) (fromIntegral x))
     where 
      ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
      badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
 
-blitM :: (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
+blitM :: (CreateImage (Image c d)) => (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
 blitM (rw,rh) imgs = resultPic
     where
      resultPic = unsafePerformIO $ do
@@ -286,7 +281,7 @@ blitM (rw,rh) imgs = resultPic
 subPixelBlit
   :: Image c d -> Image c d -> (CDouble, CDouble) -> IO ()
 
-subPixelBlit (unS -> image1) (unS -> image2) (x,y) 
+subPixelBlit (image1) (image2) (x,y) 
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y) 
     | otherwise = withImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
@@ -341,7 +336,7 @@ resetCOI image = withImage image $ \i ->
 getChannel no image = unsafePerformIO $ creatingImage $ do
     let (w,h) = getSize image
     setCOI no image
-    cres <- {#call wrapCreateImage32F#} w h 1
+    cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
     withGenImage image $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
     resetCOI image
@@ -380,7 +375,7 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
-montage :: (Int,Int) -> Int -> [Image c d] -> Image c d
+montage :: (CreateImage (Image c d)) => (Int,Int) -> Int -> [Image c d] -> Image c d
 montage (u',v') space' imgs = resultPic
     where
      space = fromIntegral space'
@@ -390,7 +385,7 @@ montage (u',v') space' imgs = resultPic
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
-                    r <- create (rw,rh) 1
+                    r <- create (rw,rh)
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) | y <- [0..v-1] , x <- [0..u-1] | i <- imgs ]
                     return r
 
