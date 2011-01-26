@@ -217,11 +217,6 @@ tileImages image1 image2 (x,y) = unsafePerformIO $
                                  creatingImage ({#call simpleMergeImages#} 
                                                 i1 i2 x y)
 -- | Blit image2 onto image1. 
---blit image1 image2 (x,y) =
---                          withImage image1 $ \i1 ->
---                           withImage image2 $ \i2 ->
---                            ({#call plainBlit#} i1 i2 x y)
--- TODO: Remove the above
 blitFix = blit
 blit image1 image2 (x,y) 
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y) 
@@ -231,6 +226,18 @@ blit image1 image2 (x,y)
     where 
      ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
      badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
+
+-- | blit multiple tiles into one image
+blitM :: (Int,Int) -> [((Int,Int),Image)] -> Image
+blitM (rw,rh) imgs = resultPic
+    where
+     resultPic = unsafePerformIO $ do
+                    r <- createImage32F (fromIntegral rw,fromIntegral rh) 1
+                    sequence_ [blit r i (fromIntegral x, fromIntegral y) 
+                              | ((x,y),i) <- imgs ]
+                    return r
+
+
 subPixelBlit
   :: Image -> Image -> (CDouble, CDouble) -> IO ()
 
@@ -346,6 +353,8 @@ montage (u',v') space' imgs = resultPic
      edge = space`div`2
      resultPic = unsafePerformIO $ do
                     r <- createImage32F (rw,rh) 1
-                    sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) | y <- [0..v-1] , x <- [0..u-1] | i <- imgs ]
+                    sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
+                              | x <- [0..u-1], y <- [0..v-1] 
+                              | i <- imgs ]
                     return r
 
