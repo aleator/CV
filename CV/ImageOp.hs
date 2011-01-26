@@ -5,8 +5,8 @@ import CV.Image
 
 -- Testing how to handle operation sequences without 
 -- copying image for each operation.
-newtype ImageOperation = ImgOp (Image -> IO ())
-(#>) :: ImageOperation -> ImageOperation -> ImageOperation
+newtype ImageOperation c d= ImgOp (Image c d-> IO ())
+(#>) :: ImageOperation c d-> ImageOperation c d -> ImageOperation c d
 (#>) (ImgOp a) (ImgOp b) = ImgOp (\img -> (a img >> b img))
 nonOp = ImgOp (\i -> return ())
 
@@ -17,7 +17,7 @@ img <## op = unsafeOperate (foldl1 (#>) op) img
 times n op = foldl (#>) nonOp (replicate n op) 
 
 -- This could, if I take enough care, be pure.
-runImageOperation :: Image -> ImageOperation -> IO Image
+runImageOperation :: Image c d -> ImageOperation c d -> IO (Image c d)
 runImageOperation img (ImgOp op) = withClone img $ \clone -> 
                                     op clone >> return clone
 

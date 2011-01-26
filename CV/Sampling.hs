@@ -36,12 +36,11 @@ getOverlappedTileCoords size (xover,yover) image
 
 -- Get overlapping tiles
 getOverlappedTiles s o i = map snd $ getOverlappedTilesC s o i  
-getOverlappedTilesC :: (Int,Int) -> (CDouble,CDouble) -> Image -> [((Int,Int),Image)]
+getOverlappedTilesC :: (Int,Int) -> (CDouble,CDouble) -> Image c d -> [((Int,Int),Image c d)]
 getOverlappedTilesC size overlap image 
                     = map (\c -> (both fromIntegral c,getRegion c size image))
                             $ getOverlappedTileCoords size 
                                 overlap image
-both f (a,b) = (f a, f b)
                     
 getMarkedAndUnmarkedTiles size overlap image marks = 
     (map fst markedTiles,map fst nonMarked)
@@ -99,6 +98,7 @@ randomPatches size count image = do
     (iwidth,iheight) = getSize image
     (w,h) = (iwidth - pwidth , iheight-pheight) 
 
+both f (a,b) = (f a,f b)
 -- Get some random pixels from image
 randomPixels count image = do
    coords <- replicateM count $ randomCoord size
@@ -107,13 +107,11 @@ randomPixels count image = do
   size = getSize image
 
 -- Get some random coords from image
-randomCoords :: MonadRandom m => Int -> (CInt,CInt) -> m [(CInt,CInt)]
+randomCoords :: MonadRandom m => Int -> (Int,Int) -> m [(Int,Int)]
 randomCoords count area = replicateM count $ randomCoord area
 
-randomCoord :: MonadRandom m => (CInt,CInt) -> m (CInt,CInt)
+randomCoord :: MonadRandom m => (Int,Int) -> m (Int,Int)
 randomCoord (w,h) = do
             x <- (getRandomR (0::Int,fromIntegral $ w-1))
-                            >>= return.fromIntegral 
             y <- (getRandomR (0::Int,fromIntegral $ h-1))
-                            >>= return.fromIntegral 
             return (x,y) 

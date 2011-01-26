@@ -76,7 +76,7 @@ absDiff = mkBinaryImageOp {#call cvAbsDiff#}
 
 atan i = unsafePerformIO $ do
                     let (w,h) = getSize i
-                    res <- createImage32F (w,h) 1
+                    res <- create (w,h) 
                     withImage i $ \s -> 
                      withImage res $ \r -> do
                       {#call calculateAtan#} s r
@@ -98,15 +98,18 @@ absOp = ImgOp $ \image -> do
 
 abs = unsafeOperate absOp
 
+subtractMeanOp :: ImageOperation GrayScale D32
 subtractMeanOp = ImgOp $ \image -> do
                       let s =  CV.ImageMath.sum image
-                      let mean = s / (fromIntegral $ uncurry (*) $ getSize image )
+                      let mean = s / (fromIntegral $ getArea image )
                       let (ImgOp subop) = subRSOp mean
                       subop image
 
+subRSOp :: Double -> ImageOperation GrayScale D32
 subRSOp scalar =  ImgOp $ \a ->  
           withGenImage a $ \ia -> do
-            {#call wrapSubRS#} ia scalar ia 
+            {#call wrapSubRS#} ia (realToFrac scalar) ia 
+
 subRS s a= unsafeOperate (subRSOp s) a
 
 subSOp scalar =  ImgOp $ \a -> 
@@ -116,7 +119,7 @@ subSOp scalar =  ImgOp $ \a ->
 subS a s = unsafeOperate (subSOp s) a
 
 -- Multiply the image with scalar 
-mulSOp :: Double -> ImageOperation
+mulSOp :: Double -> ImageOperation c d
 mulSOp scalar = ImgOp $ \a ->   
           withGenImage a $ \ia -> do
             {#call cvConvertScale#} ia ia s 0 
@@ -150,37 +153,45 @@ cmpLT = 3
 cmpLE = 4
 cmpNE = 5
 
+-- TODO: For some reason the below was going through 8U images. Investigate
 mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
           withGenImage a $ \ia -> do
-                        new  <- createImage8U (getSize a) 1
+                        new  <- create (getSize a) --8UC1
                         withGenImage new $ \cl -> do
                             {#call cvCmpS#} ia scalar cl cmp
-                            imageTo32F new
+                            --imageTo32F new
+                            return new
 
+-- TODO: For some reason the below was going through 8U images. Investigate
 mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
           withGenImage imgA $ \ia -> do
           withGenImage imgB $ \ib -> do
-                        new  <- createImage8U (getSize imgA) 1
+                        new  <- create (getSize imgA) -- 8U
                         withGenImage new $ \cl -> do
                             {#call cvCmp#} ia ib cl cmp
-                            imageTo32F new
+                            return new
+                            --imageTo32F new
 
--- Is image less than a scalar at all points?
+-- Compare Image to Scalar
+lessThan, moreThan ::   CDouble -> Image GrayScale D32 ->Image GrayScale D32
+
 lessThan = mkCmpOp cmpLT
 moreThan = mkCmpOp cmpGT
 
--- Is image less than another image
+less2Than,lessEq2Than,more2Than :: (CreateImage (Image c d)) => Image c d -> Image c d -> Image c d 
 less2Than = mkCmp2Op cmpLT
 lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image -> IO CDouble
+average' :: Image GrayScale D32 -> IO CDouble
 average' img = withGenImage img $ \image ->
                 {#call wrapAvg#} image
+
 average = unsafePerformIO.average'
 
-sum img = unsafePerformIO $ withGenImage img $ \image ->
+sum :: Image GrayScale D32 -> Double
+sum img = realToFrac $ unsafePerformIO $ withGenImage img $ \image ->
                     {#call wrapSum#} image
 
 averageImages is = ( (1/(fromIntegral $ length is)) `mulS`) (foldl1 add is)
@@ -203,8 +214,8 @@ averageMask img mask = unsafePerformIO $
 
 
 {#fun wrapMinMax as findMinMax' 
-    { withGenImage* `Image'
-    , withGenImage* `Image'
+    { withGenBareImage* `BareImage'
+    , withGenBareImage* `BareImage'
     , alloca-  `Double' peekFloatConv*
     , alloca-  `Double' peekFloatConv*}
     -> `()'#}
@@ -226,26 +237,26 @@ findMinMaxLoc img = unsafePerformIO $
 		         minval <- peek ptrintmin;
                  return (((minx,miny),minval),((maxx,maxy),maxval));}
 
--- I've got no clue what is supposed to happen below, but I hope it doesn't work..
--- |DEPRECATED
 findMinMax i = unsafePerformIO $ do
                nullp <- newForeignPtr_ nullPtr
-               (findMinMax' i (Image nullp)) 
+               (findMinMax' i (BareImage nullp)) 
 
 -- |Find minimum and maximum value of image i in area specified by the mask.
 findMinMaxMask i mask  = unsafePerformIO (findMinMax' i mask) 
 -- let a = getAllPixels i in (minimum a,maximum a)
 
-maxValue = snd.findMinMax
-minValue = fst.findMinMax 
+maxValue,minValue :: Image GrayScale D32 -> Double
+maxValue = snd.findMinMax.unS
+minValue = fst.findMinMax.unS
 
 -- | Render image of 2D gaussian curve with standard deviation of (stdX,stdY) to image size (w,h)
 --   The origin/center of curve is in center of the image
-gaussianImage (w,h) (stdX,stdY) = unsafePerformIO $ 
-    let dst = image32F (w,h) 1
-    in withImage dst $ \d-> do
-                             {#call render_gaussian#} d (realToFrac stdX) (realToFrac stdY)
-                             return dst
+gaussianImage :: (Int,Int) -> (Double,Double) -> Image GrayScale D32
+gaussianImage (w,h) (stdX,stdY) = unsafePerformIO $ do
+    dst <- create (w,h) -- 32F_C1
+    withImage dst $ \d-> do
+                           {#call render_gaussian#} d (realToFrac stdX) (realToFrac stdY)
+                           return dst
 
 -- | Produce white image with 'edgeW' amount of edges fading to black
 fadedEdgeImage (w,h) edgeW = unsafePerformIO $ creatingImage ({#call fadedEdges#} w h edgeW)
@@ -254,8 +265,9 @@ fadedEdgeImage (w,h) edgeW = unsafePerformIO $ creatingImage ({#call fadedEdges
 fadeToCenter (w,h) = unsafePerformIO $ creatingImage ({#call rectangularDistance#} w h )
 
 -- | Merge two images according to a mask. Result R is R = A*m+B*(m-1) .
+maskedMerge :: Image GrayScale D8 -> Image GrayScale D32 -> Image GrayScale D32 -> Image GrayScale D32
 maskedMerge mask img img2 = unsafePerformIO $ do
-                              let res = image32F (getSize img) 1 
+                              res <- create (getSize img)  -- 32FC1
                               withImage img $ \cimg ->
                                withImage img2 $ \cimg2 ->
                                 withImage res $ \cres ->

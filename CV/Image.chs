@@ -106,7 +106,7 @@ composeMultichannelImage (c1)
 --                              bw <- imageTo32F i
 --                              return $ Just bw
 
-loadImage :: FilePath -> IO (Maybe (Image GrayScale Double))
+loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage n = do
               exists <- fileExist n
               if not exists then return Nothing
@@ -386,6 +386,8 @@ montage (u',v') space' imgs = resultPic
      edge = space`div`2
      resultPic = unsafePerformIO $ do
                     r <- create (rw,rh)
-                    sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) | y <- [0..v-1] , x <- [0..u-1] | i <- imgs ]
+                    sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
+                               | x <- [0..u-1] , y <- [0..v-1] 
+                               | i <- imgs ]
                     return r
 
