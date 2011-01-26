@@ -21,6 +21,7 @@ allPatches size image = [getRegion (x,y) size image
 allButLast = reverse.tail.reverse 
 -- Get all non-overlapping patches of image
 getTiles size image = getOverlappedTiles size (0,0) image
+getTilesC size image = getOverlappedTilesC size (0,0) image
 
 -- Get Coordinates for overlapping tiles
 getOverlappedTileCoords size (xover,yover) image 
@@ -34,11 +35,13 @@ getOverlappedTileCoords size (xover,yover) image
                                      ,floor $ fromIntegral h*(1-yover))
 
 -- Get overlapping tiles
-getOverlappedTiles :: (CInt,CInt) -> (CDouble,CDouble) -> Image -> [Image]
-getOverlappedTiles size overlap image 
-                    = map (\c -> getRegion c size image)
+getOverlappedTiles s o i = map snd $ getOverlappedTilesC s o i  
+getOverlappedTilesC :: (Int,Int) -> (CDouble,CDouble) -> Image -> [((Int,Int),Image)]
+getOverlappedTilesC size overlap image 
+                    = map (\c -> (both fromIntegral c,getRegion c size image))
                             $ getOverlappedTileCoords size 
                                 overlap image
+both f (a,b) = (f a, f b)
                     
 getMarkedAndUnmarkedTiles size overlap image marks = 
     (map fst markedTiles,map fst nonMarked)
