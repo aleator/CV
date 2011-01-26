@@ -13,7 +13,7 @@ import CV.Image
 
 import C2HSTools
 
-sobelOp :: (Int,Int) -> Int -> ImageOperation
+sobelOp :: (Int,Int) -> Int -> ImageOperation GrayScale D32
 sobelOp (dx,dy) aperture 
     | dx >=0 && dx <3
     && aperture `elem` [-1,1,3,5,7]
@@ -27,25 +27,29 @@ sobelOp (dx,dy) aperture
 sobel dd ap im = unsafeOperate (sobelOp dd ap) im
 
 
+laplaceOp :: Int -> ImageOperation GrayScale D32
 laplaceOp s = ImgOp $ \img ->  withGenImage img $ \image -> 
                     if s `elem` [1,3,5,7]
-                       then ({#call cvLaplace #} image image s) 
+                       then ({#call cvLaplace #} image image (fromIntegral s)) 
                        else error "Laplace aperture must be 1, 3, 5 or 7"
 laplace s i = unsafeOperate (laplaceOp s) i
 
 -- TODO: Add tests below!
-canny t1 t2 aperture src' = unsafePerformIO $ do
-                           src <- imageTo8Bit src' 
+canny :: Int -> Int -> Int -> Image GrayScale D8 -> Image GrayScale D8
+canny t1 t2 aperture src = unsafePerformIO $ do
                            withClone src $ \clone -> 
                             withGenImage src $ \si ->
                              withGenImage clone $ \ci -> do
-                               {#call cvCanny#} si ci t1 t2 aperture
-                               imageTo32F clone
+                               {#call cvCanny#} si ci (fromIntegral t1) 
+                                                      (fromIntegral t2) 
+                                                      (fromIntegral aperture)
+                               return clone
                                
                             
                              
 
+susan :: (Int,Int) -> D32 -> Image GrayScale D32 -> Image GrayScale D8
 susan (w,h) t image = unsafePerformIO $ do
                     withGenImage image $ \img ->
                      creatingImage
-                      ({#call susanEdge#} img w h t)
+                      ({#call susanEdge#} img (fromIntegral w) (fromIntegral h) (realToFrac t))

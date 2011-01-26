@@ -315,6 +315,14 @@ withClone img fun = do
                 fun result
                 return result
 
+unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image -> 
+                creatingImage 
+                 ({#call ensure32F #} image)
+
+unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image -> 
+                creatingImage 
+                 ({#call ensure8U #} image)
+
 imageTo32F img = withGenBareImage img $ \image -> 
                 creatingBareImage 
                  ({#call ensure32F #} image)
