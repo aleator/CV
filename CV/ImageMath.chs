@@ -98,14 +98,14 @@ absOp = ImgOp $ \image -> do
 
 abs = unsafeOperate absOp
 
-subtractMeanOp :: ImageOperation GrayScale D32
+subtractMeanOp :: ImageOperation GrayScale a
 subtractMeanOp = ImgOp $ \image -> do
                       let s =  CV.ImageMath.sum image
                       let mean = s / (fromIntegral $ getArea image )
                       let (ImgOp subop) = subRSOp mean
                       subop image
 
-subRSOp :: Double -> ImageOperation GrayScale D32
+subRSOp :: Double -> ImageOperation GrayScale a
 subRSOp scalar =  ImgOp $ \a ->  
           withGenImage a $ \ia -> do
             {#call wrapSubRS#} ia (realToFrac scalar) ia 
@@ -173,7 +173,7 @@ mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
                             --imageTo32F new
 
 -- Compare Image to Scalar
-lessThan, moreThan ::   CDouble -> Image GrayScale D32 ->Image GrayScale D32
+lessThan, moreThan :: (CreateImage (Image GrayScale a)) => CDouble -> Image GrayScale a ->Image GrayScale a
 
 lessThan = mkCmpOp cmpLT
 moreThan = mkCmpOp cmpGT
@@ -184,13 +184,13 @@ lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image GrayScale D32 -> IO CDouble
+average' :: Image GrayScale a -> IO CDouble
 average' img = withGenImage img $ \image ->
                 {#call wrapAvg#} image
 
 average = unsafePerformIO.average'
 
-sum :: Image GrayScale D32 -> Double
+sum :: Image GrayScale a -> Double
 sum img = realToFrac $ unsafePerformIO $ withGenImage img $ \image ->
                     {#call wrapSum#} image
 
@@ -245,7 +245,7 @@ findMinMax i = unsafePerformIO $ do
 findMinMaxMask i mask  = unsafePerformIO (findMinMax' i mask) 
 -- let a = getAllPixels i in (minimum a,maximum a)
 
-maxValue,minValue :: Image GrayScale D32 -> Double
+maxValue,minValue :: Image GrayScale D64 -> D64
 maxValue = snd.findMinMax.unS
 minValue = fst.findMinMax.unS
 

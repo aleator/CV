@@ -21,6 +21,7 @@ import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+import Data.Word
 
 
 -- Colorspaces
@@ -30,9 +31,9 @@ data RGBA
 data LAB
 
 -- Bit Depths
-data D8
-data D32
-data D64
+type D8  = Word8
+type D32 = Float
+type D64 = Double
 
 newtype Image channels depth = S BareImage
 
