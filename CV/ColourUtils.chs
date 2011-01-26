@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface,ScopedTypeVariables#-}
 #include "cvWrapLEO.h"
 module CV.ColourUtils where
 import Foreign.C.Types
@@ -14,12 +14,14 @@ import CV.ImageMathOp
 
 import C2HS
 
+-- TODO: Rename this entire module to something else. Everything here  is grayscale :/
+
 -- Balance image grayscales so that it has m mean and md standard deviation
 balance (m,md) i = m |+ (scale |* (i |- im) ) 
     where
-        imd = realToFrac $ IM.stdDeviation i
-        im  = IM.average i
-        scale = realToFrac $ md/imd
+        imd :: D32 = realToFrac $ IM.stdDeviation i
+        im  :: D32 = IM.average i
+        scale :: D32 = realToFrac $ md/imd
 
 
 logarithmicCompression image = stretchHistogram $ 
@@ -34,6 +36,7 @@ getStretchScaling reference image = stretched
              (min,max) = IM.findMinMax reference
 
 
+stretchHistogram :: Image GrayScale D32 -> Image GrayScale D32 
 stretchHistogram image = stretched
             where
              stretched = (1/realToFrac length) `IM.mulS` normed
@@ -41,9 +44,9 @@ stretchHistogram image = stretched
              length = max-min
              (min,max) = IM.findMinMax image
 
+equalizeHistogram :: Image GrayScale D8 -> Image GrayScale D8
 equalizeHistogram image = unsafePerformIO $ do
-                       x <- imageTo8Bit image
-                       withGenImage x $ \i ->
+                       withClone image $ \x ->
+                        withGenImage x $ \i ->
                             {#call cvEqualizeHist#} i i
-                       imageTo32F x
 

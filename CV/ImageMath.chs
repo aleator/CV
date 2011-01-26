@@ -49,6 +49,7 @@ subFrom what = ImgOp $ \from ->
           withGenImage what $ \iwhat ->
            {#call cvSub#} ifrom iwhat ifrom nullPtr
 
+logOp :: ImageOperation GrayScale D32
 logOp  = ImgOp $ \i -> withGenImage i (\img -> {#call cvLog#}  img img)
 log = unsafeOperate logOp
 
@@ -87,7 +88,7 @@ atan i = unsafePerformIO $ do
 subtractMeanAbsOp = ImgOp $ \image -> do
                       av <- average' image
                       withGenImage image $ \i -> 
-                        {#call wrapAbsDiffS#} i av i
+                        {#call wrapAbsDiffS#} i (realToFrac av) i -- TODO: check C datatype sizes
 
 -- Logical inversion of image (Ie. invert, but stay on [0..1] range)
 invert i = addS 1 $ mulS (-1) i
@@ -98,14 +99,14 @@ absOp = ImgOp $ \image -> do
 
 abs = unsafeOperate absOp
 
-subtractMeanOp :: ImageOperation GrayScale a
+subtractMeanOp :: ImageOperation GrayScale D32
 subtractMeanOp = ImgOp $ \image -> do
                       let s =  CV.ImageMath.sum image
                       let mean = s / (fromIntegral $ getArea image )
                       let (ImgOp subop) = subRSOp mean
                       subop image
 
-subRSOp :: Double -> ImageOperation GrayScale a
+subRSOp :: D32 -> ImageOperation GrayScale D32
 subRSOp scalar =  ImgOp $ \a ->  
           withGenImage a $ \ia -> do
             {#call wrapSubRS#} ia (realToFrac scalar) ia 
@@ -114,12 +115,12 @@ subRS s a= unsafeOperate (subRSOp s) a
 
 subSOp scalar =  ImgOp $ \a -> 
           withGenImage a $ \ia -> do
-            {#call wrapSubS#} ia scalar ia 
+            {#call wrapSubS#} ia (realToFrac scalar) ia 
 
 subS a s = unsafeOperate (subSOp s) a
 
 -- Multiply the image with scalar 
-mulSOp :: Double -> ImageOperation c d
+mulSOp :: D32 -> ImageOperation GrayScale D32
 mulSOp scalar = ImgOp $ \a ->   
           withGenImage a $ \ia -> do
             {#call cvConvertScale#} ia ia s 0 
@@ -130,11 +131,12 @@ mulS s = unsafeOperate $ mulSOp s
 
 mkImgScalarOp op scalar = ImgOp $ \a ->   
               withGenImage a $ \ia -> do
-                op ia scalar ia 
+                op ia (realToFrac scalar) ia 
                 return ()
            -- where s = realToFrac scalar 
                 -- I've heard this will lose information
 
+addSOp :: D32 -> ImageOperation GrayScale D32
 addSOp = mkImgScalarOp $ {#call wrapAddS#}
 addS s = unsafeOperate $ addSOp s
 
@@ -158,7 +160,7 @@ mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
           withGenImage a $ \ia -> do
                         new  <- create (getSize a) --8UC1
                         withGenImage new $ \cl -> do
-                            {#call cvCmpS#} ia scalar cl cmp
+                            {#call cvCmpS#} ia (realToFrac scalar) cl cmp
                             --imageTo32F new
                             return new
 
@@ -173,7 +175,7 @@ mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
                             --imageTo32F new
 
 -- Compare Image to Scalar
-lessThan, moreThan :: (CreateImage (Image GrayScale a)) => CDouble -> Image GrayScale a ->Image GrayScale a
+lessThan, moreThan ::  D32 -> Image GrayScale D32 ->Image GrayScale D32
 
 lessThan = mkCmpOp cmpLT
 moreThan = mkCmpOp cmpGT
@@ -184,13 +186,14 @@ lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image GrayScale a -> IO CDouble
-average' img = withGenImage img $ \image ->
-                {#call wrapAvg#} image
+average' :: Image GrayScale D32 -> IO D32
+average' img = withGenImage img $ \image -> -- TODO: Check c datatype size
+                {#call wrapAvg#} image >>= return . realToFrac 
 
-average = unsafePerformIO.average'
+average :: Image GrayScale D32 -> D32
+average = realToFrac.unsafePerformIO.average'
 
-sum :: Image GrayScale a -> Double
+sum :: Image GrayScale D32 -> D32
 sum img = realToFrac $ unsafePerformIO $ withGenImage img $ \image ->
                     {#call wrapSum#} image
 
@@ -200,7 +203,8 @@ averageImages is = ( (1/(fromIntegral $ length is)) `mulS`) (foldl1 add is)
 --                    {#call wrapSum#} image
 
 stdDeviation' img = withGenImage img {#call wrapStdDev#} 
-stdDeviation img = unsafePerformIO $ stdDeviation' img
+stdDeviation :: Image GrayScale D32 -> D32
+stdDeviation = realToFrac . unsafePerformIO . stdDeviation' 
 
 stdDeviationMask img mask = unsafePerformIO $ 
                                  withGenImage img $ \i ->
@@ -216,8 +220,8 @@ averageMask img mask = unsafePerformIO $
 {#fun wrapMinMax as findMinMax' 
     { withGenBareImage* `BareImage'
     , withGenBareImage* `BareImage'
-    , alloca-  `Double' peekFloatConv*
-    , alloca-  `Double' peekFloatConv*}
+    , alloca-  `D32' peekFloatConv*
+    , alloca-  `D32' peekFloatConv*} -- TODO: Check datatype sizes used in C!
     -> `()'#}
 
 findMinMaxLoc img = unsafePerformIO $ 
@@ -239,15 +243,15 @@ findMinMaxLoc img = unsafePerformIO $
 
 findMinMax i = unsafePerformIO $ do
                nullp <- newForeignPtr_ nullPtr
-               (findMinMax' i (BareImage nullp)) 
+               (findMinMax' (unS i) (BareImage nullp)) 
 
 -- |Find minimum and maximum value of image i in area specified by the mask.
 findMinMaxMask i mask  = unsafePerformIO (findMinMax' i mask) 
 -- let a = getAllPixels i in (minimum a,maximum a)
 
-maxValue,minValue :: Image GrayScale D64 -> D64
-maxValue = snd.findMinMax.unS
-minValue = fst.findMinMax.unS
+maxValue,minValue :: Image GrayScale D32 -> D32
+maxValue = snd.findMinMax
+minValue = fst.findMinMax
 
 -- | Render image of 2D gaussian curve with standard deviation of (stdX,stdY) to image size (w,h)
 --   The origin/center of curve is in center of the image
