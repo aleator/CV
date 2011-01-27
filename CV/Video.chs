@@ -11,6 +11,7 @@ import Foreign.Storable
 import Foreign.C.Types
 import Foreign.C.String
 import System.IO.Unsafe
+import Utils.Stream
 
 {#pointer *CvCapture as Capture foreign newtype#}
 
@@ -21,6 +22,16 @@ foreign import ccall "& wrapReleaseCapture" releaseCapture :: FinalizerPtr Captu
 foreign import ccall "& wrapReleaseVideoWriter" releaseVideoWriter :: FinalizerPtr VideoWriter
 -- NOTE: This use of foreignPtr is quite likely to cause trouble by retaining
 --       videos longer than necessary.
+
+type VideoStream c d = Stream IO (Image c d)
+
+streamFromVideo cap   = dropS 1 $ streamFromVideo' undefined cap 
+streamFromVideo' p cap = Value $ do
+                         x <- getFrame cap
+                         case x of
+                            Just f -> return (p,(streamFromVideo' p cap))
+                            Nothing -> return (p,Terminated)
+                        
 
 captureFromFile fn = withCString fn $ \cfn -> do
                       ptr <- {#call cvCreateFileCapture#} cfn
@@ -34,9 +45,12 @@ captureFromCam int = do
 
 dropFrame cap = withCapture cap $ \ccap -> {#call cvGrabFrame#} ccap >> return ()
 
+getFrame :: Capture -> IO (Maybe (Image RGB D32))
 getFrame cap = withCapture cap $ \ccap -> do
                 p_frame <- {#call cvQueryFrame#} ccap 
-                creatingImage $ ensure32F p_frame -- NOTE: This works because Image module has generated wrappers for ensure32F
+                if p_frame==nullPtr then return Nothing
+                                    else creatingImage (ensure32F p_frame) >>= return . Just
+                    -- NOTE: This works because Image module has generated wrappers for ensure32F
 
 -- These are likely to break..
 cvCAP_PROP_POS_MSEC       =0 :: CInt
