@@ -117,7 +117,7 @@ loadImage n = do
                               bw <- imageTo32F i
                               return . Just . S $ bw
 
-loadColorImage :: FilePath -> IO (Maybe (Image RGB Double))
+loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
 loadColorImage n = do
               exists <- fileExist n
               if not exists then return Nothing

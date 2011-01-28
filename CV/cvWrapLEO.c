@@ -281,32 +281,32 @@ double wrapGet32F2DC(CvArr *arr, int x, int y,int c)
 }
 
 
-void wrapDrawCircle(CvArr *img, int x, int y, int radius, double color, int thickness)
+void wrapDrawCircle(CvArr *img, int x, int y, int radius, float r,float g,float b, int thickness)
 {
- cvCircle(img,cvPoint(x,y),radius,CV_RGB(color,color,color),thickness,8,0);
+ cvCircle(img,cvPoint(x,y),radius,CV_RGB(r,g,b),thickness,8,0);
 }
 
-void wrapDrawText(CvArr *img, char *text, float s, int x, int y)
+void wrapDrawText(CvArr *img, char *text, float s, int x, int y,float r,float g,float b)
 {
 CvFont font; //?
 cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, s, s, 0, 2, 8);
-cvPutText(img, text, cvPoint(x,y), &font, CV_RGB(1,1,1));
+cvPutText(img, text, cvPoint(x,y), &font, CV_RGB(r,g,b));
 }
 
 void wrapDrawRectangle(CvArr *img, int x1, int y1, 
-                       int x2, int y2, double color,
+                       int x2, int y2, float r, float g, float b,
                        int thickness)
 {
- cvRectangle(img,cvPoint(x1,y1),cvPoint(x2,y2),CV_RGB(color,color,color),thickness,8,0);
+ cvRectangle(img,cvPoint(x1,y1),cvPoint(x2,y2),CV_RGB(r,g,b),thickness,8,0);
 }
 
 
-void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double color, int thickness)
+void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double r, double g, double b, int thickness)
 {
- cvLine(img,cvPoint(x,y),cvPoint(x1,y1),CV_RGB(color,color,color),thickness,8,0);
+ cvLine(img,cvPoint(x,y),cvPoint(x1,y1),CV_RGB(r,g,b),thickness,4,0);
 }
 
-void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, double color)
+void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, float b)
 { 
  int i=0;
  int pSizes[] = {pc};
@@ -315,7 +315,7 @@ void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, double color)
     {pts[i].x = xs[i]; 
      pts[i].y = ys[i]; 
      }
- cvFillPoly(img, &pts, pSizes, 1, cvRealScalar(color), 8, 0 );
+ cvFillPoly(img, &pts, pSizes, 1, CV_RGB(r,g,b), 8, 0 );
  free(pts);
 }
 

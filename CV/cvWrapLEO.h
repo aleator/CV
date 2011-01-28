@@ -39,11 +39,11 @@ IplImage* ensure32F(const IplImage *src);
 void wrapSet32F2D(CvArr *arr, int x, int y, double value);
 double wrapGet32F2D(CvArr *arr, int x, int y);
 
-void wrapDrawCircle(CvArr *img, int x, int y, int radius, double color, int thickness);
+void wrapDrawCircle(CvArr *img, int x, int y, int radius, float r,float g,float b, int thickness);
 
-void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double color, int thickness);
+void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double r, double g, double b, int thickness);
 
-void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, double color);
+void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, float b);
 
 void wrapMatMul(int w, int h, double *mat
                , double *vec, double *t);
@@ -179,9 +179,9 @@ double haar_at(IplImage *intImg,
                 int x1, int y1, int w, int h);
 
 void wrapDrawRectangle(CvArr *img, int x1, int y1, 
-                       int x2, int y2, double color,
+                       int x2, int y2, float r, float g, float b,
                        int thickness);
-                       
+
 void calculateAtan(IplImage *src, IplImage *dst);
 
 
@@ -223,7 +223,7 @@ void incrImageC(void);
 IplImage* vignettingModelCos4(int w, int h) ;
 IplImage* vignettingModelCos4XCyl(int w, int h) ;
 IplImage* vignettingModelX2Cyl(int w, int h,double m, double s, double c);
-void wrapDrawText(CvArr *img, char *text, float s, int x, int y);
+void wrapDrawText(CvArr *img, char *text, float s, int x, int y,float r,float g,float b);
 
 IplImage* vignettingModelB3(int w, int h,double b1, double b2, double b3);
 inline CvPoint2D64f toNormalizedCoords(CvSize area, CvPoint from);
