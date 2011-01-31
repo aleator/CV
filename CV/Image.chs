@@ -342,6 +342,9 @@ setCOI chnl image = withImage image $ \i ->
 resetCOI image = withImage image $ \i ->
                   {#call cvSetImageCOI#} i 0
 
+
+-- #TODO: Replace the Int below with proper channel identifier
+getChannel :: Int -> Image RGB d -> Image GrayScale d
 getChannel no image = unsafePerformIO $ creatingImage $ do
     let (w,h) = getSize image
     setCOI no image
