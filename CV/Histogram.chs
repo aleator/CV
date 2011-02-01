@@ -17,7 +17,7 @@ import System.IO.Unsafe
 
 -- import Utils.List
 
-newtype Num a => HistogramData a = HGD [(a,a)]
+newtype (Num a) => HistogramData a = HGD [(a,a)]
 
 -- Assume [0,1] distribution and calculate skewness
 skewness bins image = do
@@ -81,8 +81,8 @@ getCumulativeNormalHistogram binCount image
     = HGD $ zip bins $ tcumulate values
     where
         HGD lst = getNormalHistogram binCount image
-        bins :: [CDouble]
-        values :: [CDouble]
+        bins :: [Double]
+        values :: [Double]
         (bins,values) = unzip lst
 
 weightedHistogram img weights start end binCount = unsafePerformIO $ 
@@ -96,6 +96,9 @@ weightedHistogram img weights start end binCount = unsafePerformIO $
       free bins
       return r
 
+-- TODO: Add binary images
+simpleGetHistogram :: Image GrayScale D32 -> Maybe (Image GrayScale D8) 
+                       -> D32 -> D32 -> Int -> Bool -> [D32]
 simpleGetHistogram img mask start end binCount cumulative = unsafePerformIO $
     withImage img $ \i -> do
       bins <- mallocArray binCount    
@@ -104,8 +107,7 @@ simpleGetHistogram img mask start end binCount cumulative = unsafePerformIO $
                 
       case mask of
         (Just msk) -> do
-                   mask8 <- (imageTo8Bit msk)
-                   withImage mask8 $ \m -> do
+                   withImage msk $ \m -> do
                     {#call get_histogram#} i m (realToFrac start) (realToFrac end) 
                                                isCum (fromIntegral binCount) bins
         Nothing  -> {#call get_histogram#} i (nullPtr) 
@@ -123,35 +125,35 @@ getNormalHistogram bins image = HGD new
     where
         (HGD lst) = getHistogram bins image 
 
-        value :: [CDouble]
-        bin   :: [CDouble]
+        value :: [Double]
+        bin   :: [Double]
         (bin,value) = unzip lst
         new = zip bin $ map (/size) value
         size = fromIntegral $ uncurry (*) $ getSize image
 
-getHistogram :: Int -> Image -> HistogramData CDouble
+getHistogram :: Int -> Image GrayScale D32 -> HistogramData Double
 getHistogram bins image = unsafePerformIO $ do 
                             h <- buildHistogram cbins image 
                             values <- mapM (getBin h) 
                                         [0..fromIntegral bins-1] 
                             return.HGD $ 
-                                zip [-1,-1+2/(fromIntegral bins)..1] values
+                                zip [-1,-1+2/(realToFrac bins)..1] values
                         where
                          cbins = fromIntegral bins
 
 
-getHistgramHS bins image =  calcHistogram bins $ getAllPixels image
-
--- Calculate image histogram from _Floating Point_ Image
-calcHistogram :: Int -> [CDouble] -> HistogramData Double
-calcHistogram bins pixels = HGD $ map (\(a,b) -> (realToFrac a, b/l)) $ assocs $ accumArray (+) 0 (0,bins) binned 
-                    where
-                     l = fromIntegral $ length pixels
-                     bin :: CDouble -> (Int,Double)
-                     bin d = (floor $ (fromIntegral bins) * d,1.0)
-                     binned = map bin pixels
-
--- Low level interaface:
+--getHistgramHS bins image =  calcHistogram bins $ getAllPixels image
+--
+---- Calculate image histogram from _Floating Point_ Image
+--calcHistogram :: Int -> [CDouble] -> HistogramData Int Double
+--calcHistogram bins pixels = HGD $ map (\(a,b) -> (realToFrac a, b/l)) $ assocs $ accumArray (+) 0 (0,bins) binned 
+--                    where
+--                     l = fromIntegral $ length pixels
+--                     bin :: CDouble -> (Int,Double)
+--                     bin d = (floor $ (fromIntegral bins) * d,1.0)
+--                     binned = map bin pixels
+--
+---- Low level interaface:
 
 {#pointer *CvHistogram as Histogram foreign newtype#}
 
@@ -165,6 +167,6 @@ buildHistogram bins image = withGenImage image $ \ i ->
                        creatingHistogram 
                         ({#call calculateHistogram#} i bins)
 
-getBin :: Histogram -> CInt -> IO CDouble
+getBin :: Histogram -> CInt -> IO Double
 getBin hist bin = withHistogram hist $ \h ->
-                    ({#call getHistValue#} h bin)
+                    ({#call getHistValue#} h bin) >>= return.realToFrac

@@ -136,6 +136,7 @@ mkImgScalarOp op scalar = ImgOp $ \a ->
            -- where s = realToFrac scalar 
                 -- I've heard this will lose information
 
+-- TODO: Relax the addition so it works on multiple image depths
 addSOp :: D32 -> ImageOperation GrayScale D32
 addSOp = mkImgScalarOp $ {#call wrapAddS#}
 addS s = unsafeOperate $ addSOp s
@@ -156,6 +157,7 @@ cmpLE = 4
 cmpNE = 5
 
 -- TODO: For some reason the below was going through 8U images. Investigate
+mkCmpOp :: CInt -> D32 -> (Image GrayScale D32 -> Image GrayScale D8)
 mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
           withGenImage a $ \ia -> do
                         new  <- create (getSize a) --8UC1
@@ -165,6 +167,8 @@ mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
                             return new
 
 -- TODO: For some reason the below was going through 8U images. Investigate
+mkCmp2Op :: (CreateImage (Image GrayScale d)) => 
+           CInt -> (Image GrayScale d -> Image GrayScale d -> Image GrayScale D8)
 mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
           withGenImage imgA $ \ia -> do
           withGenImage imgB $ \ib -> do
@@ -175,12 +179,13 @@ mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
                             --imageTo32F new
 
 -- Compare Image to Scalar
-lessThan, moreThan ::  D32 -> Image GrayScale D32 ->Image GrayScale D32
+lessThan, moreThan ::  D32 -> Image GrayScale D32 ->Image GrayScale D8
 
 lessThan = mkCmpOp cmpLT
 moreThan = mkCmpOp cmpGT
 
-less2Than,lessEq2Than,more2Than :: (CreateImage (Image c d)) => Image c d -> Image c d -> Image c d 
+less2Than,lessEq2Than,more2Than :: (CreateImage (Image GrayScale d)) => Image GrayScale d 
+                                    -> Image GrayScale d -> Image GrayScale D8 
 less2Than = mkCmp2Op cmpLT
 lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
