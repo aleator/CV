@@ -27,8 +27,13 @@ import Data.Word
 -- Colorspaces
 data GrayScale
 data RGB
+data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 data RGBA
 data LAB
+data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
+type family ChannelOf a :: *
+type instance ChannelOf RGB_Channel = RGB
+type instance ChannelOf LAB_Channel = LAB
 
 -- Bit Depths
 type D8  = Word8
@@ -140,23 +145,15 @@ instance IntSized BareImage where
 instance IntSized (Image c d) where
     getSize = getSize . unS
 
---loadColorImage n = do
---              exists <- fileExist n
---              if not exists then return Nothing
---                            else do
---                              i <- withCString n $ \name -> 
---                                     creatingImage ({#call cvLoadImage #} name 1)
---                              bw <- imageTo32F i
---                              return $ Just bw
 
 cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
 cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 
 
-rgbToLab :: Image RGB Double -> Image LAB Double
+rgbToLab :: Image RGB D32 -> Image LAB D32
 rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
 
-rgbToGray :: Image RGB Double -> Image GrayScale Double
+rgbToGray :: Image RGB D32 -> Image GrayScale D32
 rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
 
 
@@ -344,10 +341,10 @@ resetCOI image = withImage image $ \i ->
 
 
 -- #TODO: Replace the Int below with proper channel identifier
-getChannel :: Int -> Image RGB d -> Image GrayScale d
+getChannel :: (Enum a) => a -> Image (ChannelOf a) d -> Image GrayScale d
 getChannel no image = unsafePerformIO $ creatingImage $ do
     let (w,h) = getSize image
-    setCOI no image
+    setCOI (1+fromEnum no) image
     cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
     withGenImage image $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
@@ -362,7 +359,7 @@ withIOROI pos size image op = do
 
 withROI pos size image op = unsafePerformIO $ do
                         setROI pos size image
-                        let x = op image
+                        let x = op image -- BUG
                         resetROI image
                         return x
 
