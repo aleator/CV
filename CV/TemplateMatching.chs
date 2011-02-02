@@ -27,7 +27,7 @@ data MatchType = CV_TM_SQDIFF | CV_TM_SQDIFF_NORMED | CV_TM_CCORR
                  deriving (Eq,Show,Enum)
 
 
-simpleTemplateMatch :: MatchType -> Image -> Image -> ((CInt,CInt),Double)
+simpleTemplateMatch :: MatchType -> Image GrayScale D32 -> Image GrayScale D32 -> ((Int,Int),Double)
 simpleTemplateMatch mt image template 
 	= unsafePerformIO $ do
 	   withImage image $ \cvimg ->
@@ -39,14 +39,14 @@ simpleTemplateMatch mt image template
 		    x <- peek ptrintx;
 			y <- peek ptrinty;
 			v <- peek ptrdblval;
-		    return ((x,y),realToFrac v); }
+		    return ((fromIntegral x,fromIntegral y),realToFrac v); }
 
-matchTemplate :: MatchType-> Image -> Image -> Image
+matchTemplate :: MatchType-> Image GrayScale D32 -> Image GrayScale D32 -> Image GrayScale D32 
 matchTemplate mt image template = unsafePerformIO $ do
      let isize = getSize image
          tsize = getSize template
          size  = isize - tsize + (1,1) 
-     res <- createImage32F size 1 
+     res <- create size 
      withGenImage image $ \cimg -> 
       withGenImage template $ \ctempl ->
        withGenImage res $ \cresult -> 
@@ -55,8 +55,7 @@ matchTemplate mt image template = unsafePerformIO $ do
 
 
 -- | Perform subpixel template matching using intensity interpolation
--- TODO: CDouble to Double #CleanUp
-subPixelTemplateMatch :: MatchType -> Image -> Image -> CDouble -> (CDouble,CDouble)
+subPixelTemplateMatch :: MatchType -> Image GrayScale D32 -> Image GrayScale D32 -> Double -> (Double,Double)
 subPixelTemplateMatch mt image template n -- TODO: Make iterative #SpeedUp
     = (fromIntegral (tx)+fromIntegral sbx/n 
       ,fromIntegral (ty)+fromIntegral sby/n)

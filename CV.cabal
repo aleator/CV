@@ -21,11 +21,11 @@ Library
                        containers >= 0.2, JYU-Utils, storable-complex, binary >= 0.5, deepseq >= 1.1
     Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters, 
                        CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
-                       CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram
-                       --  CV.Histogram, CV.LightBalance, 
-                       --  CV.TemplateMatching, CV.Transforms, CV.FunnyStatistics, CV.MultiresolutionSpline
+                       CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
+                       CV.TemplateMatching, CV.Transforms
+                       --, CV.FunnyStatistics, CV.MultiresolutionSpline
                       --  CV.Marking, CV.Textures, CV.Gabor, CV.ConnectedComponents, CV.Conversions, 
-                      --  CV.Thresholding, CV.Binary 
+                      --  CV.Binary 
     Other-modules: C2HSTools, C2HS
 
     ghc-options:       -O2 -fglasgow-exts

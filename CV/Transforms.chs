@@ -40,7 +40,7 @@ idct img | (x,y) <- getSize img, even x && even y
 data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 
 flip axis img = unsafePerformIO $ do
-                 let cl = emptyCopy img
+                 cl <- emptyCopy img
                  withGenImage img $ \cimg -> 
                   withGenImage cl $ \ccl -> do
                     {#call cvFlip#} cimg ccl (if axis == Vertical then 0 else 1)
@@ -56,16 +56,17 @@ data Interpolation = NearestNeighbour | Linear
                    | Area | Cubic
                 deriving (Eq,Ord,Enum,Show)
 
+radialDistort :: Image GrayScale D32 -> Double -> Image GrayScale D32
 radialDistort img k = unsafePerformIO $ do
-                       target <- createImage32F (getSize img) 1
+                       target <- emptyCopy img 
                        withImage img $ \cimg ->
                         withImage target $ \ctarget ->
-                         {#call radialRemap#} cimg ctarget k
+                         {#call radialRemap#} cimg ctarget (realToFrac k)
                        return target
 
-scale :: (RealFloat a) => Interpolation -> a -> Image -> Image
+scale :: (RealFloat a) => Interpolation -> a -> Image GrayScale D32 -> Image GrayScale D32
 scale tpe size img = unsafePerformIO $ do
-                    target <- createImage32F (w',h') 1
+                    target <- create (w',h') 
                     withGenImage img $ \i -> 
                      withGenImage target $ \t -> 
                         {#call cvResize#} i t 
@@ -76,9 +77,9 @@ scale tpe size img = unsafePerformIO $ do
              (w',h') = (round $ fromIntegral w*size
                        ,round $ fromIntegral h*size)
 
-scaleToSize :: Interpolation -> Bool -> (CInt,CInt) -> Image -> Image
+scaleToSize :: Interpolation -> Bool -> (Int,Int) -> Image GrayScale D32 -> Image GrayScale D32
 scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
-                    target <- createImage32F (w',h') 1
+                    target <- create (w',h') 
                     withGenImage img $ \i -> 
                      withGenImage target $ \t -> 
                         {#call cvResize#} i t 
@@ -151,9 +152,9 @@ sameSizePad img img2 = if (size1 /= size2)
 
 
 cv_Gaussian = 7
-pyrDown :: Image -> Image
+pyrDown :: Image GrayScale D32 -> Image GrayScale D32
 pyrDown image = unsafePerformIO $ do
-                 let res = image32F size 1
+                 res <- create size 
                  withGenImage image $ \cImg -> 
                    withGenImage res $ \cResImg -> 
                      {#call cvPyrDown#} cImg cResImg cv_Gaussian
@@ -162,9 +163,9 @@ pyrDown image = unsafePerformIO $ do
                 size = (x`div`2,y`div`2)
                 (x,y) = getSize image  
 
-pyrUp :: Image -> Image
+pyrUp :: Image GrayScale D32 -> Image GrayScale D32
 pyrUp image = unsafePerformIO $ do
-                 let res = image32F size 1
+                 res <- create size 
                  withGenImage image $ \cImg -> 
                    withGenImage res $ \cResImg -> 
                      {#call cvPyrUp#} cImg cResImg cv_Gaussian
@@ -181,11 +182,11 @@ safePyrDown img = evenize result
      result = pyrDown img 
      (w,h)  = getSize result 
 
-laplacianPyramid :: Int -> Image -> [Image]
+laplacianPyramid :: Int -> Image GrayScale D32 -> [Image GrayScale D32]
 laplacianPyramid depth image = reverse laplacian
   where
-   downs :: [Image] = take depth $ iterate pyrDown (image)
-   upsampled :: [Image] = map pyrUp (tail downs)
+   downs :: [Image GrayScale D32] = take depth $ iterate pyrDown (image)
+   upsampled :: [Image GrayScale D32] = map pyrUp (tail downs)
    laplacian = zipWith (#-) downs upsampled ++ [last downs]
 
 -- | Reconstruct an image from a laplacian pyramid
@@ -194,8 +195,10 @@ reconstructFromLaplacian pyramid = foldl1 (\a b -> (pyrUp a) #+ b) (pyramid)
   --   safeAdd x y = sameSizePad y x #+ y  
 
 -- | Enlarge image so, that it's size is divisible by 2^n 
+-- TODO: Could have wider type
+enlarge :: Int -> Image GrayScale D32 -> Image GrayScale D32
 enlarge n img =  unsafePerformIO $ do
-                   i <- (createImage32F (w2,h2) 1)
+                   i <- create (w2,h2)
                    blit i img (0,0)
                    return i
     where

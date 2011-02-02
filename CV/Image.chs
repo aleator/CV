@@ -220,6 +220,7 @@ instance CreateImage (Image RGBA D8) where
 
 
 
+emptyCopy :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
 emptyCopy img = create (getSize img) 
 
 -- | Save image. This will convert the image to 8 bit one before saving
