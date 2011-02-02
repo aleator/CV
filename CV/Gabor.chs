@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables#-}
 #include "cvWrapLEO.h"
 module CV.Gabor where
 
@@ -23,9 +23,10 @@ newtype GaborMask = GaborMask (CInt,CInt,CDouble,CDouble,CDouble,CDouble,CDouble
 
 gaborImage (width,height,dx,dy,stdX,stdY,theta,phase,cycles) = 
     unsafePerformIO $ do
-        img <- createImage32F (width,height) 1
+        img :: Image GrayScale D32<- create (width,height) 
         withGenImage img $ \i ->
-            {#call renderGabor#} i width height dx dy stdX stdY theta phase cycles
+            {#call renderGabor#} i (fromIntegral width) (fromIntegral height) 
+                                 dx dy stdX stdY theta phase cycles
         return img
 
 gaborFiltering (GaborMask (width,height,stdX,stdY,theta,phase,cycles)) image = 
@@ -49,9 +50,9 @@ radialGaborFiltering (width,height,sigma,phase
 radialGaborImage (width,height,sigma,phase
                  ,center,cycles) = 
     unsafePerformIO $ do
-        img <- createImage32F (width,height) 1
+        img :: Image GrayScale D32 <- create (width,height) 
         withGenImage img $ \i ->
-            {#call renderRadialGabor#} i width height sigma 
+            {#call renderRadialGabor#} i (fromIntegral width) (fromIntegral height) sigma 
                                        phase center cycles
         return img
 
