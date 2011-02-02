@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, FlexibleContexts#-}
 #include "cvWrapLEO.h"
 module CV.ImageMath where
 import Foreign.C.Types

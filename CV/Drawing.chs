@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, TypeFamilies#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
 #include "cvWrapLEO.h"
 
 module CV.Drawing(ShapeStyle(Filled,Stroked),circle,putTextOp,circleOp,fillOp

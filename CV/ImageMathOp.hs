@@ -1,3 +1,4 @@
+{-#LANGUAGE FlexibleContexts#-}
 module CV.ImageMathOp where
 import CV.Image
 import CV.ImageMath as IM
