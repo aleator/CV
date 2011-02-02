@@ -274,13 +274,14 @@ fadedEdgeImage (w,h) edgeW = unsafePerformIO $ creatingImage ({#call fadedEdges
 fadeToCenter (w,h) = unsafePerformIO $ creatingImage ({#call rectangularDistance#} w h )
 
 -- | Merge two images according to a mask. Result R is R = A*m+B*(m-1) .
+-- TODO: Fix C-code of masked_merge to accept D8 input for the mask
 maskedMerge :: Image GrayScale D8 -> Image GrayScale D32 -> Image GrayScale D32 -> Image GrayScale D32
 maskedMerge mask img img2 = unsafePerformIO $ do
                               res <- create (getSize img)  -- 32FC1
                               withImage img $ \cimg ->
                                withImage img2 $ \cimg2 ->
                                 withImage res $ \cres ->
-                                  withImage mask $ \cmask ->
+                                  withImage (unsafeImageTo32F mask) $ \cmask ->
                                    {#call masked_merge#} cimg cmask cimg2 cres
                               return res
 

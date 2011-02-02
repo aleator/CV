@@ -24,6 +24,8 @@ data ShapeStyle = Filled | Stroked Int
 styleToCV Filled = -1
 styleToCV (Stroked w) = fromIntegral w
 
+-- TODO: Add fillstyle for rectOp
+
 
 -- TODO: The instances in here could be significantly smaller..
 class Drawable a b where
@@ -31,7 +33,7 @@ class Drawable a b where
     putTextOp :: (Color a b) -> Float -> String -> (Int,Int) -> ImageOperation a b
     lineOp :: (Color a b)   -> Int -> (Int,Int) -> (Int,Int) -> ImageOperation a b
     circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
-    rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ImageOperation a b
+    rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ShapeStyle -> ImageOperation a b
     fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
 
 instance Drawable RGB D32 where

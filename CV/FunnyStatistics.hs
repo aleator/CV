@@ -5,7 +5,7 @@ import CV.Filters
 import qualified CV.ImageMath as IM
 import CV.ImageMathOp
 
-nthCM s n i = blur s $ (i #- blur s i) |^ n
+--nthCM s n i = blur s $ (i #- blur s i) |^ n
 
 r_variance s i = msq #- (m #* m) 
         where
@@ -27,5 +27,5 @@ kurtosis s i = IM.div (nthCM s 4 i) (stdDev s i |^4)
 xx s i = IM.div (nthCM s 6 i) (stdDev s i |^6)
                                   -}
 
-pearsonSkewness1 s image = IM.div (blur s image #- median s image) 
+pearsonSkewness1 s image = IM.div (blur s image #- unsafeImageTo32F (median s (unsafeImageTo32F image))) 
                                   (stdDev s image)

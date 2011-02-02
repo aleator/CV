@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns, ScopedTypeVariables#-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns, ScopedTypeVariables, PatternGuards, FlexibleContexts#-}
 #include "cvWrapLEO.h"
 module CV.Transforms where
 
@@ -152,7 +152,7 @@ sameSizePad img img2 = if (size1 /= size2)
 
 
 cv_Gaussian = 7
-pyrDown :: Image GrayScale D32 -> Image GrayScale D32
+pyrDown ::(CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrDown image = unsafePerformIO $ do
                  res <- create size 
                  withGenImage image $ \cImg -> 
@@ -163,7 +163,7 @@ pyrDown image = unsafePerformIO $ do
                 size = (x`div`2,y`div`2)
                 (x,y) = getSize image  
 
-pyrUp :: Image GrayScale D32 -> Image GrayScale D32
+pyrUp :: (CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrUp image = unsafePerformIO $ do
                  res <- create size 
                  withGenImage image $ \cImg -> 
