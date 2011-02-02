@@ -22,10 +22,9 @@ Library
     Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters, 
                        CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
                        CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
-                       CV.TemplateMatching, CV.Transforms, CV.Conversions
+                       CV.TemplateMatching, CV.Transforms, CV.Conversions, CV.Binary
                        --, CV.FunnyStatistics, CV.MultiresolutionSpline
                       --  CV.Marking, CV.Textures, CV.Gabor, CV.ConnectedComponents,  
-                      --  CV.Binary 
     Other-modules: C2HSTools, C2HS
 
     ghc-options:       -O2 
