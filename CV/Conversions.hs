@@ -22,6 +22,13 @@ copyCArrayToImage carr = S $ unsafePerformIO $
      ((sx,sy),(ex,ey)) = bounds carr
      (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
 
+copyFCArrayToImage :: CArray (Int,Int) Float -> Image GrayScale D32
+copyFCArrayToImage carr = S $ unsafePerformIO $
+                          creatingBareImage (withCArray carr (acquireImageSlowF' w h))
+    where
+     ((sx,sy),(ex,ey)) = bounds carr
+     (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
+
 -- | Copy the real part of an array to image
 copyComplexCArrayToImage :: CArray (Int,Int) (Complex Double) -> Image GrayScale D32
 copyComplexCArrayToImage carr = S $ unsafePerformIO $
@@ -53,6 +60,9 @@ foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowComplex"
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow"
   acquireImageSlow' :: (Int -> (Int -> ((Ptr Double) -> (IO (Ptr (BareImage))))))
+
+foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowF"
+  acquireImageSlowF' :: (Int -> (Int -> ((Ptr Float) -> (IO (Ptr (BareImage))))))
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowComplex"
   acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (Complex Double)) -> (IO (Ptr (BareImage))))))
