@@ -1,9 +1,10 @@
 {-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
 #include "cvWrapLEO.h"
 
-module CV.Drawing(ShapeStyle(Filled,Stroked),circle,putTextOp,circleOp,fillOp
-              ,floodfill,drawLinesOp,lineOp,Drawable,drawLines,rectangle
-              ,rectOp,rectOpS,fillPolyOp,fillPoly) where
+module CV.Drawing(ShapeStyle(Filled,Stroked),circle
+              ,Drawable(..)
+              ,floodfill,drawLinesOp,drawLines,rectangle
+              ,rectOpS,fillPoly) where
 
 import Foreign.Ptr
 import Foreign.C.Types

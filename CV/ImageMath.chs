@@ -14,6 +14,7 @@ import CV.ImageOp
 import Foreign.Marshal
 import Foreign.Ptr
 import System.IO.Unsafe
+import Control.Applicative ((<$>))
 
 import C2HS
 
@@ -103,7 +104,7 @@ subtractMeanOp :: ImageOperation GrayScale D32
 subtractMeanOp = ImgOp $ \image -> do
                       let s =  CV.ImageMath.sum image
                       let mean = s / (fromIntegral $ getArea image )
-                      let (ImgOp subop) = subRSOp mean
+                      let (ImgOp subop) = subRSOp (realToFrac mean)
                       subop image
 
 subRSOp :: D32 -> ImageOperation GrayScale D32
@@ -191,14 +192,16 @@ lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image GrayScale D32 -> IO D32
+average' :: Image GrayScale a -> IO D32
 average' img = withGenImage img $ \image -> -- TODO: Check c datatype size
                 {#call wrapAvg#} image >>= return . realToFrac 
 
 average :: Image GrayScale D32 -> D32
 average = realToFrac.unsafePerformIO.average'
 
-sum :: Image GrayScale D32 -> D32
+-- | Sum the pixels in the image. Notice that OpenCV automatically casts the
+--   result to double sum :: Image GrayScale D32 -> D32
+sum :: Image GrayScale a -> Double
 sum img = realToFrac $ unsafePerformIO $ withGenImage img $ \image ->
                     {#call wrapSum#} image
 
@@ -238,12 +241,12 @@ findMinMaxLoc img = unsafePerformIO $
               alloca $ \(ptrintmax :: Ptr CDouble)->
                withImage img $ \cimg -> do {
                  {#call wrapMinMaxLoc#} cimg ptrintminx ptrintminy ptrintmaxx ptrintmaxy ptrintmin ptrintmax;
-		         minx <- peek ptrintminx;
-		         miny <- peek ptrintminy;
-		         maxx <- peek ptrintmaxx;
-		         maxy <- peek ptrintmaxy;
-		         maxval <- peek ptrintmax;
-		         minval <- peek ptrintmin;
+		         minx <- fromIntegral <$> peek ptrintminx;
+		         miny <- fromIntegral <$> peek ptrintminy;
+		         maxx <- fromIntegral <$> peek ptrintmaxx;
+		         maxy <- fromIntegral <$> peek ptrintmaxy;
+		         maxval <- realToFrac <$> peek ptrintmax;
+		         minval <- realToFrac <$> peek ptrintmin;
                  return (((minx,miny),minval),((maxx,maxy),maxval));}
 
 findMinMax i = unsafePerformIO $ do

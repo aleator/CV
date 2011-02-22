@@ -79,6 +79,7 @@ unImage (S (BareImage fptr)) = fptr
 
 data Tag tp;
 rgb = undefined :: Tag RGB
+rgba = undefined :: Tag RGBA
 lab = undefined :: Tag LAB
 
 
@@ -161,13 +162,13 @@ class GetPixel a where
     type P a :: *
     getPixel   :: (Integral i) => (i,i) -> a -> P a
 
-instance GetPixel (Image GrayScale Double) where
-    type P (Image GrayScale Double) = Double 
+instance GetPixel (Image GrayScale D32) where
+    type P (Image GrayScale D32) = D32 
     getPixel (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
              withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
 
-instance  GetPixel (Image RGB Double) where
-    type P (Image RGB Double) = (Double,Double,Double) 
+instance  GetPixel (Image RGB D32) where
+    type P (Image RGB D32) = (D32,D32,D32) 
     getPixel (fromIntegral -> x, fromIntegral -> y) image 
         = unsafePerformIO $ do 
                      withGenImage image $ \img -> do
@@ -219,9 +220,14 @@ instance CreateImage (Image RGBA D8) where
 
 
 
+empty :: (CreateImage (Image a b)) => (Int,Int) -> (Image a b)
+empty size = unsafePerformIO $ create size 
 
 emptyCopy :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
 emptyCopy img = create (getSize img) 
+
+emptyCopy' :: (CreateImage (Image a b)) => Image a b -> (Image a b)
+emptyCopy' img = unsafePerformIO $ create (getSize img) 
 
 -- | Save image. This will convert the image to 8 bit one before saving
 saveImage :: FilePath -> Image c d -> IO ()
@@ -330,8 +336,11 @@ imageTo8Bit img = withGenBareImage img $ \image ->
                  ({#call ensure8U #} image)
 
 -- Manipulating regions of interest:
-setROI (x,y) (w,h) image = withImage image $ \i -> 
+setROI (fromIntegral -> x,fromIntegral -> y) 
+       (fromIntegral -> w,fromIntegral -> h) 
+       image = withImage image $ \i -> 
                             {#call wrapSetImageROI#} i x y w h
+
 resetROI image = withImage image $ \i ->
                   {#call cvResetImageROI#} i
 
@@ -358,6 +367,7 @@ withIOROI pos size image op = do
             resetROI image
             return x
 
+withROI :: (Int, Int) -> (Int, Int) -> Image c d -> (Image c d -> a) -> a
 withROI pos size image op = unsafePerformIO $ do
                         setROI pos size image
                         let x = op image -- BUG
