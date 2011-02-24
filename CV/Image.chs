@@ -407,7 +407,7 @@ montage (u',v') space' imgs = resultPic
      resultPic = unsafePerformIO $ do
                     r <- create (rw,rh)
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
-                               | x <- [0..u-1] , y <- [0..v-1] 
+                               | y <- [0..u-1] , x <- [0..v-1] 
                                | i <- imgs ]
                     return r
 
