@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, UnicodeSyntax#-}
 #include "cvWrapLEO.h"
 module CV.Morphology (StructuringElement
                   ,structuringElement
@@ -30,10 +30,15 @@ import C2HSTools
 openOp :: StructuringElement -> ImageOperation GrayScale D32
 openOp se = erodeOp se 1 #> dilateOp se 1                    
 open se = unsafeOperate (openOp se) 
+a ○ b = open b a
+-- a ○ b = (a ⊖ b) ⊕ b 
+
+
 -- Morphological closing
 closeOp :: StructuringElement -> ImageOperation GrayScale D32
 closeOp se = dilateOp se 1 #> erodeOp se 1                    
 close se = unsafeOperate (closeOp se) 
+a ● b = close b a
 
 geodesic :: Image GrayScale D32 -> ImageOperation GrayScale D32 -> ImageOperation GrayScale D32
 geodesic mask op = op #> IM.limitToOp mask
@@ -116,6 +121,8 @@ dilateOp se count = ImgOp $ \(S img) -> dilation img img se count
 erode se count  i = unsafeOperate (erodeOp se count)  i
 dilate se count i = unsafeOperate (dilateOp se count) i
 
+a ⊕ b = erode b 1 a
+a ⊖ b = erode b 1 a
                        
 erode' se count img = withImage img $ \image ->
                withConvKernel se $ \ck ->
