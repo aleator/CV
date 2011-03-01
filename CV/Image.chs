@@ -376,8 +376,9 @@ withROI pos size image op = unsafePerformIO $ do
 
 -- Manipulating image pixels
 --setPixel :: (CInt,CInt) -> CDouble -> Image c d -> IO ()
---setPixel (x,y) v image = withGenImage image $ \img ->
---                          {#call wrapSet32F2D#} img y x v
+setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
+setPixel (x,y) v image = withGenImage image $ \img ->
+                          {#call wrapSet32F2D#} img (fromIntegral y) (fromIntegral x) (realToFrac v)
 
 
 getAllPixels image =  [getPixel (i,j) image 
@@ -405,7 +406,7 @@ montage (u',v') space' imgs = resultPic
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
-                    r <- create (rw,rh)
+                    r <- create (rh,rw)
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
                                | y <- [0..u-1] , x <- [0..v-1] 
                                | i <- imgs ]
