@@ -3,14 +3,28 @@ Version:             0.3
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
+Category:            AI, Graphics, Machine Vision
+Synopsis:            OpenCV based machine vision library
+Description:            This is a preliminary machine vision package that wraps some functionality
+                     of OpenCV library. This package has been developed for personal use and
+                     is not meant to be a complete wrapper, though it will most likely grow to
+                     cover most of functionaly exposed by OpenCV C interface.
+
+                     Currently the code is quite dirty, but tested.
 Author:              Ville Tirronen
 Maintainer:          ville.tirronen@jyu.fi
 Build-Type:          Simple
-Cabal-Version:       >=1.2
+Cabal-Version:       >=1.6
+Extra-Source-Files:
+                     examples/*.hs
+                     examples/shapes/*.png
+                     examples/shapePhoto.png
+                     examples/smallLena.jpg
+                     examples/elaine.jpg
 
 Library
     Build-Tools:       c2hs >= 0.16.0
-    Include-dirs:      /Users/aleator/homebrew/include, CV/  
+    Include-dirs:      CV/  
     Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, CV/cvWrapLEO.h
     c-sources:         CV/cvWrapLEO.c
     cc-options:        --std=c99 
