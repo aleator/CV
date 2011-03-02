@@ -21,10 +21,22 @@ getTemplateMap image template = unsafePerformIO $
          creatingImage $ {#call templateImage#} cvimg cvtemp
          
 
+#c
+enum MatchType {
+  CV_TM_SQDIFF
+  ,CV_TM_SQDIFF_NORMED 
+  ,CV_TM_CCORR
+  ,CV_TM_CCORR_NORMED
+  ,CV_TM_CCOEFF
+  ,CV_TM_CCOEFF_NORMED 
+};
+#endc
+{#enum MatchType {}#}
+
 -- TODO: Make this somehow smarter #PotentialDanger
-data MatchType = CV_TM_SQDIFF | CV_TM_SQDIFF_NORMED | CV_TM_CCORR
-                 | CV_TM_CCORR_NORMED | CV_TM_CCOEFF | CV_TM_CCOEFF_NORMED 
-                 deriving (Eq,Show,Enum)
+--data MatchType = CV_TM_SQDIFF | CV_TM_SQDIFF_NORMED | CV_TM_CCORR
+--                 | CV_TM_CCORR_NORMED | CV_TM_CCOEFF | CV_TM_CCOEFF_NORMED 
+--                 deriving (Eq,Show,Enum)
 
 
 simpleTemplateMatch :: MatchType -> Image GrayScale D32 -> Image GrayScale D32 -> ((Int,Int),Double)
