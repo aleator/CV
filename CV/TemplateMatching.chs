@@ -73,3 +73,21 @@ regionToInt rc = mkRectangle (floor x,floor y) (ceiling w,ceiling h)
     where
         (x,y) = topLeft rc
         (w,h) = rSize rc
+
+#c
+enum ShapeMatchMethod {
+  Method1 = CV_CONTOURS_MATCH_I1,
+  Method2 = CV_CONTOURS_MATCH_I2,
+  Method3 = CV_CONTOURS_MATCH_I3
+};
+#endc
+{#enum ShapeMatchMethod {}#}
+
+
+-- | Match shapes
+matchShapes :: ShapeMatchMethod -> Image GrayScale D8 -> Image GrayScale D8 -> Double
+matchShapes m a b = unsafePerformIO $ do
+    withGenImage a $ \c_a ->
+     withGenImage b $ \c_b ->
+       {#call cvMatchShapes#} c_a c_b (fromIntegral . fromEnum $ m) 0 
+        >>= return.realToFrac
