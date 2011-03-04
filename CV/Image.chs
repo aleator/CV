@@ -397,7 +397,9 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
 montage :: (CreateImage (Image c d)) => (Int,Int) -> Int -> [Image c d] -> Image c d
-montage (u',v') space' imgs = resultPic
+montage (u',v') space' imgs 
+    | u'*v' /= (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
+    | otherwise              = resultPic
     where
      space = fromIntegral space'
      (u,v) = (fromIntegral u', fromIntegral v')
@@ -406,9 +408,9 @@ montage (u',v') space' imgs = resultPic
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
-                    r <- create (rh,rw)
+                    r <- create (rw,rh)
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
-                               | y <- [0..u-1] , x <- [0..v-1] 
+                               | y <- [0..v-1] , x <- [0..u-1] 
                                | i <- imgs ]
                     return r
 
