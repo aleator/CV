@@ -13,6 +13,10 @@ import Foreign.C.String
 import System.IO.Unsafe
 import Utils.Stream
 
+-- NOTE: For some reason, this module fails to work with ghci for me
+-- -- Ville.
+
+
 {#pointer *CvCapture as Capture foreign newtype#}
 
 foreign import ccall "& wrapReleaseCapture" releaseCapture :: FinalizerPtr Capture
@@ -25,11 +29,11 @@ foreign import ccall "& wrapReleaseVideoWriter" releaseVideoWriter :: FinalizerP
 
 type VideoStream c d = Stream IO (Image c d)
 
-streamFromVideo cap   = dropS 1 $ streamFromVideo' undefined cap 
+streamFromVideo cap   = dropS 1 $ streamFromVideo' (undefined) cap 
 streamFromVideo' p cap = Value $ do
                          x <- getFrame cap
                          case x of
-                            Just f -> return (p,(streamFromVideo' p cap))
+                            Just f -> return (p,(streamFromVideo' f cap))
                             Nothing -> return (p,Terminated)
                         
 
@@ -40,8 +44,12 @@ captureFromFile fn = withCString fn $ \cfn -> do
 
 captureFromCam int = do
                       ptr <- {#call cvCreateCameraCapture#} (fromIntegral int)
-                      fptr <- newForeignPtr releaseCapture ptr
-                      return . Capture $ fptr
+                      if  ptr==nullPtr 
+                        then 
+                          return Nothing
+                        else do
+                          fptr <- newForeignPtr releaseCapture ptr
+                          return . Just . Capture $ fptr
 
 dropFrame cap = withCapture cap $ \ccap -> {#call cvGrabFrame#} ccap >> return ()
 
