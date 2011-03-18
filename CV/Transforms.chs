@@ -10,7 +10,7 @@ import System.IO.Unsafe
 {#import CV.Image#}
 import CV.ImageMathOp
 
--- Since DCT is valid only for even sized images, we provide a
+-- |Since DCT is valid only for even sized images, we provide a
 -- function to crop images to even sizes.
 takeEvenSized img = getRegion (0,0) (w-wadjust,h-hadjust) img
     where
@@ -20,7 +20,7 @@ takeEvenSized img = getRegion (0,0) (w-wadjust,h-hadjust) img
      wadjust | odd w = 1
              | otherwise = 2
 
--- Perform Discrete Cosine Transform
+-- |Perform Discrete Cosine Transform
 dct img | (x,y) <- getSize img, even x && even y 
         = unsafePerformIO $
             withGenImage img $ \i -> 
@@ -29,6 +29,7 @@ dct img | (x,y) <- getSize img, even x && even y
                   ({#call cvDCT#} i c 0)
         | otherwise = error "DCT needs even sized image"
 
+-- |Perform Inverse Discrete Cosine Transform
 idct img | (x,y) <- getSize img, even x && even y 
         = unsafePerformIO $
             withGenImage img $ \i -> 
@@ -39,6 +40,7 @@ idct img | (x,y) <- getSize img, even x && even y
 
 data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 
+-- |Mirror an image over a cardinal axis
 flip axis img = unsafePerformIO $ do
                  cl <- emptyCopy img
                  withGenImage img $ \cimg -> 
@@ -46,7 +48,7 @@ flip axis img = unsafePerformIO $ do
                     {#call cvFlip#} cimg ccl (if axis == Vertical then 0 else 1)
                  return cl
 
--- Rotate `img` `angle` radians.
+-- |Rotate `img` `angle` radians.
 rotate angle img = unsafePerformIO $
                     withImage img $ \i -> 
                         creatingImage 
@@ -56,6 +58,7 @@ data Interpolation = NearestNeighbour | Linear
                    | Area | Cubic
                 deriving (Eq,Ord,Enum,Show)
 
+-- |Simulate a radial distortion over an image
 radialDistort :: Image GrayScale D32 -> Double -> Image GrayScale D32
 radialDistort img k = unsafePerformIO $ do
                        target <- emptyCopy img 
@@ -209,4 +212,28 @@ enlarge n img =  unsafePerformIO $ do
      pad x = x + (np - x `mod` np)
      np = 2^n
 
+#c
+enum DistanceType {
+    CV_DIST_C
+    ,CV_DIST_L1
+    ,CV_DIST_L2
+};
+#endc
+{#enum DistanceType {}#}
 
+-- |Mask sizes accepted by distanceTransform
+data MaskSize = M3 | M5 deriving (Eq,Ord,Enum,Show)
+
+-- |Perform a distance transform on the image
+distanceTransform :: DistanceType -> MaskSize -> Image GrayScale D8 -> Image GrayScale D32 --TODO: Input should be a black and white image
+distanceTransform dtype maskSize source = unsafePerformIO $ do
+    result :: Image GrayScale D32 <- create (getSize source)
+    withGenImage source $ \c_source ->
+     withGenImage result $ \c_result ->
+        {#call cvDistTransform #} c_source c_result 
+                                  (fromIntegral . fromEnum $ dtype) 
+                                  (fromIntegral . fromEnum $ maskSize)
+                                   nullPtr nullPtr
+    return result
+    -- TODO: Add handling for labels
+    -- TODO: Add handling for custom masks
