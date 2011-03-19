@@ -52,18 +52,18 @@ copyImageToComplexCArray (S img) = unsafePerformIO $
     where
      (w,h) = getSize img
 
-foreign import ccall safe "CV/cvWrapLeo.h exportImageSlow"
+foreign import ccall safe "CV/cvWrapLEO.h exportImageSlow"
   exportImageSlow' :: ((Ptr (BareImage)) -> ((Ptr Double) -> (IO ())))
 
-foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowComplex"
+foreign import ccall safe "CV/cvWrapLEO.h exportImageSlowComplex"
   exportImageSlowComplex' :: ((Ptr (BareImage)) -> ((Ptr (Complex Double)) -> (IO ())))
 
-foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow"
+foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlow"
   acquireImageSlow' :: (Int -> (Int -> ((Ptr Double) -> (IO (Ptr (BareImage))))))
 
-foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowF"
+foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlowF"
   acquireImageSlowF' :: (Int -> (Int -> ((Ptr Float) -> (IO (Ptr (BareImage))))))
 
-foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowComplex"
+foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlowComplex"
   acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (Complex Double)) -> (IO (Ptr (BareImage))))))
 
