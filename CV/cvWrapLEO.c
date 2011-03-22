@@ -2183,6 +2183,25 @@ cvInitMatHeader(&target,w,1,CV_64FC1,t,CV_AUTOSTEP);
 cvMatMul(&matrix,&vector,&target);
 }
 
+void maximal_covering_circle(int ox,int oy, double or, IplImage *distmap
+                            ,int *max_x, int *max_y, double *max_r)
+{
+ double distance,radius;
+
+ *max_x = ox;
+ *max_y = oy;
+ *max_r  = or;
+
+ CvSize s = cvGetSize(distmap);
+ for(int i=0; i<s.width; i++) // TODO: Limit with max_r
+  for(int j=0; j<s.height; j++)
+   {
+    distance = sqrt((i-ox)*(i-ox) + (j-oy)*(j-oy));
+    radius   = FGET(distmap,i,j);
+    if (radius > *max_r && radius >= or+distance )
+         { *max_x=i; *max_y=j; *max_r=radius;}
+   }
+}
 
 double juliaF(double a, double b,double x, double y) {
      int limit = 1000;

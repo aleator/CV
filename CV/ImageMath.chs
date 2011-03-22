@@ -290,3 +290,22 @@ maskedMerge mask img img2 = unsafePerformIO $ do
 
 
 
+-- | Given a distance map and a circle, return the biggest circle with radius less
+--   than given in the distance map that fully covers the previous one
+
+maximalCoveringCircle distMap (x,y,r)  
+  = unsafePerformIO $ 
+     withImage distMap $ \c_distmap ->
+       alloca $ \(ptr_int_max_x :: Ptr CInt) ->
+        alloca $ \(ptr_int_max_y :: Ptr CInt) ->
+         alloca $ \(ptr_double_max_r :: Ptr CDouble) -> 
+          do
+           {#call maximal_covering_circle#} x y r c_distmap ptr_int_max_x ptr_int_max_y ptr_double_max_r
+           max_x <- fromIntegral <$> peek ptr_int_max_x
+           max_y <- fromIntegral <$> peek ptr_int_max_y
+           max_r <- realToFrac   <$> peek ptr_double_max_r
+           return (max_x,max_y,max_r)
+
+          
+
+          
