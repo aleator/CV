@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns#-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls #-}
 #include "cvWrapLeo.h"
 module CV.Image where
 
@@ -21,26 +21,76 @@ import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+import Data.Word
 
 
-{#pointer *IplImage as Image foreign newtype#}
+-- Colorspaces
+data GrayScale
+data RGB
+data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
+data RGBA
+data LAB
+data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
+type family ChannelOf a :: *
+type instance ChannelOf RGB_Channel = RGB
+type instance ChannelOf LAB_Channel = LAB
 
-foreign import ccall "& wrapReleaseImage" releaseImage :: FinalizerPtr Image
+-- Bit Depths
+type D8  = Word8
+type D32 = Float
+type D64 = Double
 
-instance NFData Image where
-    rnf a@(Image fptr) = (unsafeForeignPtrToPtr) fptr `seq` a `seq` ()-- This might also need peek?
+newtype Image channels depth = S BareImage
+
+unS (S i) = i -- Unsafe and ugly
+
+withImage :: Image c d -> (Ptr BareImage ->IO a) -> IO a
+withImage (S i) op = withBareImage i op
+--withGenNewImage (S i) op = withGenImage i op 
+
+-- Ok. this is just the example why I need image types
+withUniPtr with x fun = with x $ \y -> 
+                    fun (castPtr y)
+
+withGenImage = withUniPtr withImage
+withGenBareImage = withUniPtr withBareImage
+
+{#pointer *IplImage as BareImage foreign newtype#}
+
+foreign import ccall "& wrapReleaseImage" releaseImage :: FinalizerPtr BareImage
+
+instance NFData (Image a b) where
+    rnf a@(S (BareImage fptr)) = (unsafeForeignPtrToPtr) fptr `seq` a `seq` ()-- This might also need peek?
 
 
 creatingImage fun = do
               iptr <- fun
 --              {#call incrImageC#} -- Uncomment this line to get statistics of number of images allocated by ghc
               fptr <- newForeignPtr releaseImage iptr
-              return.Image $ fptr
+              return . S . BareImage $ fptr
 
-unImage (Image fptr) = fptr
-composeMultichannelImage :: Maybe Image -> Maybe Image -> Maybe Image -> Maybe Image -> Image 
-composeMultichannelImage c1 c2 c3 c4 = unsafePerformIO $ do
-        res <- createImage32F (size) 4 -- TODO: Check channel count
+creatingBareImage fun = do
+              iptr <- fun
+--              {#call incrImageC#} -- Uncomment this line to get statistics of number of images allocated by ghc
+              fptr <- newForeignPtr releaseImage iptr
+              return . BareImage $ fptr
+
+unImage (S (BareImage fptr)) = fptr
+
+data Tag tp;
+rgb = undefined :: Tag RGB
+rgba = undefined :: Tag RGBA
+lab = undefined :: Tag LAB
+
+
+composeMultichannelImage :: (CreateImage (Image tp a)) => Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Tag tp -> Image tp a
+composeMultichannelImage (c1) 
+                         (c2)
+                         (c3)
+                         (c4)
+                         totag
+    = unsafePerformIO $ do
+        res <- create (size) -- TODO: Check channel count -- This is NOT correct
         withMaybe c1 $ \cc1 -> 
          withMaybe c2 $ \cc2 -> 
           withMaybe c3 $ \cc3 -> 
@@ -54,80 +104,155 @@ composeMultichannelImage c1 c2 c3 c4 = unsafePerformIO $ do
 
 -- Load Image as grayscale image.
 
+--loadImage n = do
+--              exists <- fileExist n
+--              if not exists then return Nothing
+--                            else do
+--                              i <- withCString n $ \name -> 
+--                                     creatingImage ({#call cvLoadImage #} name (0))
+--                              bw <- imageTo32F i
+--                              return $ Just bw
+
+loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage n = do
               exists <- fileExist n
               if not exists then return Nothing
                             else do
                               i <- withCString n $ \name -> 
-                                     creatingImage ({#call cvLoadImage #} name (0))
+                                     creatingBareImage ({#call cvLoadImage #} name (0))
                               bw <- imageTo32F i
-                              return $ Just bw
+                              return . Just . S $ bw
+
+loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
 loadColorImage n = do
               exists <- fileExist n
               if not exists then return Nothing
                             else do
                               i <- withCString n $ \name -> 
-                                     creatingImage ({#call cvLoadImage #} name 1)
+                                     creatingBareImage ({#call cvLoadImage #} name 1)
                               bw <- imageTo32F i
-                              return $ Just bw
+                              return . Just . S  $ bw
 
-cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
-cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
-convertToGrayScale img = unsafePerformIO $ creatingImage $ do
-    res <- {#call wrapCreateImage32F#} w h 1
-    withImage img $ \cimg -> 
-        {#call cvCvtColor#} (castPtr cimg) (castPtr res) cvRGBtoGRAY
-    return res
- where    
-    (w,h) = getSize img
+class IntSized a where
+    getSize :: a -> (Int,Int)
 
-convertTo code channels img = unsafePerformIO $ creatingImage $ do
-    res <- {#call wrapCreateImage32F#} w h channels
-    withImage img $ \cimg -> 
-        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
-    return res
- where    
-    (w,h) = getSize img
-
-createImage32F (w,h) nChannels = do
-    creatingImage $ {#call wrapCreateImage32F#} w h nChannels
-
-createImage64F (w,h) nChannels = do
-    creatingImage $ {#call wrapCreateImage64F#} w h nChannels
-
-createImage8U (w,h) nChannels = do
-    creatingImage $ {#call wrapCreateImage8U#} w h nChannels
-
-image32F size channels = unsafePerformIO $ createImage32F size channels
-image8U size channels = unsafePerformIO $ createImage8U size channels
-
-emptyCopy img = image32F (getSize img) 1
-
-saveImage filename image = do
-                           fpi <- imageTo8Bit image
-                           withCString  filename $ \name  -> 
-                            withGenImage fpi    $ \cvArr ->
-							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
-
-getSize image = unsafePerformIO $ withImage image $ \i -> do
+instance IntSized BareImage where
+   -- getSize :: (Integral a, Integral b) => Image c d -> (a,b)
+    getSize image = unsafePerformIO $ withBareImage image $ \i -> do
                  w <- {#call getImageWidth#} i
                  h <- {#call getImageHeight#} i
                  return (fromIntegral w,fromIntegral h)
 
+instance IntSized (Image c d) where
+    getSize = getSize . unS
+
+
+cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
+cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
+
+
+rgbToLab :: Image RGB D32 -> Image LAB D32
+rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
+
+rgbToGray :: Image RGB D32 -> Image GrayScale D32
+rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
+
+
+class GetPixel a where
+    type P a :: *
+    getPixel   :: (Integral i) => (i,i) -> a -> P a
+
+instance GetPixel (Image GrayScale D32) where
+    type P (Image GrayScale D32) = D32 
+    getPixel (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
+             withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
+
+instance  GetPixel (Image RGB D32) where
+    type P (Image RGB D32) = (D32,D32,D32) 
+    getPixel (fromIntegral -> x, fromIntegral -> y) image 
+        = unsafePerformIO $ do 
+                     withGenImage image $ \img -> do
+                              r <- {#call wrapGet32F2DC#} img y x 0
+                              g <- {#call wrapGet32F2DC#} img y x 1
+                              b <- {#call wrapGet32F2DC#} img y x 2
+                              return (realToFrac r,realToFrac g, realToFrac b)
+
+
+convertTo :: CInt -> CInt -> BareImage -> BareImage
+convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
+    res <- {#call wrapCreateImage32F#} w h channels
+    withBareImage img $ \cimg -> 
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+    return res
+ where    
+    (fromIntegral -> w,fromIntegral -> h) = getSize img
+
+class CreateImage a where
+    create :: (Int,Int) -> IO a
+
+
+instance CreateImage (Image GrayScale D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image LAB D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGB D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGBA D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 4
+
+instance CreateImage (Image GrayScale D64) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage64F#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image LAB D64) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage64F#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGB D64) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage64F#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGBA D64) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage64F#} (fromIntegral w) (fromIntegral h) 4
+
+instance CreateImage (Image GrayScale D8) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage8U#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image LAB D8) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage8U#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGB D8) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage8U#} (fromIntegral w) (fromIntegral h) 3
+instance CreateImage (Image RGBA D8) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage8U#} (fromIntegral w) (fromIntegral h) 4
+
+
+
+empty :: (CreateImage (Image a b)) => (Int,Int) -> (Image a b)
+empty size = unsafePerformIO $ create size 
+
+emptyCopy :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
+emptyCopy img = create (getSize img) 
+
+emptyCopy' :: (CreateImage (Image a b)) => Image a b -> (Image a b)
+emptyCopy' img = unsafePerformIO $ create (getSize img) 
+
+-- | Save image. This will convert the image to 8 bit one before saving
+saveImage :: FilePath -> Image c d -> IO ()
+saveImage filename image = do
+                           fpi <- imageTo8Bit $ unS image
+                           withCString  filename $ \name  -> 
+                            withGenBareImage fpi    $ \cvArr ->
+							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
+
+
+getArea :: (IntSized a) => a -> Int
 getArea = uncurry (*).getSize
 
-getRegion :: (Integral a) => (a, a) -> (a,a) -> Image -> Image
+getRegion :: (Int,Int) -> (Int,Int) -> Image c d -> Image c d
 getRegion (fromIntegral -> x,fromIntegral -> y) (fromIntegral -> w,fromIntegral -> h) image 
-    | x+w <= width && y+h <= height = getRegion' (x,y) (w,h) image
+    | x+w <= width && y+h <= height = S . getRegion' (x,y) (w,h) $ unS image
     | otherwise                   = error $ "Region outside image:"
                                             ++ show (getSize image) ++
                                             "/"++show (x+w,y+h)
  where
-  (width,height) = getSize image
+  (fromIntegral -> width,fromIntegral -> height) = getSize image
     
 getRegion' (x,y) (w,h) image = unsafePerformIO $
-                               withImage image $ \i ->
-                                 creatingImage ({#call getSubImage#} 
+                               withBareImage image $ \i ->
+                                 creatingBareImage ({#call getSubImage#} 
                                                 i x y w h)
 
 
@@ -143,26 +268,25 @@ blit image1 image2 (x,y)
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y) 
     | otherwise = withImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
-                    ({#call plainBlit#} i1 i2 y x)
+                    ({#call plainBlit#} i1 i2 (fromIntegral y) (fromIntegral x))
     where 
      ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
      badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
 
--- | blit multiple tiles into one image
-blitM :: (Int,Int) -> [((Int,Int),Image)] -> Image
+blitM :: (CreateImage (Image c d)) => (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
 blitM (rw,rh) imgs = resultPic
     where
      resultPic = unsafePerformIO $ do
-                    r <- createImage32F (fromIntegral rw,fromIntegral rh) 1
+                    r <- create (fromIntegral rw,fromIntegral rh) 
                     sequence_ [blit r i (fromIntegral x, fromIntegral y) 
                               | ((x,y),i) <- imgs ]
                     return r
 
 
 subPixelBlit
-  :: Image -> Image -> (CDouble, CDouble) -> IO ()
+  :: Image c d -> Image c d -> (CDouble, CDouble) -> IO ()
 
-subPixelBlit image1 image2 (x,y) 
+subPixelBlit (image1) (image2) (x,y) 
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y) 
     | otherwise = withImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
@@ -195,21 +319,28 @@ withClone img fun = do
                 fun result
                 return result
 
-imageTo32F img = withGenImage img $ \image -> 
+unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 
                  ({#call ensure32F #} image)
-imageTo8Bit img = withGenImage img $ \image -> 
+
+unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 
                  ({#call ensure8U #} image)
--- Ok. this is just the example why I need image types
-withUniPtr with x fun = with x $ \y -> 
-                    fun (castPtr y)
 
-withGenImage = withUniPtr withImage
+imageTo32F img = withGenBareImage img $ \image -> 
+                creatingBareImage 
+                 ({#call ensure32F #} image)
+
+imageTo8Bit img = withGenBareImage img $ \image -> 
+                creatingBareImage 
+                 ({#call ensure8U #} image)
 
 -- Manipulating regions of interest:
-setROI (x,y) (w,h) image = withImage image $ \i -> 
+setROI (fromIntegral -> x,fromIntegral -> y) 
+       (fromIntegral -> w,fromIntegral -> h) 
+       image = withImage image $ \i -> 
                             {#call wrapSetImageROI#} i x y w h
+
 resetROI image = withImage image $ \i ->
                   {#call cvResetImageROI#} i
 
@@ -218,11 +349,13 @@ setCOI chnl image = withImage image $ \i ->
 resetCOI image = withImage image $ \i ->
                   {#call cvSetImageCOI#} i 0
 
-getChannel no image = unsafePerformIO $ creatingImage $ do
 
+-- #TODO: Replace the Int below with proper channel identifier
+getChannel :: (Enum a) => a -> Image (ChannelOf a) d -> Image GrayScale d
+getChannel no image = unsafePerformIO $ creatingImage $ do
     let (w,h) = getSize image
-    setCOI no image
-    cres <- {#call wrapCreateImage32F#} w h 1
+    setCOI (1+fromEnum no) image
+    cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
     withGenImage image $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
     resetCOI image
@@ -234,20 +367,19 @@ withIOROI pos size image op = do
             resetROI image
             return x
 
+withROI :: (Int, Int) -> (Int, Int) -> Image c d -> (Image c d -> a) -> a
 withROI pos size image op = unsafePerformIO $ do
                         setROI pos size image
-                        let x = op image
+                        let x = op image -- BUG
                         resetROI image
                         return x
 
 -- Manipulating image pixels
-setPixel :: (CInt,CInt) -> CDouble -> Image -> IO ()
+--setPixel :: (CInt,CInt) -> CDouble -> Image c d -> IO ()
+setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
 setPixel (x,y) v image = withGenImage image $ \img ->
-                          {#call wrapSet32F2D#} img y x v
+                          {#call wrapSet32F2D#} img (fromIntegral y) (fromIntegral x) (realToFrac v)
 
-getPixel :: (CInt,CInt) -> Image -> CDouble
-getPixel (x,y) image = unsafePerformIO $ withGenImage image $ \img ->
-                          {#call wrapGet32F2D#} img y x
 
 getAllPixels image =  [getPixel (i,j) image 
                       | i <- [0..width-1 ]
@@ -264,8 +396,10 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
-montage :: (Int,Int) -> Int -> [Image] -> Image
-montage (u',v') space' imgs = resultPic
+montage :: (CreateImage (Image c d)) => (Int,Int) -> Int -> [Image c d] -> Image c d
+montage (u',v') space' imgs 
+    | u'*v' /= (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
+    | otherwise              = resultPic
     where
      space = fromIntegral space'
      (u,v) = (fromIntegral u', fromIntegral v')
@@ -274,9 +408,9 @@ montage (u',v') space' imgs = resultPic
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
-                    r <- createImage32F (rw,rh) 1
+                    r <- create (rw,rh)
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep) 
-                              | x <- [0..u-1], y <- [0..v-1] 
-                              | i <- imgs ]
+                               | y <- [0..v-1] , x <- [0..u-1] 
+                               | i <- imgs ]
                     return r
 

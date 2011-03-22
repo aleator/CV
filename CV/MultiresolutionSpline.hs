@@ -15,30 +15,18 @@ import CV.Filters
 
 -- | Do a burt-adelson multiresolution splining for two images.
 --   Notice, that the mask should contain a tiny blurred region between images 
+burtAdelsonMerge :: Int -> Image GrayScale D8 -> Image GrayScale D32 -> Image GrayScale D32 
+                        -> Image GrayScale D32
 burtAdelsonMerge levels mask img1 img2 
     | badSize = error $ "BAMerge: Images have a bad size. Not divisible by "++show divisor ++" "++show sizes 
     | otherwise = reconstructFromLaplacian pyrMerge
     where
         divisor = 2^levels
         notDivisible x = x`mod`(divisor) /= 0 
-        sizes = map getSize [mask,img1,img2]
+        sizes = map getSize [img1,img2]++[getSize mask]
         badSize = any (\(x,y) -> notDivisible x || notDivisible y) sizes
         maskPyr = reverse $ take levels $ iterate pyrDown $ mask
         pyr  = laplacianPyramid levels img1
         pyr2 = laplacianPyramid levels img2 
         pyrMerge = zipWith3 IM.maskedMerge maskPyr pyr2 pyr
-
--- | Another Burt-Adelson spline. Since OpenCV:s pyramids are inflexible, this one does without
---   Naturally, this is much more inefficient and must be seen as stop-gap solution for splining
---   arbitrary size images. Does not work, btw.
-
-burtAdelsonMerge2 levels mask img1 img2 = foldl1 (#+) pyrMerge
-    where
-        g = gaussian (25,25)
-        fakeLaplacian gpyr = zipWith (#-) gpyr (tail gpyr) ++ last [gpyr]
-        maskPyr = take levels $ iterate g mask
-        gpyr1 = take levels . iterate g $ img1
-        gpyr2 = take levels . iterate g $ img2
-        pyrMerge = zipWith3 IM.maskedMerge maskPyr (fakeLaplacian gpyr2) (fakeLaplacian gpyr1)
-
 

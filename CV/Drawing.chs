@@ -1,9 +1,10 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
 #include "cvWrapLEO.h"
 
-module CV.Drawing(ShapeStyle(Filled,Stroked),circle,putTextOp,circleOp,fillOp
-              ,floodfill,drawLinesOp,lineOp,line,drawLines,rectangle
-              ,rectOp,rectOpS,fillPolyOp,fillPoly) where
+module CV.Drawing(ShapeStyle(Filled,Stroked),circle
+              ,Drawable(..)
+              ,floodfill,drawLinesOp,drawLines,rectangle
+              ,rectOpS,fillPoly) where
 
 import Foreign.Ptr
 import Foreign.C.Types
@@ -12,6 +13,7 @@ import Foreign.ForeignPtr
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import System.IO.Unsafe
+import Control.Monad(when)
 
 {#import CV.Image#}
 
@@ -23,45 +25,116 @@ data ShapeStyle = Filled | Stroked Int
 styleToCV Filled = -1
 styleToCV (Stroked w) = fromIntegral w
 
-putTextOp size text (x,y) = ImgOp $ \img -> do
-                               withGenImage img $ \cimg ->
-                                withCString text $ \(ctext) ->
-                                {#call wrapDrawText#} cimg ctext size x y   
+-- TODO: Add fillstyle for rectOp
 
-circleOp (x,y) r c s = ImgOp $ \i -> do
-                        let (w,h) = getSize i
-                        let tr = r + abs (styleToCV s)
-                        if r <1
-                         then return () 
-                         else withGenImage i $ \img -> 
-                              ({#call wrapDrawCircle#} img x y r c 
-                                $ styleToCV s)
 
-lineOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
+-- TODO: The instances in here could be significantly smaller..
+class Drawable a b where
+    type Color a b :: * 
+    putTextOp :: (Color a b) -> Float -> String -> (Int,Int) -> ImageOperation a b
+    lineOp :: (Color a b)   -> Int -> (Int,Int) -> (Int,Int) -> ImageOperation a b
+    circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
+    rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ImageOperation a b
+    fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
+
+instance Drawable RGB D32 where
+    type Color RGB D32 = (D32,D32,D32)
+    putTextOp (r,g,b) size text (x,y)  = ImgOp $ \img -> do
+                                   withGenImage img $ \cimg ->
+                                    withCString text $ \(ctext) ->
+                                    {#call wrapDrawText#} cimg ctext (realToFrac size) 
+                                        (fromIntegral x) (fromIntegral y) 
+                                        (realToFrac r) (realToFrac g) (realToFrac b) 
+
+    lineOp (r,g,b) t (x,y) (x1,y1) = ImgOp $ \i -> do
                          withGenImage i $ \img -> 
-                              {#call wrapDrawLine#} img x y x1 y1 c t 
-
-fillPolyOp c pts = ImgOp $ \i -> do
-                         withImage i $ \img -> do
-                              let (xs,ys) = unzip pts
-                              xs' <- newArray $ map fromIntegral xs
-                              ys' <- newArray $ map fromIntegral  ys
-                              {#call wrapFillPolygon#} img 
-                                   (fromIntegral $ length xs) xs' ys' 
-                               (realToFrac c) 
-                              free xs'
-                              free ys'
-
-rectOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
+                              {#call wrapDrawLine#} img (fromIntegral x) (fromIntegral y) 
+                                                        (fromIntegral x1) (fromIntegral y1) 
+                                                        (realToFrac r) (realToFrac g) 
+                                                        (realToFrac b) (fromIntegral t) 
+    
+    circleOp (red,g,b) (x,y) r s = ImgOp $ \i -> do
+                        when (r>0) $ withGenImage i $ \img -> 
+                              ({#call wrapDrawCircle#} img (fromIntegral x) (fromIntegral y) 
+                                                           (fromIntegral r) (realToFrac red) 
+                                                           (realToFrac g) (realToFrac b)
+                                                           $ styleToCV s)
+    rectOp (r,g,b) t (x,y) (x1,y1) = ImgOp $ \i -> do
                          withGenImage i $ \img -> 
-                              {#call wrapDrawRectangle#} img x y x1 y1 c t 
+                              {#call wrapDrawRectangle#} img (fromIntegral x)
+                               (fromIntegral y) (fromIntegral x1) (fromIntegral y1)
+                               (realToFrac r) (realToFrac g)(realToFrac b)(fromIntegral t)
+    fillPolyOp (r,g,b) pts = ImgOp $ \i -> do
+                             withImage i $ \img -> do
+                                  let (xs,ys) = unzip pts
+                                  xs' <- newArray $ map fromIntegral xs
+                                  ys' <- newArray $ map fromIntegral  ys
+                                  {#call wrapFillPolygon#} img 
+                                       (fromIntegral $ length xs) xs' ys' 
+                                   (realToFrac r) (realToFrac g) (realToFrac b) 
+                                  free xs'
+                                  free ys'
 
-rectOpS c t (x,y) (w,h) = ImgOp $ \i -> do
+
+instance Drawable GrayScale D32 where
+    type Color GrayScale D32 = D32
+
+    putTextOp color size text (x,y)  = ImgOp $ \img -> do
+                                   withGenImage img $ \cimg ->
+                                    withCString text $ \(ctext) ->
+                                    {#call wrapDrawText#} cimg ctext (realToFrac size) 
+                                        (fromIntegral x) (fromIntegral y)   
+                                        (realToFrac color) (realToFrac color) (realToFrac color) 
+
+    lineOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
                          withGenImage i $ \img -> 
-                              {#call wrapDrawRectangle#} img x y (x+w) (y+h) c t 
+                              {#call wrapDrawLine#} img (fromIntegral x) (fromIntegral y) 
+                                                        (fromIntegral x1) (fromIntegral y1) 
+                                                        (realToFrac c) (realToFrac c) 
+                                                        (realToFrac c) (fromIntegral t) 
 
-line color thickness start end i = 
-    operate (lineOp color thickness start end ) i
+    circleOp c (x,y) r s = ImgOp $ \i -> do
+                        when (r>0) $ withGenImage i $ \img -> 
+                              ({#call wrapDrawCircle#} img (fromIntegral x) (fromIntegral y) 
+                                                           (fromIntegral r) 
+                                                           (realToFrac c) (realToFrac c) (realToFrac c) 
+                                                           $ styleToCV s)
+
+    rectOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
+                         withGenImage i $ \img -> 
+                              {#call wrapDrawRectangle#} img (fromIntegral x)
+                               (fromIntegral y) (fromIntegral x1) (fromIntegral y1)
+                               (realToFrac c)(realToFrac c)(realToFrac c) (fromIntegral t)
+
+    fillPolyOp c pts = ImgOp $ \i -> do
+                             withImage i $ \img -> do
+                                  let (xs,ys) = unzip pts
+                                  xs' <- newArray $ map fromIntegral xs
+                                  ys' <- newArray $ map fromIntegral  ys
+                                  {#call wrapFillPolygon#} img 
+                                       (fromIntegral $ length xs) xs' ys' 
+                                   (realToFrac c) (realToFrac c) (realToFrac c) 
+                                  free xs'
+                                  free ys'
+
+
+rectOpS c t pos@(x,y) (w,h) = rectOp c t pos (x+w,y+h)
+
+fillOp :: (Int,Int) -> D32 -> D32 -> D32 -> Bool -> ImageOperation GrayScale D32
+fillOp (x,y) color low high floats = 
+    ImgOp $ \i -> do
+      withImage i $ \img -> 
+        ({#call wrapFloodFill#} img (fromIntegral x) (fromIntegral y)
+            (realToFrac color) (realToFrac low) (realToFrac high) (toCINT $ floats))
+    where
+     toCINT False = 0
+     toCINT True  = 1
+
+-- Shorthand for single drawing operations. You should however use #> and <## in CV.ImageOp 
+-- rather than these
+
+--line color thickness start end i = 
+--    operate (lineOp color thickness start end ) i
 
 rectangle color thickness a b i = 
     operate (rectOp color thickness a b ) i
@@ -75,18 +148,10 @@ drawLinesOp color thickness segments =
 drawLines img color thickness segments = operateOn img
                     (drawLinesOp color thickness segments)
 
-circle center r color s i = unsafeOperate (circleOp center r color s) i
+circle center r color s i = unsafeOperate (circleOp color center r s) i
 
 floodfill (x,y) color low high floats = 
     unsafeOperate (fillOp (x,y) color low high floats) 
 
-fillOp (x,y) color low high floats = 
-    ImgOp $ \i -> do
-      withImage i $ \img -> 
-        ({#call wrapFloodFill#} img x y color low high 
-                              (toCINT $ floats))
-    where
-     toCINT False = 0
-     toCINT True  = 1
             
 
