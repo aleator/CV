@@ -323,6 +323,7 @@ unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage 
                  ({#call ensure32F #} image)
 
+unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
 unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 
                  ({#call ensure8U #} image)
@@ -334,6 +335,21 @@ imageTo32F img = withGenBareImage img $ \image ->
 imageTo8Bit img = withGenBareImage img $ \image -> 
                 creatingBareImage 
                  ({#call ensure8U #} image)
+#c
+enum ImageDepth {
+     Depth32F = IPL_DEPTH_32F,
+     Depth64F = IPL_DEPTH_64F,
+     Depth8U  = IPL_DEPTH_8U, 
+     Depth8S  = IPL_DEPTH_8S, 
+     Depth16U  = IPL_DEPTH_16U, 
+     Depth16S  = IPL_DEPTH_16S,
+     Depth32S  = IPL_DEPTH_32S
+     };
+#endc
+ 
+{#enum ImageDepth {}#}
+
+getImageDepth i = withImage i $ \c_img -> {#get IplImage->depth #} c_img
 
 -- Manipulating regions of interest:
 setROI (fromIntegral -> x,fromIntegral -> y) 
