@@ -67,8 +67,11 @@ radialDistort img k = unsafePerformIO $ do
                          {#call radialRemap#} cimg ctarget (realToFrac k)
                        return target
 
+-- | Scale image by a ratio on both axes
 scaleSingleRatio tpe x img = scale tpe (x,x) img
 
+
+-- | Scale an image
 scale :: (RealFloat a) => Interpolation -> (a,a) -> Image GrayScale D32 -> Image GrayScale D32
 scale tpe (x,y) img = unsafePerformIO $ do
                     target <- create (w',h') 
