@@ -23,12 +23,12 @@ getTemplateMap image template = unsafePerformIO $
 
 #c
 enum MatchType {
-  CV_TM_SQDIFF
-  ,CV_TM_SQDIFF_NORMED 
-  ,CV_TM_CCORR
-  ,CV_TM_CCORR_NORMED
-  ,CV_TM_CCOEFF
-  ,CV_TM_CCOEFF_NORMED 
+   SQDIFF        = CV_TM_SQDIFF
+  ,SQDIFF_NORMED = CV_TM_SQDIFF_NORMED
+  ,CCORR         = CV_TM_CCORR
+  ,CCORR_NORMED  = CV_TM_CCORR_NORMED
+  ,CCOEFF        = CV_TM_CCOEFF
+  ,CCOEFF_NORMED = CV_TM_CCOEFF_NORMED
 };
 #endc
 {#enum MatchType {}#}
@@ -68,13 +68,13 @@ subPixelTemplateMatch mt image template n -- TODO: Make iterative #SpeedUp
       ,fromIntegral (ty)+fromIntegral sby/n)
      where
         (otw,oth) = getSize template
-        ((orX,orY),_) = simpleTemplateMatch CV_TM_CCORR_NORMED image template
+        ((orX,orY),_) = simpleTemplateMatch CCORR_NORMED image template
         (tx,ty) = (orX-otw`div`2, orY-oth`div`2)
 
         bigTempl = scaleSingleRatio Linear n template
         (tw,th) = getSize bigTempl
         region = scaleSingleRatio Linear n . getRegion (tx,ty) (otw*2,oth*2)  $ image
-        ((sbx,sby),_) = simpleTemplateMatch CV_TM_CCORR_NORMED region bigTempl
+        ((sbx,sby),_) = simpleTemplateMatch CCORR_NORMED region bigTempl
      
 regionToInt rc = mkRectangle (floor x,floor y) (ceiling w,ceiling h)
     where

@@ -217,9 +217,9 @@ enlarge n img =  unsafePerformIO $ do
 
 #c
 enum DistanceType {
-    CV_DIST_C
-    ,CV_DIST_L1
-    ,CV_DIST_L2
+     C =  CV_DIST_C
+    ,L1 =  CV_DIST_L1
+    ,L2 =  CV_DIST_L2
 };
 #endc
 {#enum DistanceType {}#}
