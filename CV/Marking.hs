@@ -14,15 +14,15 @@ import CV.ImageMathOp
 
 
 -- For easy marking of detected flaws
-boxFlaws i = Edges.laplace 1 $ dilate basicSE 5 (i)
+boxFlaws i = Edges.laplace Edges.l1 $ dilate basicSE 5 (i)
 highLightFlaws image flaws = displayFlaws 
                              ((0.2 |* flaws) #+ (0.8 |* image)) flaws
 displayFlaws image = IM.sub image . IM.mulS 0.6 . boxFlaws 
-displayLargeFlaws image = IM.sub image . IM.mulS 0.6 . Edges.laplace 1 
+displayLargeFlaws image = IM.sub image . IM.mulS 0.6 . Edges.laplace l1 
 
 
-type Marker = (CInt,CInt) -> CDouble -> (CInt,CInt)
-                -> ImageOperation
+type Marker c d = (Int,Int) -> (Int,Int)
+                -> ImageOperation c d
 
 condMarker condition m size t place  = if condition t 
                                         then m size t place
@@ -34,23 +34,23 @@ getCoordsForMarkedTiles tileSize overlap marks image =
     coords = getOverlappedTileCoords tileSize overlap image
 
 cuteDot (x,y) = 
-        circleOp 
-         (x,y) (w*2) 0.1 (Stroked 1) ImageOp.#> circleOp (x,y) (w*2-1) 0.9 (Stroked 1) 
+        circleOp 1
+         (x,y) (w*2) (Stroked 1) ImageOp.#> circleOp 0 (x,y) (w*2-1) (Stroked 1) 
     where w = 2 
 
 cuteCircle1 (x,y) = 
-        circleOp 
-         (x+w,y+w) (w*2) 0.1 (Stroked 1) ImageOp.#> circleOp (x+w,y+w) (w*2-1) 0.9 (Stroked 1) 
+        circleOp 1 
+         (x+w,y+w) (w*2) (Stroked 1) ImageOp.#> circleOp 0 (x+w,y+w) (w*2-1) (Stroked 1) 
     where w = 6 
 
 cuteRect (w,h) (x,y) = 
         rectOp 0.1 1 (x,y) (x+w,y+h) ImageOp.#> 
         rectOp 1 1 (x+1,y+1) (x+w-1,y+h-1) 
 
-cuteCircle ::  Marker
-cuteCircle (tw,th) t (x,y) = 
-                    (circleOp 
-                     (x+tw`div`2,y+tw`div`2) (w) 0.1 (Stroked 1) ) ImageOp.#> circleOp (x+tw`div`2,y+tw`div`2) (w-1) 0.9 (Stroked 1) 
+cuteCircle :: Marker GrayScale D32
+cuteCircle (tw,th) (x,y) = 
+                    (circleOp 1
+                     (x+tw`div`2,y+tw`div`2) (w) (Stroked 1) ) ImageOp.#> circleOp 0 (x+tw`div`2,y+tw`div`2) (w-1) (Stroked 1) 
     where w = tw`div`2
 
 markTiles image size overlap marker lst = marked

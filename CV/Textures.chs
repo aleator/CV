@@ -14,15 +14,8 @@ import CV.ImageOp
 import C2HSTools
 {#import CV.Image#}
 
-emptyPattern :: [CInt]
-emptyPattern = replicate 256 0
-broilerPlate op image = unsafePerformIO $ do
-             withGenImage image $ \img ->
-              withArray emptyPattern $ \ptrn -> do
-                (op img ptrn )
-                p <- peekArray 256 ptrn
-                let !maximum = fromIntegral $ sum p
-                return $ map (\x -> fromIntegral x / maximum) p
+
+-- | Various simple Local Binary Pattern operators
 
 lbp = broilerPlate ({#call localBinaryPattern#})
 
@@ -41,3 +34,13 @@ weightedLBP offsetX offsetXY weights image = unsafePerformIO $ do
                     {#call weighted_localBinaryPattern#} img (fromIntegral offsetX) (fromIntegral offsetXY) ws ptrn 
                     p <- peekArray 256 ptrn
                     return p
+
+emptyPattern :: [CInt]
+emptyPattern = replicate 256 0
+broilerPlate op image = unsafePerformIO $ do
+             withGenImage image $ \img ->
+              withArray emptyPattern $ \ptrn -> do
+                (op img ptrn )
+                p <- peekArray 256 ptrn
+                let !maximum = fromIntegral $ sum p
+                return $ map (\x -> fromIntegral x / maximum) p

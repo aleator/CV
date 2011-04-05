@@ -1,6 +1,6 @@
-{-#LANGUAGE ScopedTypeVariables#-}
+{-#LANGUAGE ScopedTypeVariables, FlexibleInstances#-}
 module CV.Binary where
-import CV.Image (Image)
+import CV.Image (Image,GrayScale,D32)
 import CV.Conversions
 
 import Data.Maybe (fromJust)
@@ -11,7 +11,7 @@ import Data.Array.IArray
 
 -- NOTE: This binary instance is NOT PORTABLE.  
 
-instance Binary Image where
+instance Binary (Image GrayScale D32) where
     put img = do
             let arr :: CArray (Int,Int) Double = copyImageToCArray img
             put (bounds arr)

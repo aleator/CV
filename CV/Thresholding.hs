@@ -39,7 +39,8 @@ nibblyr (w,h) k i = IM.lessThan t flat
      flat = i #- gaussian (w,h) i
 
 
-otsu bs image = IM.moreThan threshold image
+-- TODO: Convert Histograms from Doubles to Floats..
+otsu bs image = IM.moreThan (realToFrac threshold) image
     where
         histogram  = getHistogram bs $ image
         partitions = histogramPartitions histogram 
@@ -60,10 +61,10 @@ kittlerMeasure image t = unNaN $
     where
      unNaN x | isNaN x = -10000000
              | otherwise = x
-     thresholded = (IM.lessThan t image)
-     p_t = IM.sum thresholded / fromIntegral (getArea image)
-     bgDev = IM.stdDeviationMask image thresholded 
-     fgDev = IM.stdDeviationMask image (IM.invert thresholded)
+     thresholded = unsafeImageTo32F (IM.lessThan t image)
+     p_t = IM.sum ( thresholded) / fromIntegral (getArea image)
+     bgDev = realToFrac $ IM.stdDeviationMask image thresholded 
+     fgDev = realToFrac $ IM.stdDeviationMask image (IM.invert thresholded)
 
 
 histogramPartitions (HGD a) = zip3 (head.tails.map fst $ a) 

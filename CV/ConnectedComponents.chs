@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables#-}
 #include "cvWrapLEO.h"
 module CV.ConnectedComponents
 --    (selectSizedComponents,countBlobs,centralMoments
@@ -16,14 +16,13 @@ import C2HSTools
 
 import CV.ImageOp
 
-countBlobs image = unsafePerformIO $ do
-    eightBit <- imageTo8Bit image 
-    withGenImage eightBit $ \i ->
+countBlobs :: Image GrayScale D8 -> Int 
+countBlobs image = fromIntegral $ unsafePerformIO $ do
+    withGenImage image $ \i ->
      {#call blobCount#} i
 
 selectSizedComponents minSize maxSize image = unsafePerformIO $ do
-    eightBit <- imageTo8Bit image 
-    withGenImage eightBit $ \i ->
+    withGenImage image $ \i ->
      creatingImage ({#call sizeFilter#} i minSize maxSize)
 
 
