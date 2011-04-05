@@ -22,6 +22,8 @@ runImageOperation img (ImgOp op) = withClone img $ \clone ->
                                     op clone >> return clone
 
 directOp i (ImgOp op)  = op i
+operateInPlace (ImgOp op) img = op img 
+
 operate op img = runImageOperation img op
 operateOn = runImageOperation
 unsafeOperate op img = unsafePerformIO $ operate op img

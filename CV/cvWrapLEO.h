@@ -260,6 +260,8 @@ double bicubicInterp(IplImage *tex, double u, double v);
 CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color); 
 
 double wrapGet32F2DC(CvArr *arr, int x, int y,int c);
+void maximal_covering_circle(int ox,int oy, double or, IplImage *distmap
+                            ,int *max_x, int *max_y, double *max_r);
 
 
 #endif
