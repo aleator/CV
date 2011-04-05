@@ -36,7 +36,7 @@ getOverlappedTileCoords size (xover,yover) image
 
 -- Get overlapping tiles
 getOverlappedTiles s o i = map snd $ getOverlappedTilesC s o i  
-etOverlappedTilesC :: (Int,Int) -> (CDouble,CDouble) -> Image c d -> [((Int,Int),Image c d)]
+getOverlappedTilesC :: (Int,Int) -> (CDouble,CDouble) -> Image c d -> [((Int,Int),Image c d)]
 getOverlappedTilesC size overlap image 
                     = map (\c -> (both fromIntegral c,getRegion c size image))
                             $ getOverlappedTileCoords size 
@@ -99,7 +99,6 @@ randomPatches size count image = do
     (iwidth,iheight) = getSize image
     (w,h) = (iwidth - pwidth , iheight-pheight) 
 
-both f (a,b) = (f a,f b)
 -- Get some random pixels from image
 randomPixels count image = do
    coords <- replicateM count $ randomCoord size

@@ -67,8 +67,11 @@ radialDistort img k = unsafePerformIO $ do
                          {#call radialRemap#} cimg ctarget (realToFrac k)
                        return target
 
+-- | Scale image by a ratio on both axes
 scaleSingleRatio tpe x img = scale tpe (x,x) img
 
+
+-- | Scale an image
 scale :: (RealFloat a) => Interpolation -> (a,a) -> Image GrayScale D32 -> Image GrayScale D32
 scale tpe (x,y) img = unsafePerformIO $ do
                     target <- create (w',h') 
@@ -214,9 +217,9 @@ enlarge n img =  unsafePerformIO $ do
 
 #c
 enum DistanceType {
-    CV_DIST_C
-    ,CV_DIST_L1
-    ,CV_DIST_L2
+     C =  CV_DIST_C
+    ,L1 =  CV_DIST_L1
+    ,L2 =  CV_DIST_L2
 };
 #endc
 {#enum DistanceType {}#}

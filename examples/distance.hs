@@ -11,7 +11,7 @@ import Data.Maybe (fromJust)
 
 main = do
     x <- loadImage "smallLena.jpg" >>= return . IM.moreThan 0.6 . fromJust
-    let dtf = distanceTransform CV_DIST_L2 M3 x
+    let dtf = distanceTransform L2 M3 x
         (_,((mx,my),v)) = IM.findMinMaxLoc dtf
     saveImage "distance.png"  $ montage (3,1) 2 
                                  [unsafeImageTo32F x

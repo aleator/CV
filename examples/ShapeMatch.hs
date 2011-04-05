@@ -19,7 +19,7 @@ main = do
      Just target <- loadImage "shapePhoto.jpg"
      let ops :: Image GrayScale D32
          ops = target <## 
-                [let ((x,y),v) = simpleTemplateMatch CV_TM_CCORR_NORMED 
+                [let ((x,y),v) = simpleTemplateMatch CCORR_NORMED 
                                                      (target) (scaleToSize Cubic False (sx,sy) img)
                 in putTextOp 1 1 fnx (x,y) #> rectOpS 1 1 (x,y) (sx,sy)
                 | img <- images | fnx <- files ]
