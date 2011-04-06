@@ -18,7 +18,7 @@ bernsen (w,h) c i = goodContrast #* (i #< surface)
              high = dilate se 1 i
              goodContrast = IM.moreThan c (high #- low)
              surface = 0.5 |* (high #+ low) 
-             se = structuringElement (w,h) (w`div`2,h`div`2) ellipseShape
+             se = structuringElement (w,h) (w`div`2,h`div`2) EllipseShape
 
 -- Very slow implementation of niblack thresholding
 --niblack (w,h) k i = IM.more2Than trunc (unsafePerformIO $ surface) 

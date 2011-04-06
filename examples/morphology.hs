@@ -12,7 +12,7 @@ main = do
         ,whiteTopHat 5 x
         ,open basicSE x
         ,close basicSE x
-        ,close (structuringElement (2,8) (1,4) crossShape) x
-        ,open (structuringElement (2,8) (1,4)  crossShape) x
+        ,close (structuringElement (2,8) (1,4) CrossShape) x
+        ,open (structuringElement (2,8) (1,4)  CrossShape) x
         ]
 

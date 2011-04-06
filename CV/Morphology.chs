@@ -9,8 +9,8 @@ module CV.Morphology (StructuringElement
                   ,open,close
                   ,erode,dilate
                   ,blackTopHat,whiteTopHat
-                  ,dilateOp,erodeOp,ellipseShape
-                  ,crossShape,rectShape) 
+                  ,dilateOp,erodeOp,KernelShape(EllipseShape,CrossShape,RectShape) 
+                  )
 where
 
 import Foreign.C.Types
@@ -43,26 +43,33 @@ a ● b = close b a
 geodesic :: Image GrayScale D32 -> ImageOperation GrayScale D32 -> ImageOperation GrayScale D32
 geodesic mask op = op #> IM.limitToOp mask
 
+-- | Perform a black tophat filtering of size
 blackTopHat size i = unsafePerformIO $ do
                   let se = structuringElement 
-                        (size,size) (size `div` 2, size `div` 2) rectShape
+                        (size,size) (size `div` 2, size `div` 2) RectShape
                   x <- runImageOperation i (closeOp se)
                   return $ x `IM.sub` i
 
+-- | Perform a white tophat filtering of size
 whiteTopHat size i = unsafePerformIO $ do
                   let se = structuringElement 
-                        (size,size) (size `div` 2, size `div` 2) rectShape
+                        (size,size) (size `div` 2, size `div` 2) RectShape
                   x <- runImageOperation i (openOp se)
                   return $ i `IM.sub` x
 
-basicSE = structuringElement (3,3) (1,1) rectShape
-bigSE = structuringElement (9,9) (4,4) rectShape
+basicSE = structuringElement (3,3) (1,1) RectShape
+bigSE = structuringElement (9,9) (4,4) RectShape
 
 ---------- Low level wrapper
-rectShape = 0
-crossShape = 1
-ellipseShape = 2
-customShape = 100
+#c
+enum KernelShape {
+    RectShape    = CV_SHAPE_RECT
+    ,CrossShape   = CV_SHAPE_CROSS
+    ,EllipseShape = CV_SHAPE_ELLIPSE
+    ,CustomShape  = CV_SHAPE_CUSTOM
+    };
+#endc
+{#enum KernelShape {} #}
 
 {#pointer *IplConvKernel as ConvKernel foreign newtype#}
 
@@ -88,7 +95,7 @@ structuringElement s d | isGoodSE s d = createSE s d
 -- Create SE with custom shape that is taken from flat list shape.
 createSE (w,h) (x,y) shape = unsafePerformIO $ do
     iptr <- {#call cvCreateStructuringElementEx#}
-             w h x y (fromIntegral shape) nullPtr
+             w h x y (fromIntegral . fromEnum $ shape) nullPtr
     fptr <- newForeignPtr releaseSE iptr
     return (ConvKernel fptr)
 
@@ -99,7 +106,7 @@ customSE s@(w,h) o shape | isGoodSE s o
 createCustomSE (w,h) (x,y) shape = unsafePerformIO $ do
             iptr <- withArray shape $ \arr ->
                     {#call cvCreateStructuringElementEx#}
-                      w h x y (fromIntegral customShape) arr
+                      w h x y (fromIntegral . fromEnum $ CustomShape) arr
             fptr <- newForeignPtr releaseSE iptr
             return (ConvKernel fptr)
 
