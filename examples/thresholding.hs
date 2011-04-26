@@ -6,6 +6,7 @@ main = do
     Just x <- loadImage "smallLena.jpg"
     saveImage "thresholding.png" $ montage (3,2) 5 $
         [x
+        ,x
         ,unsafeImageTo32F $ nibbly 1.2 0.01 x
         ,unsafeImageTo32F $ otsu 64 x
         ,unsafeImageTo32F $ kittler 0.1 x
