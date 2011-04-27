@@ -3,17 +3,25 @@ module CV.ImageOp where
 import Foreign
 import CV.Image
 
--- Testing how to handle operation sequences without 
--- copying image for each operation.
+-- |ImageOperation is a device for mutating images inplace.
 newtype ImageOperation c d= ImgOp (Image c d-> IO ())
+
+-- |Compose two image operations
 (#>) :: ImageOperation c d-> ImageOperation c d -> ImageOperation c d
 (#>) (ImgOp a) (ImgOp b) = ImgOp (\img -> (a img >> b img))
+
+-- |An unit operation for compose (#>) 
 nonOp = ImgOp (\i -> return ())
 
+-- |Apply image operation to a Copy of an image
 img <# op = unsafeOperate op img
+
+-- |Apply list of image operations to a Copy of an image. (Makes a single copy and is
+-- faster than folding over (<#)
 img <## [] = img
 img <## op = unsafeOperate (foldl1 (#>) op) img
 
+-- |Iterate an operation N times
 times n op = foldl (#>) nonOp (replicate n op) 
 
 -- This could, if I take enough care, be pure.

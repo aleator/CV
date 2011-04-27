@@ -1,6 +1,7 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns, ScopedTypeVariables, PatternGuards, FlexibleContexts#-}
 #include "cvWrapLEO.h"
-module CV.Transforms where
+-- |Various image transformations from opencv and other sources.
+module CV.Transforms  where
 
 import CV.Image
 import Foreign.Ptr
@@ -67,11 +68,11 @@ radialDistort img k = unsafePerformIO $ do
                          {#call radialRemap#} cimg ctarget (realToFrac k)
                        return target
 
--- | Scale image by a ratio on both axes
+-- |Scale image by one ratio on both of the axes
 scaleSingleRatio tpe x img = scale tpe (x,x) img
 
 
--- | Scale an image
+-- |Scale an image with different ratios for axes
 scale :: (RealFloat a) => Interpolation -> (a,a) -> Image GrayScale D32 -> Image GrayScale D32
 scale tpe (x,y) img = unsafePerformIO $ do
                     target <- create (w',h') 
@@ -85,6 +86,7 @@ scale tpe (x,y) img = unsafePerformIO $ do
              (w',h') = (round $ fromIntegral w*y
                        ,round $ fromIntegral h*x)
 
+-- |Scale an image to a given size
 scaleToSize :: Interpolation -> Bool -> (Int,Int) -> Image GrayScale D32 -> Image GrayScale D32
 scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
                     target <- create (w',h') 
@@ -101,15 +103,19 @@ scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
              ratio  = max (fromIntegral w/fromIntegral ow)
                           (fromIntegral h/fromIntegral oh)
 
+-- | DEPRECATED: A simple one parameter shrinking of the image
 oneParamPerspective img k
     = unsafePerformIO $ 
        withImage img $ \cimg -> creatingImage $ {#call simplePerspective#} k cimg
 
+-- |Apply a perspective transform to the image. The transformation 3x3 matrix is supplied as
+--  a row ordered, flat, list.
 perspectiveTransform img (map realToFrac -> [a1,a2,a3,a4,a5,a6,a7,a8,a9])
     = unsafePerformIO $ 
        withImage img $ \cimg -> creatingImage $ {#call wrapPerspective#} cimg a1 a2 a3 a4 a5 a6 a7 a8 a9
 
 
+-- |Find a homography between two sets of points in. The resulting 3x3 matrix is returned as a list.
 getHomography srcPts dstPts = 
     unsafePerformIO $ withArray src $ \c_src ->
                        withArray dst $ \c_dst ->
@@ -123,6 +129,7 @@ getHomography srcPts dstPts =
 
 
 --- Pyramid transforms
+-- |Return a copy of an image with an even size
 evenize img = if (odd w || odd h)
               then  
                 unsafePerformIO $     
@@ -132,6 +139,7 @@ evenize img = if (odd w || odd h)
     where
      (w,h)  = getSize img
 
+-- |Return a copy of an image with an odd size
 oddize img = if (even w || even h)
               then  
                 unsafePerformIO $     
@@ -143,6 +151,7 @@ oddize img = if (even w || even h)
      toI False = 0
      (w,h)  = getSize img
 
+-- |Pad images to same size
 sameSizePad img img2 = if (size1 /= size2)
               then unsafePerformIO $ do
                 r <- creatingImage $
@@ -160,6 +169,7 @@ sameSizePad img img2 = if (size1 /= size2)
 
 
 cv_Gaussian = 7
+-- |Downsize image by 50% efficiently. Image dimensions must be even.
 pyrDown ::(CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrDown image = unsafePerformIO $ do
                  res <- create size 
@@ -171,6 +181,7 @@ pyrDown image = unsafePerformIO $ do
                 size = (x`div`2,y`div`2)
                 (x,y) = getSize image  
 
+-- |Enlarge image to double in each dimension. Used to recover pyramidal layers
 pyrUp :: (CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrUp image = unsafePerformIO $ do
                  res <- create size 
@@ -190,6 +201,9 @@ safePyrDown img = evenize result
      result = pyrDown img 
      (w,h)  = getSize result 
 
+-- |Calculate the laplacian pyramid of an image up to the nth level.
+--  Notice that the image size must be divisible by 2^n or opencv 
+--  will abort (TODO!)
 laplacianPyramid :: Int -> Image GrayScale D32 -> [Image GrayScale D32]
 laplacianPyramid depth image = reverse laplacian
   where
@@ -197,13 +211,13 @@ laplacianPyramid depth image = reverse laplacian
    upsampled :: [Image GrayScale D32] = map pyrUp (tail downs)
    laplacian = zipWith (#-) downs upsampled ++ [last downs]
 
--- | Reconstruct an image from a laplacian pyramid
+-- |Reconstruct an image from a laplacian pyramid
 reconstructFromLaplacian pyramid = foldl1 (\a b -> (pyrUp a) #+ b) (pyramid)
   --  where 
   --   safeAdd x y = sameSizePad y x #+ y  
 
--- | Enlarge image so, that it's size is divisible by 2^n 
 -- TODO: Could have wider type
+-- |Enlarge image so, that it's size is divisible by 2^n 
 enlarge :: Int -> Image GrayScale D32 -> Image GrayScale D32
 enlarge n img =  unsafePerformIO $ do
                    i <- create (w2,h2)
