@@ -25,8 +25,8 @@ Extra-Source-Files:
 Library
     Build-Tools:       c2hs >= 0.16.0
     Include-dirs:      CV/  
-    Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, CV/cvWrapLEO.h
-    c-sources:         CV/cvWrapLEO.c
+    Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, CV/cvWrapLEO.h, CV/haralick.h
+    c-sources:         CV/cvWrapLEO.c CV/haralick.c
     cc-options:        --std=c99 
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
      
