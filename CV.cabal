@@ -18,7 +18,7 @@ Cabal-Version:       >=1.6
 Extra-Source-Files:
                      examples/*.hs
                      examples/shapes/*.png
-                     examples/shapePhoto.png
+                     examples/shapePhoto.jpg
                      examples/smallLena.jpg
                      examples/elaine.jpg
 
@@ -27,6 +27,7 @@ Library
     Include-dirs:      CV/  
     Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, CV/cvWrapLEO.h
     c-sources:         CV/cvWrapLEO.c
+    c-headers:         CV/cvWrapLEO.c
     cc-options:        --std=c99 
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
      
