@@ -1,5 +1,7 @@
 {-#LANGUAGE ForeignFunctionInterface#-}
 #include "cvWrapLEO.h"
+#include "haralick.h"
+
 module CV.Textures where
 
 import Foreign.C.Types
@@ -27,6 +29,9 @@ lbpVertical = broilerPlate
     ({#call localVerticalBinaryPattern#})
 
 -- LBP with weights and adjustable sampling points
+
+-- weightedLBP :: :: (Integral a) =>
+--   a -> a ->  Image c1 d1 -> Image c d -> [CDouble]
 weightedLBP offsetX offsetXY weights image = unsafePerformIO $ do
              withGenImage image $ \img ->
               withGenImage weights $ \ws ->
@@ -44,3 +49,9 @@ broilerPlate op image = unsafePerformIO $ do
                 p <- peekArray 256 ptrn
                 let !maximum = fromIntegral $ sum p
                 return $ map (\x -> fromIntegral x / maximum) p
+
+calculateAsmAverage :: Image c d -> CDouble
+calculateAsmAverage image = unsafePerformIO $ do
+	       withGenImage image $ \img -> do
+	         i <- {#call calculate_asm_average#} img
+                 return i
