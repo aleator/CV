@@ -5,12 +5,13 @@ License:             GPL
 License-file:        LICENSE
 Category:            AI, Graphics, Machine Vision
 Synopsis:            OpenCV based machine vision library
-Description:            This is a preliminary machine vision package that wraps some functionality
+Description:         This is a machine vision package that wraps some functionality
                      of OpenCV library. This package has been developed for personal use and
                      is not meant to be a complete wrapper, though it will most likely grow to
                      cover most of functionaly exposed by OpenCV C interface.
 
-                     Currently the code is quite dirty, but tested.
+                     Currently this package is quite dirty and requires much work on documentation
+                     and code clean-up, but is somewhat tested.
 Author:              Ville Tirronen
 Maintainer:          ville.tirronen@jyu.fi
 Build-Type:          Simple
@@ -33,7 +34,8 @@ Library
      
     Build-Depends:     haskell98, base >= 3 && < 5, parallel > 1.1, unix > 2.3, array >= 0.2.0.0,
                        mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1, 
-                       containers >= 0.2, JYU-Utils, storable-complex, binary >= 0.5, deepseq >= 1.1
+                       containers >= 0.2, JYU-Utils >= 0.1 && < 0.2,
+                       storable-complex, binary >= 0.5, deepseq >= 1.1
     Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters, 
                        CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
                        CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
@@ -41,7 +43,5 @@ Library
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline,  CV.Gabor,
                        CV.ConnectedComponents
-    Other-modules: C2HSTools, C2HS
-
-    ghc-options:       -O2 
+    Other-modules:     C2HSTools, C2HS
 

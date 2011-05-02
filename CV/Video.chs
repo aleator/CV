@@ -14,8 +14,6 @@ import System.IO.Unsafe
 import Utils.Stream
 
 -- NOTE: For some reason, this module fails to work with ghci for me
--- -- Ville.
-
 
 {#pointer *CvCapture as Capture foreign newtype#}
 
@@ -61,54 +59,62 @@ getFrame cap = withCapture cap $ \ccap -> do
                     -- NOTE: This works because Image module has generated wrappers for ensure32F
 
 -- These are likely to break..
-cvCAP_PROP_POS_MSEC       =0 :: CInt
-cvCAP_PROP_POS_FRAMES     =1 :: CInt
-cvCAP_PROP_POS_AVI_RATIO  =2 :: CInt
-cvCAP_PROP_FRAME_WIDTH    =3 :: CInt
-cvCAP_PROP_FRAME_HEIGHT   =4 :: CInt
-cvCAP_PROP_FPS            =5 :: CInt
-cvCAP_PROP_FOURCC         =6 :: CInt
-cvCAP_PROP_FRAME_COUNT    =7 :: CInt
-cvCAP_PROP_FORMAT         =8 :: CInt
-cvCAP_PROP_MODE           =9 :: CInt
-cvCAP_PROP_BRIGHTNESS    =10 :: CInt
-cvCAP_PROP_CONTRAST      =11 :: CInt
-cvCAP_PROP_SATURATION    =12 :: CInt
-cvCAP_PROP_HUE           =13 :: CInt
-cvCAP_PROP_GAIN          =14 :: CInt
-cvCAP_PROP_EXPOSURE      =15 :: CInt
-cvCAP_PROP_CONVERT_RGB   =16 :: CInt
-cvCAP_PROP_WHITE_BALANCE =17 :: CInt
-cvCAP_PROP_RECTIFICATION =18 :: CInt   
-cvCAP_PROP_MONOCROME     =19 :: CInt
+#c
+enum CapProp {
+      CAP_PROP_POS_MSEC       =  CV_CAP_PROP_POS_MSEC     
+    , CAP_PROP_POS_FRAMES     =  CV_CAP_PROP_POS_FRAMES   
+    , CAP_PROP_POS_AVI_RATIO  =  CV_CAP_PROP_POS_AVI_RATIO
+    , CAP_PROP_FRAME_WIDTH    =  CV_CAP_PROP_FRAME_WIDTH  
+    , CAP_PROP_FRAME_HEIGHT   =  CV_CAP_PROP_FRAME_HEIGHT 
+    , CAP_PROP_FPS            =  CV_CAP_PROP_FPS          
+    , CAP_PROP_FOURCC         =  CV_CAP_PROP_FOURCC       
+    , CAP_PROP_FRAME_COUNT    =  CV_CAP_PROP_FRAME_COUNT  
+    , CAP_PROP_FORMAT         =  CV_CAP_PROP_FORMAT       
+    , CAP_PROP_MODE           =  CV_CAP_PROP_MODE         
+    , CAP_PROP_BRIGHTNESS     =  CV_CAP_PROP_BRIGHTNESS   
+    , CAP_PROP_CONTRAST       =  CV_CAP_PROP_CONTRAST     
+    , CAP_PROP_SATURATION     =  CV_CAP_PROP_SATURATION   
+    , CAP_PROP_HUE            =  CV_CAP_PROP_HUE          
+    , CAP_PROP_GAIN           =  CV_CAP_PROP_GAIN         
+    , CAP_PROP_EXPOSURE       =  CV_CAP_PROP_EXPOSURE     
+    , CAP_PROP_CONVERT_RGB    =  CV_CAP_PROP_CONVERT_RGB  
+    , CAP_PROP_WHITE_BALANCE  =  CV_CAP_PROP_WHITE_BALANCE
+    , CAP_PROP_RECTIFICATION  =  CV_CAP_PROP_RECTIFICATION 
+    , CAP_PROP_MONOCROME      =  CV_CAP_PROP_MONOCROME    
+};
+#endc
+{#enum CapProp {}#}
 
+fromProp = fromIntegral . fromEnum
 
 getFrameRate cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
                          {#call cvGetCaptureProperty#} 
-                           ccap cvCAP_PROP_FPS >>= return . realToFrac
+                           ccap (fromProp CAP_PROP_FPS) >>= return . realToFrac
 
 getFrameSize cap = unsafePerformIO $
                       withCapture cap $ \ccap -> do
-                         w <- {#call cvGetCaptureProperty#} ccap cvCAP_PROP_FRAME_WIDTH >>= return . round
-                         h <- {#call cvGetCaptureProperty#} ccap cvCAP_PROP_FRAME_HEIGHT >>= return . round
+                         w <- {#call cvGetCaptureProperty#} ccap (fromProp CAP_PROP_FRAME_WIDTH) 
+                                >>= return . round
+                         h <- {#call cvGetCaptureProperty#} ccap (fromProp CAP_PROP_FRAME_HEIGHT)
+                                >>= return . round
                          return (w,h)
 
 
 setCapProp cap prop val = withCapture cap $ \ccap ->
                          {#call cvSetCaptureProperty#} 
-                           ccap prop (realToFrac val)
+                           ccap (fromProp prop) (realToFrac val)
 
-getNumberOfFrames cap = unsafePerformIO $
+numberOfFrames cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
                          {#call cvGetCaptureProperty#} 
-                           ccap cvCAP_PROP_FRAME_COUNT
+                           ccap (fromProp CAP_PROP_FRAME_COUNT)
                             >>= return . floor
 
-getFrameNumber cap = unsafePerformIO $
+frameNumber cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
                          {#call cvGetCaptureProperty#} 
-                          ccap cvCAP_PROP_POS_FRAMES >>= return . floor
+                          ccap (fromProp CAP_PROP_POS_FRAMES) >>= return . floor
 
 -- Video Writing
 

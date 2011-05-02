@@ -7,7 +7,6 @@ import Control.Monad
 import Foreign.C.Types
 import qualified CV.ImageMath as IM
 import Data.List(partition)
-import Utils.MonadRandom
 
 -- Get a patch around every pixel of given size for which it is 
 -- attainable (Enough far from edge)
@@ -90,28 +89,28 @@ getMarkedPatches size source marks
     where coords = getCoordsFromMarks marks
 
 
--- Get some random image patches
-randomPatches size count image = do
-    coords <- replicateM count $ randomCoord (w,h)
-    return $ getPatches size coords image
- where
-    (pwidth,pheight) = size
-    (iwidth,iheight) = getSize image
-    (w,h) = (iwidth - pwidth , iheight-pheight) 
+---- Get some random image patches
+--randomPatches size count image = do
+--    coords <- replicateM count $ randomCoord (w,h)
+--    return $ getPatches size coords image
+-- where
+--    (pwidth,pheight) = size
+--    (iwidth,iheight) = getSize image
+--    (w,h) = (iwidth - pwidth , iheight-pheight) 
 
--- Get some random pixels from image
-randomPixels count image = do
-   coords <- replicateM count $ randomCoord size
-   return $ map (flip getPixel $ image) $ coords 
- where
-  size = getSize image
+---- Get some random pixels from image
+--randomPixels count image = do
+--   coords <- replicateM count $ randomCoord size
+--   return $ map (flip getPixel $ image) $ coords 
+-- where
+--  size = getSize image
 
--- Get some random coords from image
-randomCoords :: MonadRandom m => Int -> (Int,Int) -> m [(Int,Int)]
-randomCoords count area = replicateM count $ randomCoord area
+---- Get some random coords from image
+--randomCoords :: MonadRandom m => Int -> (Int,Int) -> m [(Int,Int)]
+--randomCoords count area = replicateM count $ randomCoord area
 
-randomCoord :: MonadRandom m => (Int,Int) -> m (Int,Int)
-randomCoord (w,h) = do
-            x <- (getRandomR (0::Int,fromIntegral $ w-1))
-            y <- (getRandomR (0::Int,fromIntegral $ h-1))
-            return (x,y) 
+--randomCoord :: MonadRandom m => (Int,Int) -> m (Int,Int)
+--randomCoord (w,h) = do
+--            x <- (getRandomR (0::Int,fromIntegral $ w-1))
+--            y <- (getRandomR (0::Int,fromIntegral $ h-1))
+--            return (x,y) 
