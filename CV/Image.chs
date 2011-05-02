@@ -1,5 +1,5 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls #-}
-#include "cvWrapLeo.h"
+#include "cvWrapLEO.h"
 module CV.Image where
 
 import System.Posix.Files

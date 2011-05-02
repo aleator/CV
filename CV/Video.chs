@@ -1,5 +1,5 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns#-}
-#include "cvWrapLeo.h"
+#include "cvWrapLEO.h"
 module CV.Video where
 {#import CV.Image#}
 
