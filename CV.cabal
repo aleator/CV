@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3
+Version:             0.3.0.1
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -45,3 +45,11 @@ Library
                        CV.ConnectedComponents
     Other-modules:     C2HSTools, C2HS
 
+source-repository head
+  type:     git
+  location: http://github.com/aleator/CV
+
+source-repository head
+  type:     git
+  location: http://yousource.it.jyu.fi/cv
+ 
