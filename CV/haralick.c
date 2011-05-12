@@ -109,3 +109,41 @@ double calculate_asm_average(IplImage *im)
   free(sd_matrices);
   return asm_sum;
 }
+
+/*
+haralick_values calculate_values(IplImage *im)
+{
+  double* sd_matrices = prepare_matrix();
+
+  calculate_matrices(im, sd_matrices);
+  double asm_sum = 0.0;
+
+  int angle, i, j;
+  for (angle=0; angle<4; angle++) {
+    double asm_val = 0.0;
+    for (j=0; j<NCOLORS; j++) {
+      for (i=0; i<NCOLORS; i++) {
+	double val = *(sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+	asm_val += val*val;
+      }
+    }
+    asm_sum += asm_val / 4;
+  }
+  printf("ASM sum: %f\n", asm_sum);
+  free(sd_matrices);
+  struct Haralicks h = { asm_sum };
+  return h;
+}*/
+
+//FIXME global
+struct haralick_values t;
+
+struct haralick_values *calculate_values(IplImage *im)
+{
+  t.asm_average = 5.0;
+  t.asm_0       = 0.0;
+  t.asm_45      = 45.0;
+  t.asm_90      = 90.0;
+  t.asm_135     = 135.0;
+  return &t;
+}
