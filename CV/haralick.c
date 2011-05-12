@@ -6,6 +6,11 @@
 
 #define NCOLORS 8
 
+#define ANGLE_0 0
+#define ANGLE_45 1
+#define ANGLE_90 2
+#define ANGLE_135 3 
+
 void add_balanced_occurrence(double addition, double *sd_matrices, int angle, int colr1, int colr2)
 {
   *(sd_matrices + (angle*NCOLORS*NCOLORS) + (colr1*NCOLORS) + colr2 ) += addition;
@@ -84,8 +89,25 @@ double* prepare_matrix()
   return sd_matrices;
 }
 
+double calculate_asm(double *sd_matrices, int angle)
+{
+  double asm_val = 0.0;
 
-double calculate_asm_average(IplImage *im)
+  int j, i;
+  for (j=0; j<NCOLORS; j++) {
+    for (i=0; i<NCOLORS; i++) {
+      double val = *(sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+      asm_val += val*val;
+    }
+  }
+
+  return asm_val;
+}
+
+//FIXME global
+struct haralick_values t;
+
+struct haralick_values *calculate_values(IplImage *im)
 {
   // Gray-tone spatial-dependence matrices for degrees 0, 45, 90, 135
   // Four 2-dimensional arrays containing color-to-color occurrences.
@@ -94,18 +116,13 @@ double calculate_asm_average(IplImage *im)
   calculate_matrices(im, sd_matrices);
   double asm_sum = 0.0;
 
-  int angle, i, j;
-  for (angle=0; angle<4; angle++) {
-    double asm_val = 0.0;
-    for (j=0; j<NCOLORS; j++) {
-      for (i=0; i<NCOLORS; i++) {
-	double val = *(sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-	asm_val += val*val;
-      }
-    }
-    asm_sum += asm_val / 4;
-  }
-  printf("ASM sum: %f\n", asm_sum);
+  t.asm_0   = calculate_asm(sd_matrices, ANGLE_0);
+  t.asm_45  = calculate_asm(sd_matrices, ANGLE_45);
+  t.asm_90  = calculate_asm(sd_matrices, ANGLE_90);
+  t.asm_135 = calculate_asm(sd_matrices, ANGLE_135);
+  t.asm_average = (t.asm_0 + t.asm_45 + t.asm_90 + t.asm_135) / 4;
+
   free(sd_matrices);
-  return asm_sum;
+  return &t;
 }
+

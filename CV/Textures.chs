@@ -50,8 +50,26 @@ broilerPlate op image = unsafePerformIO $ do
                 let !maximum = fromIntegral $ sum p
                 return $ map (\x -> fromIntegral x / maximum) p
 
-calculateAsmAverage :: Image c d -> CDouble
-calculateAsmAverage image = unsafePerformIO $ do
-	       withGenImage image $ \img -> do
-	         i <- {#call calculate_asm_average#} img
-                 return i
+#c
+typedef struct haralick_values haralick_values_t;
+#endc
+
+{#pointer *haralick_values_t as HaralickValues#}
+
+calculateValues :: CV.Image.Image c d -> Ptr ()
+calculateValues img = unsafePerformIO $ withImage img {#call calculate_values#}
+
+data HaralickFeatures = HaralickFeatures {
+                          asms :: [Double] -- Angular second moments at all four angles
+                        } deriving(Show)
+
+calculateHaralickFeatures :: Image a b -> HaralickFeatures
+calculateHaralickFeatures im = HaralickFeatures asms
+  where
+    v = calculateValues im
+    asm0'       = unsafePerformIO $ {#get haralick_values_t->asm_0#}   v >>= return . realToFrac
+    asm45'      = unsafePerformIO $ {#get haralick_values_t->asm_45#}  v >>= return . realToFrac
+    asm90'      = unsafePerformIO $ {#get haralick_values_t->asm_90#}  v >>= return . realToFrac
+    asm135'     = unsafePerformIO $ {#get haralick_values_t->asm_135#} v >>= return . realToFrac
+    asms        = [asm0', asm45', asm90', asm135']
+ 

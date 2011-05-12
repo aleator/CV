@@ -7,6 +7,7 @@
 #include "cvWrapLEO.h"
 #include <stdio.h>
 #include <complex.h>
+#include <math.h>
 
 //@-node:aleator.20050908100314.1:Includes
 //@+node:aleator.20050908100314.2:Wrappers
