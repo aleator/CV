@@ -49,12 +49,13 @@ broilerPlate op image = unsafePerformIO $ do
                 p <- peekArray 256 ptrn
                 let !maximum = fromIntegral $ sum p
                 return $ map (\x -> fromIntegral x / maximum) p
-{-
+
 calculateAsmAverage' :: Image c d -> CDouble
 calculateAsmAverage' image = unsafePerformIO $ do
 	       withGenImage image $ \img -> do
 	         i <- {#call calculate_asm_average#} img
                  return i
+{-
 
 
 
@@ -69,10 +70,12 @@ calculateAsmAverage image = unsafePerformIO $ do
 typedef struct haralick_values haralick_values_t;
 #endc
 
-{#pointer *haralick_values_t as HaralickValuesPtr#}
+{#pointer *haralick_values_t as HaralickValues#}
 
-{#fun calculate_values as ^
-  {`(Ptr (BareImage))'} -> `HaralickValuesPtr' id#} 
+-- {#fun calculate_values as ^
+--  {`(Ptr (BareImage))'} -> `HaralickValuesPtr' id#} 
+
+calculateValues img = withImage img {#call calculate_values#}
 
 --data HaralickFeatures = HaralickFeatures { asm_average :: Double } deriving (Show)
 
