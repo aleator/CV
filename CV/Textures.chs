@@ -60,12 +60,13 @@ calculateValues :: CV.Image.Image c d -> Ptr ()
 calculateValues img = unsafePerformIO $ withImage img {#call calculate_values#}
 
 data HaralickFeatures = HaralickFeatures {
-                          asms :: [Double],      -- Angular second moments at four angles
-                          contrasts :: [Double]  -- Contrasts at four angles
+                          asms :: [Double],        -- Angular second moments at four angles
+                          contrasts :: [Double],   -- Contrasts at four angles
+                          correlations :: [Double] -- Correlations at four angles
                         } deriving(Show)
 
 calculateHaralickFeatures :: Image a b -> HaralickFeatures
-calculateHaralickFeatures im = HaralickFeatures asms contrasts
+calculateHaralickFeatures im = HaralickFeatures asms contrasts correlations
   where
     v = calculateValues im
     asm0'        = unsafePerformIO $ {#get haralick_values_t->asm_0#}   v >>= return . realToFrac
@@ -78,3 +79,8 @@ calculateHaralickFeatures im = HaralickFeatures asms contrasts
     contrast90'  = unsafePerformIO $ {#get haralick_values_t->contrast_90#}  v >>= return . realToFrac
     contrast135' = unsafePerformIO $ {#get haralick_values_t->contrast_135#} v >>= return . realToFrac
     contrasts    = [contrast0', contrast45', contrast90', contrast135'] 
+    correlation0'   = unsafePerformIO $ {#get haralick_values_t->correlation_0#}   v >>= return . realToFrac
+    correlation45'  = unsafePerformIO $ {#get haralick_values_t->correlation_45#}  v >>= return . realToFrac
+    correlation90'  = unsafePerformIO $ {#get haralick_values_t->correlation_90#}  v >>= return . realToFrac
+    correlation135' = unsafePerformIO $ {#get haralick_values_t->correlation_135#} v >>= return . realToFrac
+    correlations    = [correlation0', correlation45', correlation90', correlation135'] 

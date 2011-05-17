@@ -14,11 +14,39 @@
 
 #define EPSILON 0.00000000000001
 
+
+struct array_properties {
+  int n;
+  double sum;
+  double average;
+  double std_dev;
+  double var;
+};
+
+void calculate_array_properties(double *array, int n, struct array_properties *properties)
+{
+  properties->n = n;
+  int i;
+  for ( i=0; i<n; i++ ) {
+    properties->sum += *(array+i);
+  }
+  properties->average = properties->sum/properties->n;
+  double partial_sum = 0.0;
+  for ( i=0; i<n; i++ ) {
+    partial_sum += pow(*(array+i) - properties->average, 2);
+  }
+  partial_sum /= properties->n - 1;
+  properties->var = partial_sum;
+  properties->std_dev = sqrt(partial_sum);
+}
+
+
 void add_balanced_occurrence(double addition, double *sd_matrices, int angle, int colr1, int colr2)
 {
   *(sd_matrices + (angle*NCOLORS*NCOLORS) + (colr1*NCOLORS) + colr2 ) += addition;
   *(sd_matrices + (angle*NCOLORS*NCOLORS) + (colr2*NCOLORS) + colr1 ) += addition;
 }
+
 
 /*
  * Calculates gray-tone co-occurrence matrices for neighboring
@@ -106,7 +134,7 @@ double calculate_asm(double *sd_matrices, int angle)
   for ( j=0; j<NCOLORS; j++ ) {
     for ( i=0; i<NCOLORS; i++ ) {
       double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-      sum += cell*cell;
+      sum += pow(cell, 2);;
     }
   }
   return sum;
@@ -146,38 +174,51 @@ double calculate_contrast(double *sd_matrices, int angle)
  * @return             correlation or specified co-occurrence matrix
  */
 double calculate_correlation(double *sd_matrices, int angle)
-{/*
-  double u_x[NCOLORS] = 0.0;
-  double sig_x[NCOLORS] = 0.0;
-  for ( j=1; j<=NCOLORS; j++ ) {
-    for ( i=1; i<=NCOLORS; i++ ) {
-    }
+{
+  struct array_properties *row_props    = malloc(NCOLORS*sizeof(*row_props));
+  struct array_properties *column_props = malloc(NCOLORS*sizeof(*row_props));
+  int i, j;
+
+  // prepare means and standard deviations for co-occurrence matrix rows
+  for ( j=0; j<NCOLORS; j++ ) {
+    double *array = sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS);
+    calculate_array_properties(array, NCOLORS, row_props+j);
   }
 
-  double u_y[NCOLORS] = 0.0;
-  double sig_y[NCOLORS] = 0.0;
+  // prepare means and standard deviations for co-occurrence matrix columns
+  for ( i=0; i<NCOLORS; i++ ) {
+    double *array = malloc(NCOLORS*sizeof(double));
+    for ( j=0; j<NCOLORS; j++ ) {
+      *(array+j) = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+    }
+    calculate_array_properties(array, NCOLORS, column_props+i);
+    free(array);
+  }
 
   double sum = 0.0;
-  int i, j, n;
-  for ( n=0; n<NCOLORS; n++ ) {
-    double partial_sum = 0.0;
-    for ( j=1; j<=NCOLORS; j++ ) {
-      for ( i=1; i<=NCOLORS; i++ ) {
-        if ( abs(i-j) == n ) {
-          double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-          partial_sum += cell;
-        }
-      }
+  for ( i=0; i<NCOLORS; i++ ) {
+    for ( j=0; j<NCOLORS; j++ ) {
+      double cell     = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+      double avgs     = ((*(row_props+j)).average) * ((*(column_props+i)).average);
+      double std_devs = ((*(row_props+j)).std_dev) * ((*(column_props+i)).std_dev);
+      sum += ( (i*j) * cell - avgs ) / std_devs;
     }
-    sum += (n*n) * partial_sum;
   }
-*/
-  return -1.0;
+
+  free(row_props);
+  free(column_props);
+  return sum;
 }
 
 //FIXME global
 struct haralick_values t;
 
+/* 
+ * Calculates texture features for given image.
+ *
+ * @param  image IplImage to be analyzed 
+ * @return haralick_values struct containing calculated texture features
+ */
 struct haralick_values *calculate_values(IplImage *image)
 {
   // Gray-tone spatial-dependence matrices for degrees 0, 45, 90, 135
@@ -195,6 +236,10 @@ struct haralick_values *calculate_values(IplImage *image)
   t.contrast_45  = calculate_contrast(sd_matrices, ANGLE_45);
   t.contrast_90  = calculate_contrast(sd_matrices, ANGLE_90);
   t.contrast_135 = calculate_contrast(sd_matrices, ANGLE_135);
+  t.correlation_0   = calculate_correlation(sd_matrices, ANGLE_0);
+  t.correlation_45  = calculate_correlation(sd_matrices, ANGLE_45);
+  t.correlation_90  = calculate_correlation(sd_matrices, ANGLE_90);
+  t.correlation_135 = calculate_correlation(sd_matrices, ANGLE_135);
 
   free(sd_matrices);
   return &t;

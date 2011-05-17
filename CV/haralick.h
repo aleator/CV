@@ -15,9 +15,16 @@ struct haralick_values {
   double contrast_45;
   double contrast_90;
   double contrast_135;
+  // Correlations
+  double correlation_0;
+  double correlation_45;
+  double correlation_90;
+  double correlation_135;
 };
 
-/*
+/* 
+ * Calculates texture features for given image.
+ *
  * @param  image IplImage to be analyzed 
  * @return haralick_values struct containing calculated texture features
  */
