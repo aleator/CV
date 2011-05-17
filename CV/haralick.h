@@ -20,6 +20,11 @@ struct haralick_values {
   double correlation_45;
   double correlation_90;
   double correlation_135;
+  // Entropies
+  double entropy_0;
+  double entropy_45;
+  double entropy_90;
+  double entropy_135;
 };
 
 /* 

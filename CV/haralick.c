@@ -210,6 +210,29 @@ double calculate_correlation(double *sd_matrices, int angle)
   return sum;
 }
 
+/*
+ * Calculates entropy.
+ *
+ * @param sd_matrices  set of co-occurrence matrices at four angles
+ * @param angle        angle (matrix) of interest
+ * @return             entropy for specified co-occurrence matrix
+ */
+double calculate_entropy(double *sd_matrices, int angle)
+{
+  double sum = 0.0;
+  int j, i;
+  for ( j=0; j<NCOLORS; j++ ) {
+    for ( i=0; i<NCOLORS; i++ ) {
+      double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+      // Since log(0) is not defined, Haralick et al. 1973 recommends adding an
+      // arbitarily small positive constant.
+      sum = cell * log(cell+EPSILON);
+    }
+  }
+  return -sum;
+}
+
+
 //FIXME global
 struct haralick_values t;
 
@@ -240,6 +263,10 @@ struct haralick_values *calculate_values(IplImage *image)
   t.correlation_45  = calculate_correlation(sd_matrices, ANGLE_45);
   t.correlation_90  = calculate_correlation(sd_matrices, ANGLE_90);
   t.correlation_135 = calculate_correlation(sd_matrices, ANGLE_135);
+  t.entropy_0   = calculate_entropy(sd_matrices, ANGLE_0);
+  t.entropy_45  = calculate_entropy(sd_matrices, ANGLE_45);
+  t.entropy_90  = calculate_entropy(sd_matrices, ANGLE_90);
+  t.entropy_135 = calculate_entropy(sd_matrices, ANGLE_135);
 
   free(sd_matrices);
   return &t;
