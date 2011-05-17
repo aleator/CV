@@ -1,6 +1,7 @@
 #include "haralick.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
 
@@ -10,6 +11,8 @@
 #define ANGLE_45 1
 #define ANGLE_90 2
 #define ANGLE_135 3 
+
+#define EPSILON 0.00000000000001
 
 void add_balanced_occurrence(double addition, double *sd_matrices, int angle, int colr1, int colr2)
 {
@@ -89,38 +92,109 @@ double* prepare_matrix()
   return sd_matrices;
 }
 
+/*
+ * Calculates angular second moment.
+ *
+ * @param sd_matrices  set of co-occurrence matrices at four angles
+ * @param angle        angle (matrix) of interest
+ * @return             angular second moment for specified co-occurrence matrix
+ */
 double calculate_asm(double *sd_matrices, int angle)
 {
-  double asm_val = 0.0;
-
+  double sum = 0.0;
   int j, i;
-  for (j=0; j<NCOLORS; j++) {
-    for (i=0; i<NCOLORS; i++) {
-      double val = *(sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-      asm_val += val*val;
+  for ( j=0; j<NCOLORS; j++ ) {
+    for ( i=0; i<NCOLORS; i++ ) {
+      double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+      sum += cell*cell;
     }
   }
+  return sum;
+}
 
-  return asm_val;
+/*
+ * Calculates contrast.
+ *
+ * @param sd_matrices  set of co-occurrence matrices at four angles
+ * @param angle        angle (matrix) of interest
+ * @return             contrast or specified co-occurrence matrix
+ */
+double calculate_contrast(double *sd_matrices, int angle)
+{
+  double sum = 0.0;
+  int i, j, n;
+  for ( n=0; n<NCOLORS; n++ ) {
+    double partial_sum = 0.0;
+    for ( j=1; j<=NCOLORS; j++ ) {
+      for ( i=1; i<=NCOLORS; i++ ) {
+        if ( abs(i-j) == n ) {
+          double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+          partial_sum += cell;
+        }
+      }
+    }
+    sum += (n*n) * partial_sum;
+  }
+  return sum;
+}
+
+/*
+ * Calculates correlation.
+ *
+ * @param sd_matrices  set of co-occurrence matrices at four angles
+ * @param angle        angle (matrix) of interest
+ * @return             correlation or specified co-occurrence matrix
+ */
+double calculate_correlation(double *sd_matrices, int angle)
+{/*
+  double u_x[NCOLORS] = 0.0;
+  double sig_x[NCOLORS] = 0.0;
+  for ( j=1; j<=NCOLORS; j++ ) {
+    for ( i=1; i<=NCOLORS; i++ ) {
+    }
+  }
+
+  double u_y[NCOLORS] = 0.0;
+  double sig_y[NCOLORS] = 0.0;
+
+  double sum = 0.0;
+  int i, j, n;
+  for ( n=0; n<NCOLORS; n++ ) {
+    double partial_sum = 0.0;
+    for ( j=1; j<=NCOLORS; j++ ) {
+      for ( i=1; i<=NCOLORS; i++ ) {
+        if ( abs(i-j) == n ) {
+          double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
+          partial_sum += cell;
+        }
+      }
+    }
+    sum += (n*n) * partial_sum;
+  }
+*/
+  return -1.0;
 }
 
 //FIXME global
 struct haralick_values t;
 
-struct haralick_values *calculate_values(IplImage *im)
+struct haralick_values *calculate_values(IplImage *image)
 {
   // Gray-tone spatial-dependence matrices for degrees 0, 45, 90, 135
   // Four 2-dimensional arrays containing color-to-color occurrences.
   double* sd_matrices = prepare_matrix();
 
-  calculate_matrices(im, sd_matrices);
+  calculate_matrices(image, sd_matrices);
   double asm_sum = 0.0;
 
   t.asm_0   = calculate_asm(sd_matrices, ANGLE_0);
   t.asm_45  = calculate_asm(sd_matrices, ANGLE_45);
   t.asm_90  = calculate_asm(sd_matrices, ANGLE_90);
   t.asm_135 = calculate_asm(sd_matrices, ANGLE_135);
-  t.asm_average = (t.asm_0 + t.asm_45 + t.asm_90 + t.asm_135) / 4;
+  t.contrast_0   = calculate_contrast(sd_matrices, ANGLE_0);
+  t.contrast_45  = calculate_contrast(sd_matrices, ANGLE_45);
+  t.contrast_90  = calculate_contrast(sd_matrices, ANGLE_90);
+  t.contrast_135 = calculate_contrast(sd_matrices, ANGLE_135);
 
   free(sd_matrices);
   return &t;

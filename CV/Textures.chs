@@ -60,16 +60,21 @@ calculateValues :: CV.Image.Image c d -> Ptr ()
 calculateValues img = unsafePerformIO $ withImage img {#call calculate_values#}
 
 data HaralickFeatures = HaralickFeatures {
-                          asms :: [Double] -- Angular second moments at all four angles
+                          asms :: [Double],      -- Angular second moments at four angles
+                          contrasts :: [Double]  -- Contrasts at four angles
                         } deriving(Show)
 
 calculateHaralickFeatures :: Image a b -> HaralickFeatures
-calculateHaralickFeatures im = HaralickFeatures asms
+calculateHaralickFeatures im = HaralickFeatures asms contrasts
   where
     v = calculateValues im
-    asm0'       = unsafePerformIO $ {#get haralick_values_t->asm_0#}   v >>= return . realToFrac
-    asm45'      = unsafePerformIO $ {#get haralick_values_t->asm_45#}  v >>= return . realToFrac
-    asm90'      = unsafePerformIO $ {#get haralick_values_t->asm_90#}  v >>= return . realToFrac
-    asm135'     = unsafePerformIO $ {#get haralick_values_t->asm_135#} v >>= return . realToFrac
-    asms        = [asm0', asm45', asm90', asm135']
- 
+    asm0'        = unsafePerformIO $ {#get haralick_values_t->asm_0#}   v >>= return . realToFrac
+    asm45'       = unsafePerformIO $ {#get haralick_values_t->asm_45#}  v >>= return . realToFrac
+    asm90'       = unsafePerformIO $ {#get haralick_values_t->asm_90#}  v >>= return . realToFrac
+    asm135'      = unsafePerformIO $ {#get haralick_values_t->asm_135#} v >>= return . realToFrac
+    asms         = [asm0', asm45', asm90', asm135']
+    contrast0'   = unsafePerformIO $ {#get haralick_values_t->contrast_0#}   v >>= return . realToFrac
+    contrast45'  = unsafePerformIO $ {#get haralick_values_t->contrast_45#}  v >>= return . realToFrac
+    contrast90'  = unsafePerformIO $ {#get haralick_values_t->contrast_90#}  v >>= return . realToFrac
+    contrast135' = unsafePerformIO $ {#get haralick_values_t->contrast_135#} v >>= return . realToFrac
+    contrasts    = [contrast0', contrast45', contrast90', contrast135'] 
