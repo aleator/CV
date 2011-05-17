@@ -125,9 +125,9 @@ double calculate_contrast(double *sd_matrices, int angle)
   int i, j, n;
   for ( n=0; n<NCOLORS; n++ ) {
     double partial_sum = 0.0;
-    for ( j=1; j<=NCOLORS; j++ ) {
-      for ( i=1; i<=NCOLORS; i++ ) {
-        if ( abs(i-j) == n ) {
+    for ( j=0; j<NCOLORS; j++ ) {
+      for ( i=0; i<NCOLORS; i++ ) {
+        if ( abs((i+1)-(j+1)) == n ) {
           double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
           partial_sum += cell;
         }
