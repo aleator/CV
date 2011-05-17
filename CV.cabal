@@ -29,7 +29,7 @@ Library
     Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, CV/cvWrapLEO.h
     c-sources:         CV/cvWrapLEO.c
     install-includes:  CV/cvWrapLEO.h
-    cc-options:        --std=c99 
+    cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
      
     Build-Depends:     haskell98, base >= 3 && < 5, parallel > 1.1, unix > 2.3, array >= 0.2.0.0,
