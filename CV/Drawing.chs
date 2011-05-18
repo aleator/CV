@@ -1,10 +1,27 @@
 {-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
 #include "cvWrapLEO.h"
+-- | Module for exposing opencv drawing functions. These are meant for quick and dirty marking
+--   and not for anything presentable. For any real drawing
+--   you should figure out how to use cairo or related package, such as diagrams. They are
+--   way better.
+--
+--   Consult the "CV.ImageOp" module for functions to apply the operations in this module to images.
 
-module CV.Drawing(ShapeStyle(Filled,Stroked),circle
-              ,Drawable(..)
-              ,floodfill,drawLinesOp,drawLines,rectangle
-              ,rectOpS,fillPoly) where
+module CV.Drawing(
+                -- * Drawable class
+                 ShapeStyle(Filled,Stroked)
+                ,Drawable(..)
+                -- * Extra drawing operations
+                ,drawLinesOp
+                ,rectOpS
+                -- * Floodfill operations
+                ,fillOp
+                ,floodfill
+                -- * Shorthand for drawing single shapes
+                ,circle
+                ,drawLines
+                ,rectangle
+                ,fillPoly) where
 
 import Foreign.Ptr
 import Foreign.C.Types
@@ -19,22 +36,27 @@ import Control.Monad(when)
 
 import CV.ImageOp
 
+-- | Is the shape filled or just a boundary?
 data ShapeStyle = Filled | Stroked Int
     deriving(Eq,Show)
 
 styleToCV Filled = -1
 styleToCV (Stroked w) = fromIntegral w
 
--- TODO: Add fillstyle for rectOp
-
-
 -- TODO: The instances in here could be significantly smaller..
+-- |Typeclass for images that support elementary drawing operations. 
 class Drawable a b where
+    -- | Type of the pixel, i.e. Float for a grayscale image and 3-tuple for RGB image.
     type Color a b :: * 
+    -- | Put text of certain color to given coordinates. Good size seems to be around 0.5-1.5.
     putTextOp :: (Color a b) -> Float -> String -> (Int,Int) -> ImageOperation a b
-    lineOp :: (Color a b)   -> Int -> (Int,Int) -> (Int,Int) -> ImageOperation a b
+    -- | Draw a line between two points.
+    lineOp :: (Color a b)  -> Int -> (Int,Int) -> (Int,Int) -> ImageOperation a b
+    -- | Draw a Circle
     circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
+    -- | Draw a Rectangle by supplying two corners
     rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ImageOperation a b
+    -- | Draw a filled polygon
     fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
 
 instance Drawable RGB D32 where
@@ -118,8 +140,12 @@ instance Drawable GrayScale D32 where
                                   free ys'
 
 
+-- | Draw a rectangle by giving top left corner and size.
+rectOpS :: Drawable a b => Color a b -> Int -> (Int, Int) -> (Int, Int) 
+            -> ImageOperation a b
 rectOpS c t pos@(x,y) (w,h) = rectOp c t pos (x+w,y+h)
 
+-- | Flood fill a region of the image
 fillOp :: (Int,Int) -> D32 -> D32 -> D32 -> Bool -> ImageOperation GrayScale D32
 fillOp (x,y) color low high floats = 
     ImgOp $ \i -> do
@@ -130,26 +156,34 @@ fillOp (x,y) color low high floats =
      toCINT False = 0
      toCINT True  = 1
 
--- Shorthand for single drawing operations. You should however use #> and <## in CV.ImageOp 
--- rather than these
-
---line color thickness start end i = 
---    operate (lineOp color thickness start end ) i
-
+-- | Apply rectOp to an image
+rectangle :: Drawable c d => Color c d -> Int -> (Int, Int) -> (Int, Int) -> Image c d
+             -> IO (Image c d)
 rectangle color thickness a b i = 
     operate (rectOp color thickness a b ) i
 
+-- | Apply fillPolyOp to an image
+fillPoly :: Drawable c d => Color c d -> [(Int, Int)] -> Image c d -> IO (Image c d)
 fillPoly c pts i = operate (fillPolyOp c pts) i
 
+-- | Draw a polyline
+drawLinesOp :: Drawable c d => Color c d -> Int -> [((Int, Int), (Int, Int))] -> CV.ImageOp.ImageOperation c d
 drawLinesOp color thickness segments = 
     foldl (#>) nonOp 
      $ map (\(a,b) -> lineOp color thickness a b) segments
 
+-- | Apply drawLinesOp to an image
+drawLines :: Drawable c d => Image c d -> Color c d -> Int -> [((Int, Int), (Int, Int))]
+                                -> IO (Image c d)
 drawLines img color thickness segments = operateOn img
                     (drawLinesOp color thickness segments)
 
+-- | Apply circleOp to an image
+circle :: Drawable c d => (Int, Int) -> Int -> Color c d -> ShapeStyle -> Image c d -> Image c d
 circle center r color s i = unsafeOperate (circleOp color center r s) i
 
+-- | Apply fillOp to an image
+floodfill :: (Int, Int) -> D32 -> D32 -> D32 -> Bool -> Image GrayScale D32 -> Image GrayScale D32
 floodfill (x,y) color low high floats = 
     unsafeOperate (fillOp (x,y) color low high floats) 
 
