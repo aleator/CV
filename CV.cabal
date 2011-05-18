@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.0.1
+Version:             0.3.0.2
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -7,11 +7,19 @@ Category:            AI, Graphics, Machine Vision
 Synopsis:            OpenCV based machine vision library
 Description:         This is a machine vision package that wraps some functionality
                      of OpenCV library. This package has been developed for personal use and
-                     is not meant to be a complete wrapper, though it will most likely grow to
-                     cover most of functionaly exposed by OpenCV C interface.
-
+                     is not meant to be a complete wrapper. It also includes some things not
+                     in OpenCV.
+                     .
                      Currently this package is quite dirty and requires much work on documentation
                      and code clean-up, but is somewhat tested.
+                     .
+                     (The scarce) Documentation is available at 
+                      <http://users.jyu.fi/~aleator/CV-0.3.0.2/html/index.html>
+                     .
+                     Changelog.
+                     0.3.0.2 - Workaround for compiling with OS X 10.6 & fixed errors about M_PI
+                     .
+
 Author:              Ville Tirronen
 Maintainer:          ville.tirronen@jyu.fi
 Build-Type:          Simple

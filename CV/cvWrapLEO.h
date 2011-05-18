@@ -4,6 +4,10 @@
 #ifndef __CVWRAP__
 #define __CVWRAP__
 
+#ifndef M_PI
+#define M_PI           3.14159265358979323846
+#endif
+
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
