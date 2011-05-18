@@ -8,6 +8,7 @@ module CV.Conversions (
     ,copyImageToFCArray
     ,copyImageToCArray
     ,copyImageToComplexCArray
+    ,copyImageToExistingCArray
     ) where
 
 import Complex
@@ -46,6 +47,9 @@ copyImageToFCArray (S img) = unsafePerformIO $
     where
      (w,h) = getSize img
 
+
+
+
 -- |Copy the real part of an array to image
 copyComplexCArrayToImage :: CArray (Int,Int) (Complex Double) -> Image GrayScale D32
 copyComplexCArrayToImage carr = S $ unsafePerformIO $
@@ -59,6 +63,13 @@ copyImageToCArray :: Image GrayScale D32 -> CArray (Int,Int) Double
 copyImageToCArray (S img) = unsafePerformIO $
          withBareImage img $ \cimg -> 
           createCArray ((0,0),(w-1,h-1)) (exportImageSlow' cimg) --({#call exportImageSlow#} cimg)
+    where
+     (w,h) = getSize img
+-- |Copy the contents of CV.Image into a pre-existing CArray.
+--
+copyImageToExistingCArray (S img) arr = 
+         withBareImage img $ \cimg -> 
+          withCArray arr $ \carr -> (exportImageSlow' cimg carr) --({#call exportImageSlow#} cimg)
     where
      (w,h) = getSize img
 
