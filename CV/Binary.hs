@@ -1,3 +1,5 @@
+-- |Binary instances for images. Currently it only supports the type 
+-- `Image Grayscale D32`.
 {-#LANGUAGE ScopedTypeVariables, FlexibleInstances#-}
 module CV.Binary where
 import CV.Image (Image,GrayScale,D32)
