@@ -1,9 +1,17 @@
 {-#LANGUAGE ForeignFunctionInterface#-}
 #include "cvWrapLEO.h"
-module CV.Edges (sobelOp,sobel
+-- | This module is a collection of simple edge detectors.
+module CV.Edges (
+                -- * Common edge detectors
+                 sobelOp,sobel
+                ,laplaceOp,laplace,canny,susan
+                -- * Various aperture sizes
+                -- | For added safety  we define the possible 
+                --   apertures as constants, since the filters accept only
+                --   specific mask sizes.
                 ,sScharr,s1,s3,s5,s7
                 ,l1,l3,l5,l7
-                ,laplaceOp,laplace,canny,susan) where
+                ) where
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
@@ -19,8 +27,7 @@ import C2HSTools
 -- | Perform Sobel filtering on image. First argument gives order of horizontal and vertical
 --   derivative estimates and second one is the aperture. This function can also calculate
 --   Scharr filter with aperture specification of sScharr
--- TODO: Type the aperture size and possibly the derivative orders as well
--- TODO: It is possible to define sobel with different target image with other bit depths.
+
 sobelOp :: (Int,Int) -> SobelAperture -> ImageOperation GrayScale D32
 sobelOp (dx,dy) (Sb aperture)
     | dx >=0 && dx <3
@@ -35,7 +42,8 @@ sobel dd ap im = unsafeOperate (sobelOp dd ap) im
 
 -- | Aperture sizes for sobel operator
 newtype SobelAperture = Sb Int
-sScharr = Sb (-1)
+-- | Use Scharr mask instead
+sScharr = Sb (-1) 
 s1 = Sb 1
 s3 = Sb 3
 s5 = Sb 5
@@ -70,10 +78,10 @@ canny t1 t2 aperture src = unsafePerformIO $ do
                                
                             
                              
--- | SUSAN edge detection filter, see http://users.fmrib.ox.ac.uk/~steve/susan/susan/susan.html
--- TODO: Should return a binary image
+-- | SUSAN edge detection filter, see <http://users.fmrib.ox.ac.uk/~steve/susan/susan/susan.html>
 susan :: (Int,Int) -> D32 -> Image GrayScale D32 -> Image GrayScale D8
 susan (w,h) t image = unsafePerformIO $ do
                     withGenImage image $ \img ->
                      creatingImage
                       ({#call susanEdge#} img (fromIntegral w) (fromIntegral h) (realToFrac t))
+-- TODO: Should return a binary image

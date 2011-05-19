@@ -1,13 +1,14 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies#-}
 #include "cvWrapLEO.h"
-module CV.Filters(gaussian,gaussianOp,bilateral
+-- | This module is a collection of various image filters
+module CV.Filters(gaussian,gaussianOp
               ,blurOp,blur,blurNS
               ,median
               ,susan,getCentralMoment,getAbsCentralMoment
               ,getMoment,secondMomentBinarize,secondMomentBinarizeOp
               ,secondMomentAdaptiveBinarize,secondMomentAdaptiveBinarizeOp
               ,selectiveAvg,convolve2D,convolve2DI,haar,haarAt
-              ,IntegralImage,getIISize,integralImage,verticalAverage) where
+              ,IntegralImage(),integralImage,verticalAverage) where
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
@@ -24,16 +25,26 @@ import C2HSTools
 --  IplImage* susanSmooth(IplImage *src, int w, int h
 --                     ,double t, double sigma); 
 
+-- | SUSAN adaptive smoothing filter, see <http://users.fmrib.ox.ac.uk/~steve/susan/susan/susan.html>
+susan :: (Int, Int) -> Double -> Double
+     -> Image GrayScale D32 -> Image GrayScale D32
 susan (w,h) t sigma image = unsafePerformIO $ do
                             withGenImage image $ \img ->
                              creatingImage 
-                                ({#call susanSmooth#} img w h t sigma)
+                                ({#call susanSmooth#} img (fromIntegral w) (fromIntegral h) 
+                                                         (realToFrac t) (realToFrac sigma))
 -- TODO: ADD checks above!
+
+-- | A selective average filter is an edge preserving noise reduction filter.
+--   It is a standard gaussian filter which ignores pixel values
+--   that are more than a given threshold away from the filtered pixel value.
+selectiveAvg :: (Int, Int) -> Double 
+     -> Image GrayScale D32 -> Image GrayScale D32
 selectiveAvg (w,h) t image = unsafePerformIO $ do
                               withGenImage image $ \img ->
                                creatingImage 
                                 ({#call selectiveAvgFilter#} 
-                                    img t w h)
+                                    img (realToFrac t) (fromIntegral w) (fromIntegral h))
 -- TODO: ADD checks above!
 
 getCentralMoment n (w,h) image = unsafePerformIO $ do
@@ -61,7 +72,6 @@ secondMomentAdaptiveBinarizeOp w h t = ImgOp $ \image ->
                                 (\i-> {#call smab#} i w h t)
 secondMomentAdaptiveBinarize w h t i = unsafeOperate (secondMomentAdaptiveBinarizeOp w h t) i
 
--- Low level wrapper for opencv
 data SmoothType = BlurNoScale | Blur 
                 | Gaussian | Median 
                 | Bilateral
@@ -105,6 +115,7 @@ bilateral colorS spaceS img = unsafePerformIO $
                         (fromIntegral colorS) (fromIntegral spaceS) 0 0
 
 
+-- | Perform median filtering on an eight bit image.
 median :: (Int,Int) -> Image GrayScale D8 -> Image GrayScale D8
 median (w,h) img 
   | maskIsOk (w,h) = unsafePerformIO $ do
@@ -137,6 +148,7 @@ convolve2DI (x,y) kernel image = unsafePerformIO $
                                        {#call wrapFilter2DImg#} 
                                         img k x y
 
+-- | Replace pixel values by the average of the row. 
 verticalAverage :: Image GrayScale D32 -> Image GrayScale D32
 verticalAverage image = unsafePerformIO $ do 
                     let (w,h) = getSize image
@@ -146,10 +158,18 @@ verticalAverage image = unsafePerformIO $ do
                       {#call vertical_average#} i sum 
                     return s
 
+-- | A type for storing integral images. Integral image stores for every pixel the sum of pixels
+--   above and left of it. Such images are used for significantly accelerating the calculation of
+--   area averages. 
 newtype IntegralImage = IntegralImage (Image GrayScale D64)
+instance IntSized IntegralImage where
+    getSize (IntegralImage i) = getSize i
 
-getIISize (IntegralImage i) = getSize i
+instance GetPixel IntegralImage where
+    type P IntegralImage = Double
+    getPixel = getPixel
 
+-- | Calculate the integral image from the given image.
 integralImage :: Image GrayScale D32 -> IntegralImage
 integralImage image = unsafePerformIO $ do 
                     let (w,h) = getSize image
@@ -160,6 +180,7 @@ integralImage image = unsafePerformIO $ do
                       return $ IntegralImage s
 
 
+-- |Filter the image with box shaped averaging mask.
 haar :: IntegralImage -> (Int,Int,Int,Int) -> Image GrayScale D32
 haar (IntegralImage image) (a',b',c',d') = unsafePerformIO $ do
                     let (w,h) = getSize image
@@ -175,5 +196,9 @@ haar (IntegralImage image) (a',b',c',d') = unsafePerformIO $ do
                                 res
                             return r
 
-haarAt (IntegralImage ii) (a,b,w,h) = unsafePerformIO $ withImage ii $ \i -> 
-                                        {#call haar_at#} i a b w h 
+-- | Get an average of a given region.
+haarAt  :: IntegralImage -> (Int,Int,Int,Int) -> Double
+
+haarAt (IntegralImage ii) (a,b,w,h) = realToFrac $ unsafePerformIO $ withImage ii $ \i -> 
+                                        {#call haar_at#} i (f a) (f b) (f w) (f h)
+                                    where f = fromIntegral 
