@@ -28,6 +28,7 @@ Extra-Source-Files:
                      examples/*.hs
                      examples/shapes/*.png
                      examples/shapePhoto.jpg
+                     examples/fuseTest*.png
                      examples/smallLena.jpg
                      examples/elaine.jpg
 

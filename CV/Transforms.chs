@@ -212,6 +212,7 @@ laplacianPyramid depth image = reverse laplacian
    laplacian = zipWith (#-) downs upsampled ++ [last downs]
 
 -- |Reconstruct an image from a laplacian pyramid
+reconstructFromLaplacian :: [Image GrayScale D32] -> Image GrayScale D32 
 reconstructFromLaplacian pyramid = foldl1 (\a b -> (pyrUp a) #+ b) (pyramid)
   --  where 
   --   safeAdd x y = sameSizePad y x #+ y  
