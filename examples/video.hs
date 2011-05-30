@@ -5,7 +5,6 @@ import CV.Video
 import Utils.Stream
 
 main = do
-    Just x <- loadImage "smallLena.jpg"
     print "finding capture"
     Just cap <- captureFromCam (-1)
     print "capture acquired"
@@ -15,5 +14,5 @@ main = do
                                          . takeS (6*6) 
                                          $ streamFromVideo cap
     print (map getSize imgs)
-    saveImage "video.png"  $ montage (6,6) 2 (imgs)
+    saveImage "video.png"  $ montage (length imgs,1) 2 (imgs)
 

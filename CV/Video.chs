@@ -58,7 +58,6 @@ getFrame cap = withCapture cap $ \ccap -> do
                                     else creatingImage (ensure32F p_frame) >>= return . Just
                     -- NOTE: This works because Image module has generated wrappers for ensure32F
 
--- These are likely to break..
 #c
 enum CapProp {
       CAP_PROP_POS_MSEC       =  CV_CAP_PROP_POS_MSEC     
@@ -86,6 +85,10 @@ enum CapProp {
 {#enum CapProp {}#}
 
 fromProp = fromIntegral . fromEnum
+
+getCapProp cap prop = withCapture cap $ \ccap ->
+                         {#call cvGetCaptureProperty#} 
+                           ccap (fromProp prop) >>= return . realToFrac
 
 getFrameRate cap = unsafePerformIO $
                       withCapture cap $ \ccap ->
