@@ -1,1 +1,4 @@
 dist/
+*.hi
+*.o
+tags
