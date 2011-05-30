@@ -319,6 +319,11 @@ withClone img fun = do
                 fun result
                 return result
 
+withCloneValue img fun = do 
+                result <- cloneImage img
+                r <- fun result
+                return r
+
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 
                  ({#call ensure32F #} image)
