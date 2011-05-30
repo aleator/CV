@@ -50,7 +50,7 @@ Library
                        CV.TemplateMatching, CV.Transforms, CV.Conversions,
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline,  CV.Gabor,
-                       CV.ConnectedComponents
+                       CV.ConnectedComponents, CV.HighGUI
     Other-modules:     C2HSTools, C2HS
 
 source-repository head
