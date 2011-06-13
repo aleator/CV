@@ -35,5 +35,5 @@ struct haralick_values {
  */
 struct haralick_values *calculate_values(IplImage *image);
 
-int get_color(IplImage *image, int x, int y);
+int get_color(IplImage* im, int x, int y, float minimum, float maximum);
 

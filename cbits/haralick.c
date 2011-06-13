@@ -109,21 +109,22 @@ void calculate_matrices(IplImage *im, double *sd_matrices)
 
   for (y=0; y<h; y++) {
     for (x=0; x<w; x++) {
+      int current_color = get_color(im, x, y, minimum, maximum) 
       // 0 degrees: horizontal co-occurrence
       if (x+1 < w)
-	add_balanced_occurrence(addition_0, sd_matrices, 0, get_color(im, x, y, minimum, maximum), get_color(im, x+1, y, minimum, maximum));
+	add_balanced_occurrence(addition_0, sd_matrices, 0, current_color , get_color(im, x+1, y, minimum, maximum));
 
       // 45 degress: diagonal right-up co-occurrence
       if ( (x+1<w) && (y>0) )
-	add_balanced_occurrence(addition_45, sd_matrices, 1, get_color(im, x, y, minimum, maximum), get_color(im, x+1, y-1, minimum, maximum));
+	add_balanced_occurrence(addition_45, sd_matrices, 1, current_color, get_color(im, x+1, y-1, minimum, maximum));
 
       // 90 degrees: vertical co-occurrence
       if (y>0)
-	add_balanced_occurrence(addition_90, sd_matrices, 2, get_color(im, x, y, minimum, maximum), get_color(im, x, y-1, minimum, maximum));
+	add_balanced_occurrence(addition_90, sd_matrices, 2, current_color, get_color(im, x, y-1, minimum, maximum));
 
       // 135 degress: diagonal left-up co-occurrence
       if ( (x>0) && (y>0) )
-	add_balanced_occurrence(addition_135, sd_matrices, 3, get_color(im, x, y, minimum, maximum), get_color(im, x-1, y-1, minimum, maximum));
+	add_balanced_occurrence(addition_135, sd_matrices, 3, current_color, get_color(im, x-1, y-1, minimum, maximum));
     }
   }
 }
