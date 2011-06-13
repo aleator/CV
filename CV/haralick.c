@@ -5,7 +5,7 @@
 
 #define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
 
-#define NCOLORS 8
+#define NCOLORS 256
 
 #define ANGLE_0 0
 #define ANGLE_45 1
@@ -47,11 +47,31 @@ void add_balanced_occurrence(double addition, double *sd_matrices, int angle, in
   *(sd_matrices + (angle*NCOLORS*NCOLORS) + (colr2*NCOLORS) + colr1 ) += addition;
 }
 
+int get_color(IplImage* im, int x, int y, float minimum, float maximum)
+{
+  float color = FGET(im,x,y);
+  if (color < 0 || color > 1) {
+    printf("Error! (x,y)=(%d,%d)'s value is out of [0,1]: %f\n", x, y, color);
+    return 0;
+  }
+  // Preventing unnecessary divide by zero at scaling with images that have only 1 color.
+  if (maximum-minimum < EPSILON) {
+    return 0;
+  }
+  float ratio = (color-minimum)/(maximum-minimum);
+  int col = (int)(NCOLORS*ratio);
+  return col;
+}
+
+
 
 /*
  * Calculates gray-tone co-occurrence matrices for neighboring
  * cells at directions 0', 45', 90', 135'
  * 
+ * Image's color values are between [0,1]. To normalize values, colors are quantized to
+ * NCOLOR areas not between [0,1], but [min,max] in image.
+ *
  * Takes pointers to IplImage and allocated space for matrices
  */
 void calculate_matrices(IplImage *im, double *sd_matrices)
@@ -73,36 +93,39 @@ void calculate_matrices(IplImage *im, double *sd_matrices)
   double addition_135 = 1.0 / neighbours_135;
 
   int x,y;
+  float minimum = 1.0;
+  float maximum = 0.0;
+
+  // Find min and max values 
+  for (y=0; y<h; y++) {
+    for (x=0; x<w; x++) {
+      float cur_color = FGET(im,x,y);
+      if (cur_color > maximum)
+        maximum = cur_color;
+      if (cur_color < minimum)
+        minimum = cur_color;
+    }
+  }
+
   for (y=0; y<h; y++) {
     for (x=0; x<w; x++) {
       // 0 degrees: horizontal co-occurrence
       if (x+1 < w)
-	add_balanced_occurrence(addition_0, sd_matrices, 0, get_color(im, x, y), get_color(im, x+1, y));
+	add_balanced_occurrence(addition_0, sd_matrices, 0, get_color(im, x, y, minimum, maximum), get_color(im, x+1, y, minimum, maximum));
 
       // 45 degress: diagonal right-up co-occurrence
       if ( (x+1<w) && (y>0) )
-	add_balanced_occurrence(addition_45, sd_matrices, 1, get_color(im, x, y), get_color(im, x+1, y-1));
+	add_balanced_occurrence(addition_45, sd_matrices, 1, get_color(im, x, y, minimum, maximum), get_color(im, x+1, y-1, minimum, maximum));
 
       // 90 degrees: vertical co-occurrence
       if (y>0)
-	add_balanced_occurrence(addition_90, sd_matrices, 2, get_color(im, x, y), get_color(im, x, y-1));
+	add_balanced_occurrence(addition_90, sd_matrices, 2, get_color(im, x, y, minimum, maximum), get_color(im, x, y-1, minimum, maximum));
 
       // 135 degress: diagonal left-up co-occurrence
       if ( (x>0) && (y>0) )
-	add_balanced_occurrence(addition_135, sd_matrices, 3, get_color(im, x, y), get_color(im, x-1, y-1));
+	add_balanced_occurrence(addition_135, sd_matrices, 3, get_color(im, x, y, minimum, maximum), get_color(im, x-1, y-1, minimum, maximum));
     }
   }
-}
-
-int get_color(IplImage* im, int x, int y)
-{
-  float color = FGET(im,x,y);
-  if (color < 0 || color > 1) {
-    printf("Error! (x,y)=(%d,%d)'s value is out of [0,1]: %f\n", x, y, color);
-    return 0;
-  }
-  int col = (int)(NCOLORS*color);
-  return col;
 }
 
 double* prepare_matrix()
