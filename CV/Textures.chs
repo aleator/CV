@@ -50,43 +50,4 @@ broilerPlate op image = unsafePerformIO $ do
                 let !maximum = fromIntegral $ sum p
                 return $ map (\x -> fromIntegral x / maximum) p
 
-#c
-typedef struct haralick_values haralick_values_t;
-#endc
 
-{#pointer *haralick_values_t as HaralickValues#}
-
-calculateValues :: CV.Image.Image c d -> Ptr ()
-calculateValues img = unsafePerformIO $ withImage img {#call calculate_values#}
-
-data HaralickFeatures = HaralickFeatures {
-                          asms :: [Double],         -- Angular second moments at four angles
-                          contrasts :: [Double],    -- Contrasts at four angles
-                          correlations :: [Double], -- Correlations at four angles
-                          entropies  :: [Double]    -- Entropies at four angles
-                        } deriving(Show)
-
-calculateHaralickFeatures :: Image a b -> HaralickFeatures
-calculateHaralickFeatures im = HaralickFeatures asms contrasts correlations entropies
-  where
-    v = calculateValues im
-    asm0'        = unsafePerformIO $ {#get haralick_values_t->asm_0#}   v >>= return . realToFrac
-    asm45'       = unsafePerformIO $ {#get haralick_values_t->asm_45#}  v >>= return . realToFrac
-    asm90'       = unsafePerformIO $ {#get haralick_values_t->asm_90#}  v >>= return . realToFrac
-    asm135'      = unsafePerformIO $ {#get haralick_values_t->asm_135#} v >>= return . realToFrac
-    asms         = [asm0', asm45', asm90', asm135']
-    contrast0'   = unsafePerformIO $ {#get haralick_values_t->contrast_0#}   v >>= return . realToFrac
-    contrast45'  = unsafePerformIO $ {#get haralick_values_t->contrast_45#}  v >>= return . realToFrac
-    contrast90'  = unsafePerformIO $ {#get haralick_values_t->contrast_90#}  v >>= return . realToFrac
-    contrast135' = unsafePerformIO $ {#get haralick_values_t->contrast_135#} v >>= return . realToFrac
-    contrasts    = [contrast0', contrast45', contrast90', contrast135'] 
-    correlation0'   = unsafePerformIO $ {#get haralick_values_t->correlation_0#}   v >>= return . realToFrac
-    correlation45'  = unsafePerformIO $ {#get haralick_values_t->correlation_45#}  v >>= return . realToFrac
-    correlation90'  = unsafePerformIO $ {#get haralick_values_t->correlation_90#}  v >>= return . realToFrac
-    correlation135' = unsafePerformIO $ {#get haralick_values_t->correlation_135#} v >>= return . realToFrac
-    correlations    = [correlation0', correlation45', correlation90', correlation135'] 
-    entropy0'   = unsafePerformIO $ {#get haralick_values_t->entropy_0#}   v >>= return . realToFrac
-    entropy45'  = unsafePerformIO $ {#get haralick_values_t->entropy_45#}  v >>= return . realToFrac
-    entropy90'  = unsafePerformIO $ {#get haralick_values_t->entropy_90#}  v >>= return . realToFrac
-    entropy135' = unsafePerformIO $ {#get haralick_values_t->entropy_135#} v >>= return . realToFrac
-    entropies   = [entropy0', entropy45', entropy90', entropy135'] 

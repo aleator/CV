@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
 
@@ -65,100 +66,60 @@ int get_color(IplImage* im, int x, int y, float minimum, float maximum)
 
 
 
+#define IGET(img,x,y) (((uchar *)((img)->imageData + (y)*(img)->widthStep))[(x)])
+
 /*
- * Calculates gray-tone co-occurrence matrices for neighboring
- * cells at directions 0', 45', 90', 135'
- * 
- * Image's color values are between [0,1]. To normalize values, colors are quantized to
- * NCOLOR areas not between [0,1], but [min,max] in image.
- *
- * Takes pointers to IplImage and allocated space for matrices
+ * Calculates the (normalized) grayscale-co-occurence matrix for an 8 bit image.
+ * Takes pointers to 8U image and zero initialized space for the matrix (255 x 255 x sizeof(Int))
  */
-void calculate_matrices(IplImage *im, double *sd_matrices)
+void calculate_co_occurence_matrix(IplImage *im, int dx, int dy,  double *sd_matrix)
 {
   CvSize imSize = cvGetSize(im);
   int w = imSize.width;
   int h = imSize.height;
+  int matrix_size = 256;
 
-  // Numbers of neighboring resolutions in different angles for balancing
-  int neighbours_0   = 2 * (w-1) * h;
-  int neighbours_45  = 2 * (w-1) * (h-1);
-  int neighbours_90  = 2 *   w   * (w-1);
-  int neighbours_135 = neighbours_45; 
-
-  // All cells could also be divided by neighbour resolution counts afterwards
-  double addition_0   = 1.0 / neighbours_0;
-  double addition_45  = 1.0 / neighbours_45;
-  double addition_90  = 1.0 / neighbours_90;
-  double addition_135 = 1.0 / neighbours_135;
-
-  int x,y;
   float minimum = 1.0;
   float maximum = 0.0;
+  
+  int usable_height = (dy > 0 ? h-dy : h) ;
+  int usable_width  = (dx > 0 ? w-dx : w) ;
 
-  // Find min and max values 
-  for (y=0; y<h; y++) {
-    for (x=0; x<w; x++) {
-      float cur_color = FGET(im,x,y);
-      if (cur_color > maximum)
-        maximum = cur_color;
-      if (cur_color < minimum)
-        minimum = cur_color;
+  int start_y = (dy < 0 ? -dy : 0) ;
+  int start_x = (dx < 0 ? -dx : 0) ;
+
+  int comparisons=0;
+
+  for (int y=start_y;   y < usable_height ; y++) {
+    for (int x=start_x; x < usable_width  ; x++) {
+      int current_val   = IGET(im, x,    y   ); 
+      int neighbour_val = IGET(im, x+dx, y+dy); 
+      assert(current_val < 256);
+      assert(neighbour_val < 256);
+	  sd_matrix[current_val+neighbour_val*(matrix_size-1)] += 1;
+      comparisons++;
     }
   }
 
-  for (y=0; y<h; y++) {
-    for (x=0; x<w; x++) {
-      int current_color = get_color(im, x, y, minimum, maximum) 
-      // 0 degrees: horizontal co-occurrence
-      if (x+1 < w)
-	add_balanced_occurrence(addition_0, sd_matrices, 0, current_color , get_color(im, x+1, y, minimum, maximum));
-
-      // 45 degress: diagonal right-up co-occurrence
-      if ( (x+1<w) && (y>0) )
-	add_balanced_occurrence(addition_45, sd_matrices, 1, current_color, get_color(im, x+1, y-1, minimum, maximum));
-
-      // 90 degrees: vertical co-occurrence
-      if (y>0)
-	add_balanced_occurrence(addition_90, sd_matrices, 2, current_color, get_color(im, x, y-1, minimum, maximum));
-
-      // 135 degress: diagonal left-up co-occurrence
-      if ( (x>0) && (y>0) )
-	add_balanced_occurrence(addition_135, sd_matrices, 3, current_color, get_color(im, x-1, y-1, minimum, maximum));
+  for (int j=0;   j < matrix_size*matrix_size ; j++) {
+	  sd_matrix[j] /= comparisons;
     }
-  }
-}
-
-double* prepare_matrix()
-{
-  // 4*NCOLORS*NCOLORS should be enough but leads to memory corruption -> bug
-  double* sd_matrices = malloc(5*NCOLORS*NCOLORS*sizeof(double));
-  int angle,i,j;
-  for (angle=0; angle<4; angle++) {
-    for (j=0; j<NCOLORS; j++) {
-      for (i=0; i<NCOLORS; i++) {
-        *(sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i ) = 0.0;
-      }
-    } 
-  }
-  return sd_matrices;
 }
 
 /*
  * Calculates angular second moment.
  *
- * @param sd_matrices  set of co-occurrence matrices at four angles
- * @param angle        angle (matrix) of interest
+ * @param matrix       co-occurrence matrix
+ * @param size         number of elements in the matrix
  * @return             angular second moment for specified co-occurrence matrix
  */
-double calculate_asm(double *sd_matrices, int angle)
+double calculate_asm(const double *matrix, const int size)
 {
   double sum = 0.0;
-  int j, i;
-  for ( j=0; j<NCOLORS; j++ ) {
-    for ( i=0; i<NCOLORS; i++ ) {
-      double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-      sum += pow(cell, 2);;
+  for (int j=0; j<size; j++ ) {
+    for (int i=0; i<size; i++ ) {
+      double cell = matrix[i+j*size];
+      sum += pow(cell, 2);
     }
   }
   return sum;
@@ -167,26 +128,19 @@ double calculate_asm(double *sd_matrices, int angle)
 /*
  * Calculates contrast.
  *
- * @param sd_matrices  set of co-occurrence matrices at four angles
- * @param angle        angle (matrix) of interest
- * @return             contrast or specified co-occurrence matrix
+ * @param matrix       co-occurrence matrix
+ * @param size         number of elements in the matrix
+ * @return             non-normalized contrast measure. (Divide by size of original image or by the
+ *                     sum of co-occurence matrix for actual contrast).
  */
-double calculate_contrast(double *sd_matrices, int angle)
+double calculate_contrast(const double *matrix, const int size)
 {
   double sum = 0.0;
-  int i, j, n;
-  for ( n=0; n<NCOLORS; n++ ) {
-    double partial_sum = 0.0;
-    for ( j=0; j<NCOLORS; j++ ) {
-      for ( i=0; i<NCOLORS; i++ ) {
-        if ( abs((i+1)-(j+1)) == n ) {
-          double cell = *( sd_matrices + (angle*NCOLORS*NCOLORS) + (j*NCOLORS) + i );
-          partial_sum += cell;
-        }
+    for   (int j=0; j<size; j++ ) {
+      for (int i=0; i<size; i++ ) {
+        sum += (pow((i-j),2) * matrix[i+j*size]);  // Should i and j be normalized to [0,1] range?
       }
     }
-    sum += (n*n) * partial_sum;
-  }
   return sum;
 }
 
@@ -266,7 +220,7 @@ struct haralick_values t;
  * @param  image IplImage to be analyzed 
  * @return haralick_values struct containing calculated texture features
  */
-struct haralick_values *calculate_values(IplImage *image)
+/*struct haralick_values *calculate_values(IplImage *image)
 {
   // Gray-tone spatial-dependence matrices for degrees 0, 45, 90, 135
   // Four 2-dimensional arrays containing color-to-color occurrences.
@@ -294,5 +248,5 @@ struct haralick_values *calculate_values(IplImage *image)
 
   free(sd_matrices);
   return &t;
-}
+} */
 

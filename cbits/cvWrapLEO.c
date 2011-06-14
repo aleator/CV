@@ -1788,6 +1788,7 @@ return target;
 //@+node:aleator.20060104154125:AcquireImage
 
 // Copy array into single channel iplImage
+
 IplImage *acquireImageSlow(int w, int h, double *d)
 {
  IplImage *img;
@@ -1797,6 +1798,21 @@ IplImage *acquireImageSlow(int w, int h, double *d)
    for (j=0; j<w; j++) { 
          //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
          FGET(img,j,i) = d[j*h+i]; 
+         }
+    }
+ return img;
+}
+#define IGET(img,x,y) (((uchar *)((img)->imageData + (y)*(img)->widthStep))[(x)])
+
+IplImage *acquireImageSlow8u(int w, int h, uchar *d)
+{
+ IplImage *img;
+ int i,j;
+ img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
+ for (i=0; i<h; i++) {
+   for (j=0; j<w; j++) { 
+         //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
+         IGET(img,j,i) = d[j*h+i]; 
          }
     }
  return img;

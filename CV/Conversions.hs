@@ -3,6 +3,7 @@
 --  CArrays, which can easily be passed into foreign functions.
 module CV.Conversions (
      copyCArrayToImage
+    ,copyEightBitCArrayToImage
     ,copyFCArrayToImage
     ,copyComplexCArrayToImage
     ,copyImageToFCArray
@@ -21,11 +22,19 @@ import Foreign.C.Types
 import Foreign.Ptr
 import Foreign.Storable.Complex
 import System.IO.Unsafe
+import Data.Word
 
 -- |Copy the contents of a CArray into CV.Image type.
 copyCArrayToImage :: CArray (Int,Int) Double -> Image GrayScale D32
 copyCArrayToImage carr = S $ unsafePerformIO $
                           creatingBareImage (withCArray carr (acquireImageSlow' w h))
+    where
+     ((sx,sy),(ex,ey)) = bounds carr
+     (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
+
+copyEightBitCArrayToImage :: CArray (Int,Int) D8 -> Image GrayScale D8
+copyEightBitCArrayToImage carr = S $ unsafePerformIO $
+                          creatingBareImage (withCArray carr (acquireImageSlow8u' w h))
     where
      ((sx,sy),(ex,ey)) = bounds carr
      (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
@@ -70,21 +79,24 @@ copyImageToComplexCArray (S img) = unsafePerformIO $
     where
      (w,h) = getSize img
 
-foreign import ccall safe "CV/cvWrapLEO.h exportImageSlow"
+foreign import ccall safe "cbits/cvWrapLEO.h exportImageSlow"
   exportImageSlow' :: ((Ptr (BareImage)) -> ((Ptr Double) -> (IO ())))
 
-foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowF"
+foreign import ccall safe "cbits/cvWrapLeo.h exportImageSlowF"
   exportImageSlowF' :: ((Ptr (BareImage)) -> ((Ptr Float) -> (IO ())))
 
-foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowComplex"
+foreign import ccall safe "cbits/cvWrapLeo.h exportImageSlowComplex"
   exportImageSlowComplex' :: ((Ptr (BareImage)) -> ((Ptr (Complex Double)) -> (IO ())))
 
-foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlow"
+foreign import ccall safe "cbits/cvWrapLEO.h acquireImageSlow"
   acquireImageSlow' :: (Int -> (Int -> ((Ptr Double) -> (IO (Ptr (BareImage))))))
 
-foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlowF"
+foreign import ccall safe "cbits/cvWrapLEO.h acquireImageSlow8u"
+  acquireImageSlow8u' :: (Int -> (Int -> ((Ptr Word8) -> (IO (Ptr (BareImage))))))
+
+foreign import ccall safe "cbits/cvWrapLEO.h acquireImageSlowF"
   acquireImageSlowF' :: (Int -> (Int -> ((Ptr Float) -> (IO (Ptr (BareImage))))))
 
-foreign import ccall safe "CV/cvWrapLEO.h acquireImageSlowComplex"
+foreign import ccall safe "cbits/cvWrapLEO.h acquireImageSlowComplex"
   acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (Complex Double)) -> (IO (Ptr (BareImage))))))
 

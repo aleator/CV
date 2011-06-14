@@ -250,6 +250,7 @@ IplImage* composeMultiChannel(IplImage* img0
                              ,const int channels);
 
 IplImage *acquireImageSlow(int w, int h, double *d);
+IplImage *acquireImageSlow8u(int w, int h, uchar *d);
 IplImage *acquireImageSlowF(int w, int h, float *d);
 void exportImageSlow(IplImage *img, double *d);
 void exportImageSlowF(IplImage *img, float *d);

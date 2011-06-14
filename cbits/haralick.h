@@ -33,7 +33,9 @@ struct haralick_values {
  * @param  image IplImage to be analyzed 
  * @return haralick_values struct containing calculated texture features
  */
-struct haralick_values *calculate_values(IplImage *image);
+void calculate_co_occurence_matrix(IplImage *im, int dx, int dy, double *sd_matrix);
 
 int get_color(IplImage* im, int x, int y, float minimum, float maximum);
+double calculate_contrast(const double *matrix, const int size);
+double calculate_asm(const double *matrix, const int size);
 
