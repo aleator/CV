@@ -123,19 +123,18 @@ frameNumber cap = unsafePerformIO $
 
 data Codec = MPG4 deriving (Eq,Show)
 
-createVideoWriter filename codec framerate frameSize isColor = 
+createVideoWriter filename codec framerate frameSize = 
     withCString filename $ \cfilename -> do
         ptr <- {#call wrapCreateVideoWriter#} cfilename fourcc 
-                                              framerate w h ccolor
+                                              framerate w h 0
         if ptr == nullPtr then error "Could not create video writer" else return ()
         fptr <- newForeignPtr releaseVideoWriter ptr
         return . VideoWriter $ fptr
   where
-    (w,h) = frameSize
-    ccolor | isColor   = 1
-           | otherwise = 0
+    (fromIntegral -> w, fromIntegral -> h) = frameSize
     fourcc | codec == MPG4 = 0x4d504734 -- This is so wrong..
 
+writeFrame :: VideoWriter -> Image RGB D32 -> IO ()
 writeFrame writer img = withVideoWriter writer $ \cwriter ->
                          withImage img    $ \cimg -> 
-                          {#call cvWriteFrame #} cwriter cimg
+                          {#call cvWriteFrame #} cwriter cimg >> return ()

@@ -8,9 +8,9 @@ main = do
     print "finding capture"
     Just cap <- captureFromCam (-1)
     print "capture acquired"
-   -- Just f <- getFrame cap
-   --saveImage "video.png" $ f
-    imgs :: [Image RGB D32] <- runStream . sideEffect (\_ -> print "frame taken") 
+    let frameSize = getFrameSize cap
+    writer <- createVideoWriter "test.mpg" MPG4 24 frameSize False
+    imgs :: [Image RGB D32] <- runStream . sideEffect (\i -> writeFrame writer (unsafeImageTo8Bit i >> print "frame taken") 
                                          . takeS (6*6) 
                                          $ streamFromVideo cap
     print (map getSize imgs)
