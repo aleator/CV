@@ -20,6 +20,7 @@ import CV.ImageOp
 import C2HSTools
 {#import CV.Image#}
 
+
 -- * Haralick features
 
 -- | Co-Occurence matrix is currently a CArray. It might be nice to use REPA array instead
@@ -37,11 +38,11 @@ foreign import ccall unsafe "cbits/haralick.h calculate_co_occurence_matrix"
 
 
 -- | Calculate a contrast measure of a co-occurence matrix
-{#fun calculate_contrast as contrast 
+{#fun pure calculate_contrast as contrast
     {withArrPtr* `CoOccurenceMatrix', `Int'} -> `Double' #}
 
 -- | Calculate a second angular moment measure of a co-occurence matrix
-{#fun calculate_asm      as angularSecondMoment 
+{#fun pure calculate_asm      as angularSecondMoment 
     {withArrPtr* `CoOccurenceMatrix', `Int'} -> `Double' #}
 
 -- TODO: withArrPtr should somehow be able to supply the size as well.

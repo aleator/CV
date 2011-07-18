@@ -18,7 +18,7 @@ Cabal-Version:       >=1.6
 Extra-Source-Files:
                      examples/*.hs
                      examples/shapes/*.png
-                     examples/shapePhoto.png
+                     examples/shapePhoto.jpg
                      examples/smallLena.jpg
                      examples/elaine.jpg
                      examples/rynkky4.bmp
