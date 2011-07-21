@@ -24,6 +24,7 @@ import System.IO.Unsafe
 import Data.Word
 
 
+
 -- Colorspaces
 data GrayScale
 data RGB
@@ -177,6 +178,16 @@ instance  GetPixel (Image RGB D32) where
                               b <- {#call wrapGet32F2DC#} img y x 2
                               return (realToFrac r,realToFrac g, realToFrac b)
 
+instance  GetPixel (Image RGB D8) where
+    type P (Image RGB D8) = (D8,D8,D8) 
+    getPixel (fromIntegral -> x, fromIntegral -> y) image 
+        = unsafePerformIO $ do 
+                     withGenImage image $ \img -> do
+                              r <- {#call wrapGet8U2DC#} img y x 0
+                              g <- {#call wrapGet8U2DC#} img y x 1
+                              b <- {#call wrapGet8U2DC#} img y x 2
+                              return (fromIntegral r,fromIntegral g, fromIntegral b)
+
 
 convertTo :: CInt -> CInt -> BareImage -> BareImage
 convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
@@ -318,6 +329,11 @@ withClone img fun = do
                 result <- cloneImage img
                 fun result
                 return result
+
+withCloneValue img fun = do 
+                result <- cloneImage img
+                r <- fun result
+                return r
 
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 

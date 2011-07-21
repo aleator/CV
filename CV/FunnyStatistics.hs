@@ -27,5 +27,5 @@ kurtosis s i = IM.div (nthCM s 4 i) (stdDev s i |^4)
 xx s i = IM.div (nthCM s 6 i) (stdDev s i |^6)
                                   -}
 
-pearsonSkewness1 s image = IM.div (blur s image #- unsafeImageTo32F (median s (unsafeImageTo32F image))) 
+pearsonSkewness1 s image = IM.div (blur s image #- unsafeImageTo32F (median s (unsafeImageTo8Bit image))) 
                                   (stdDev s image)

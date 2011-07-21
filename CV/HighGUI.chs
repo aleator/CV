@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables#-}
 #include "cvWrapLEO.h"
 module CV.HighGUI where
 import Foreign.C.Types
@@ -11,7 +11,6 @@ import C2HSTools
 import CV.Image
 {#import CV.Image#}
 import CV.ImageOp
-import Control.Concurrent
 
 -- Functions for easy operation
 
@@ -31,9 +30,16 @@ makeWindow name = mkWin name 1
 destroyWindow n = withCString n $ \name -> do
                 {#call cvDestroyWindow#} name
 
+foreign import ccall "wrapper"
+  trackbarCallback :: (CInt -> IO ()) -> IO (FunPtr (CInt -> IO ()))
 
-{#fun cvShowImage as showImage 
-    {`String',withGenImage* `Image' } -> `()' #}
-
+mkTrackbar mx initial name window callback = do
+        cb <- trackbarCallback callback
+        withCString name $ \cname ->
+         withCString window $ \cwindow ->
+          {#call cvCreateTrackbar#} cname cwindow nullPtr (fromIntegral mx) cb
+    
 waitKey delay = {#call cvWaitKey#} delay
 
+{#fun cvShowImage as showImage
+ {`String', withGenImage* `Image c d'} -> `()'#}

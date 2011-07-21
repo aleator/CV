@@ -11,6 +11,9 @@
 //@-node:aleator.20050908100314.1:Includes
 //@+node:aleator.20050908100314.2:Wrappers
 
+#define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
+#define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
+
 size_t images;
 
 void incrImageC(void)
@@ -266,6 +269,7 @@ void wrapSet32F2D(CvArr *arr, int x, int y, double value)
  cvSet2D(arr,x,y,cvRealScalar(value)); 
 }
 
+
 double wrapGet32F2D(CvArr *arr, int x, int y)
 { 
  CvScalar r;
@@ -278,6 +282,11 @@ double wrapGet32F2DC(CvArr *arr, int x, int y,int c)
  CvScalar r;
  r = cvGet2D(arr,x,y); 
  return r.val[c];
+}
+
+uint8_t wrapGet8U2DC(IplImage *arr, int x, int y,int c)
+{ 
+ return UGETC(arr,c,y,x);
 }
 
 
@@ -397,7 +406,6 @@ void blitImg(IplImage *a, IplImage *b,int offset_x, int offset_y)
  cvResetImageROI(a);
  printf("Done!\n"); fflush(stdout);
 }
-#define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
 
 IplImage* makeEvenDown(IplImage *src)
 {
@@ -764,6 +772,7 @@ void get_histogram(IplImage *img,IplImage *mask
  return;
 }
 
+
 double getHistValue(CvHistogram *h,int bin)
 {
  return *cvGetHistValue_1D(h,bin);
@@ -863,6 +872,18 @@ void calculateAtan(IplImage *src, IplImage *dst)
           cvSet2D(dst,j,i,cvScalarAll(atan(r)));
     }
 }
+
+void calculateAtan2(IplImage *src1,IplImage *src2, IplImage *dst)
+{
+  CvSize imageSize = cvGetSize(dst);
+  for(int i=0; i<imageSize.width; ++i)
+    for(int j=0; j<imageSize.height; ++j) {
+          double a = FGET(src1,j,i);
+          double b = FGET(src2,j,i);
+          FGET(dst,j,i) = atan2(a,b);
+    }
+}
+
 //@nonl
 //@-node:aleator.20070906153003:Trigonometric operations
 //@+node:aleator.20051109111547:Pixel accessors
@@ -1806,6 +1827,27 @@ IplImage *acquireImageSlowF(int w, int h, float *d)
    for (j=0; j<w; j++) { 
          //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
          FGET(img,j,i) = d[j*h+i]; 
+         }
+    }
+ return img;
+}
+
+#define BLUE = 0
+#define GREEN = 1
+#define RED = 2
+
+
+
+IplImage *acquireImageSlow8URGB(int w, int h, uint8_t *d)
+{
+ IplImage *img;
+ int i,j;
+ img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,3);
+ for (i=0; i<h; i++) {
+   for (j=0; j<w; j++) { 
+         UGETC(img,0,j,i) = *d; d++; 
+         UGETC(img,1,j,i) = *d; d++; 
+         UGETC(img,2,j,i) = *d; d++; 
          }
     }
  return img;

@@ -83,6 +83,14 @@ atan i = unsafePerformIO $ do
                      withImage res $ \r -> do
                       {#call calculateAtan#} s r
                       return res
+
+atan2 a b = unsafePerformIO $ do
+                    res <- create (getSize a)
+                    withImage a $ \c_a -> 
+                     withImage b $ \c_b -> 
+                      withImage res $ \c_res -> do
+                       {#call calculateAtan2#} c_a c_b c_res 
+                       return res
           
 
 -- Operation that subtracts image mean from image

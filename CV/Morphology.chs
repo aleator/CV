@@ -44,18 +44,18 @@ geodesic :: Image GrayScale D32 -> ImageOperation GrayScale D32 -> ImageOperatio
 geodesic mask op = op #> IM.limitToOp mask
 
 -- | Perform a black tophat filtering of size
-blackTopHat size i = unsafePerformIO $ do
+blackTopHat size i =
                   let se = structuringElement 
                         (size,size) (size `div` 2, size `div` 2) RectShape
-                  x <- runImageOperation i (closeOp se)
-                  return $ x `IM.sub` i
+                      x  = unsafeOperate (closeOp se) i
+                  in x `IM.sub` i
 
 -- | Perform a white tophat filtering of size
-whiteTopHat size i = unsafePerformIO $ do
+whiteTopHat size i =
                   let se = structuringElement 
                         (size,size) (size `div` 2, size `div` 2) RectShape
-                  x <- runImageOperation i (openOp se)
-                  return $ i `IM.sub` x
+                      x  = unsafeOperate (openOp se) i
+                  in i `IM.sub` x
 
 basicSE = structuringElement (3,3) (1,1) RectShape
 bigSE = structuringElement (9,9) (4,4) RectShape

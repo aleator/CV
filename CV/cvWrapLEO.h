@@ -42,6 +42,7 @@ IplImage* ensure32F(const IplImage *src);
 
 void wrapSet32F2D(CvArr *arr, int x, int y, double value);
 double wrapGet32F2D(CvArr *arr, int x, int y);
+uint8_t wrapGet8U2DC(IplImage *arr, int x, int y,int c);
 
 void wrapDrawCircle(CvArr *img, int x, int y, int radius, float r,float g,float b, int thickness);
 
@@ -61,6 +62,11 @@ void get_histogram(IplImage *img,IplImage *mask
                  ,float a, float b,int isCumulative
                  ,int binCount
                  ,double *values);
+
+//void get_weighted_histogram(IplImage *img,IplImage *mask);
+//                 ,float a, float b
+//                 ,int binCount
+//                 ,double *values);
 
 IplImage* getSubImage(IplImage *img, int sx,int sy,int w,int h);
 int getImageHeight(IplImage *img);
@@ -187,6 +193,7 @@ void wrapDrawRectangle(CvArr *img, int x1, int y1,
                        int thickness);
 
 void calculateAtan(IplImage *src, IplImage *dst);
+void calculateAtan2(IplImage *src1,IplImage *src2, IplImage *dst);
 
 
 // Contours

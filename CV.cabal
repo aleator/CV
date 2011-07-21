@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.0.2
+Version:             0.3.1.2
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -28,6 +28,7 @@ Extra-Source-Files:
                      examples/*.hs
                      examples/shapes/*.png
                      examples/shapePhoto.jpg
+                     examples/fuseTest*.png
                      examples/smallLena.jpg
                      examples/elaine.jpg
 
@@ -50,7 +51,7 @@ Library
                        CV.TemplateMatching, CV.Transforms, CV.Conversions,
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline,  CV.Gabor,
-                       CV.ConnectedComponents
+                       CV.ConnectedComponents, CV.HighGUI
     Other-modules:     C2HSTools, C2HS
 
 source-repository head
