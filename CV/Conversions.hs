@@ -33,9 +33,8 @@ import Foreign.Ptr
 import Foreign.Storable.Complex
 import System.IO.Unsafe
 
-unsafe8UC3FromPtr :: (Int,Int) -> Ptr Word8 -> Image RGB D8
-unsafe8UC3FromPtr (w,h) ptr = S $ unsafePerformIO . creatingBareImage 
-                                                  $ acquireImageSlow8URGB' w h ptr
+unsafe8UC3FromPtr :: (Int,Int) -> Ptr Word8 -> IO (Image RGB D8)
+unsafe8UC3FromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8URGB' w h ptr)
 
 -- |Copy the contents of a CArray into CV.Image type.
 copyCArrayToImage :: CArray (Int,Int) Double -> Image GrayScale D32
