@@ -1853,6 +1853,21 @@ IplImage *acquireImageSlow8URGB(int w, int h, uint8_t *d)
  return img;
 }
 
+IplImage *acquireImageSlow8UBGR(int w, int h, uint8_t *d)
+{
+ IplImage *img;
+ int i,j;
+ img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,3);
+ for (i=0; i<h; i++) {
+   for (j=0; j<w; j++) { 
+         UGETC(img,2,j,i) = *d; d++; 
+         UGETC(img,1,j,i) = *d; d++; 
+         UGETC(img,0,j,i) = *d; d++; 
+         }
+    }
+ return img;
+}
+
 IplImage *acquireImageSlowComplex(int w, int h, complex double *d)
 {
  IplImage *img;
