@@ -7,7 +7,9 @@ import System.Mem
 
 import Foreign.C.Types
 import Foreign.C.String
-import Foreign.ForeignPtr
+import Foreign.Marshal.Utils
+import Foreign.ForeignPtr hiding (newForeignPtr)
+import Foreign.Concurrent 
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
@@ -58,7 +60,9 @@ withGenBareImage = withUniPtr withBareImage
 
 {#pointer *IplImage as BareImage foreign newtype#}
 
-foreign import ccall "& wrapReleaseImage" releaseImage :: FinalizerPtr BareImage
+freeBareImage ptr = with ptr {#call cvReleaseImage#}
+
+--foreign import ccall "& wrapReleaseImage" releaseImage :: FinalizerPtr BareImage
 
 instance NFData (Image a b) where
     rnf a@(S (BareImage fptr)) = (unsafeForeignPtrToPtr) fptr `seq` a `seq` ()-- This might also need peek?
@@ -67,13 +71,13 @@ instance NFData (Image a b) where
 creatingImage fun = do
               iptr <- fun
 --              {#call incrImageC#} -- Uncomment this line to get statistics of number of images allocated by ghc
-              fptr <- newForeignPtr releaseImage iptr
+              fptr <- newForeignPtr iptr (freeBareImage iptr) 
               return . S . BareImage $ fptr
 
 creatingBareImage fun = do
               iptr <- fun
 --              {#call incrImageC#} -- Uncomment this line to get statistics of number of images allocated by ghc
-              fptr <- newForeignPtr releaseImage iptr
+              fptr <- newForeignPtr iptr (freeBareImage iptr)
               return . BareImage $ fptr
 
 unImage (S (BareImage fptr)) = fptr
