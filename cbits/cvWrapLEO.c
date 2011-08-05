@@ -2295,6 +2295,19 @@ CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
    return res;
  }
 
+int wrapFindChessBoardCorners(const void* image, int pw, int ph, CvPoint2D32f* corners, int* cornerCount, int flags)
+{
+ CvSize s = {pw,ph};
+ //for (int i=0; i<pw*ph; i++) {corners[i].x=i; corners[i].y=i+10;}
+ cvFindChessboardCorners(image,s,corners,cornerCount,flags);
+}
+
+int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners, int cornerCount, int wasFound)
+{
+ CvSize s = {pw,ph};
+ cvDrawChessboardCorners(image,s,corners,cornerCount,wasFound);
+}
+
 //@-node:aleator.20051220091717:Matrix multiplication
 //@-all
 //@-node:aleator.20050908100314:@thin cvWrapLEO.c

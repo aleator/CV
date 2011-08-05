@@ -276,6 +276,9 @@ double wrapGet32F2DC(CvArr *arr, int x, int y,int c);
 void maximal_covering_circle(int ox,int oy, double or, IplImage *distmap
                             ,int *max_x, int *max_y, double *max_r);
 
+int wrapFindChessBoardCorners(const void* image, int pw, int ph, CvPoint2D32f* corners, int* cornerCount, int flags);
+
+int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners, int cornerCount, int wasFound);
 
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
