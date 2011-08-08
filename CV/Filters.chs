@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, TypeFamilies#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, FlexibleInstances#-}
 #include "cvWrapLEO.h"
 -- | This module is a collection of various image filters
 module CV.Filters(gaussian,gaussianOp
@@ -116,8 +116,19 @@ bilateral colorS spaceS img = unsafePerformIO $
 
 
 -- | Perform median filtering on an eight bit image.
-median :: (Int,Int) -> Image GrayScale D8 -> Image GrayScale D8
-median (w,h) img 
+-- TODO: The type is not exactly correct
+
+class HasMedianFiltering a where
+    median :: (Int,Int) -> a -> a
+
+instance HasMedianFiltering (Image GrayScale D8) where
+    median = median'
+
+instance HasMedianFiltering (Image RGB D8) where
+    median = median'
+
+median' :: (Int,Int) -> Image c D8 -> Image c D8
+median' (w,h) img 
   | maskIsOk (w,h) = unsafePerformIO $ do
                     clone2 <- cloneImage img
                     withGenImage img $ \c1 -> 
