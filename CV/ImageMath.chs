@@ -76,6 +76,7 @@ max = mkBinaryImageOp {#call cvMax#}
 
 absDiff = mkBinaryImageOp {#call cvAbsDiff#}
 
+atan :: Image GrayScale D32 -> Image GrayScale D32
 atan i = unsafePerformIO $ do
                     let (w,h) = getSize i
                     res <- create (w,h) 

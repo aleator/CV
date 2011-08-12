@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables #-}
 #include "cvWrapLEO.h"
 module CV.Image where
 
@@ -24,6 +24,7 @@ import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
+import Control.Monad
 
 
 
@@ -165,16 +166,38 @@ rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
 
 class GetPixel a where
     type P a :: *
-    getPixel   :: (Integral i) => (i,i) -> a -> P a
+    getPixel   :: (Int,Int) -> a -> P a
 
+-- #define FGET(img,x,y) (((float *)((img)->imageData + (y)*(img)->widthStep))[(x)])
 instance GetPixel (Image GrayScale D32) where
     type P (Image GrayScale D32) = D32 
-    getPixel (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
-             withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Float))):: Ptr Float)
 
-instance  GetPixel (Image RGB D32) where
+{-#INLINE getPixelOld#-}
+getPixelOld (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
+         withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
+
+-- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
+instance GetPixel (Image RGB D32) where
     type P (Image RGB D32) = (D32,D32,D32) 
-    getPixel (fromIntegral -> x, fromIntegral -> y) image 
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
+
+getPixelOldRGB (fromIntegral -> x, fromIntegral -> y) image 
         = unsafePerformIO $ do 
                      withGenImage image $ \img -> do
                               r <- {#call wrapGet32F2DC#} img y x 0
@@ -182,15 +205,35 @@ instance  GetPixel (Image RGB D32) where
                               b <- {#call wrapGet32F2DC#} img y x 2
                               return (realToFrac r,realToFrac g, realToFrac b)
 
+-- | Perform (a destructive) inplace map of the image. This should be wrapped inside 
+-- withClone or an image operation 
+mapImageInplace :: (P (Image GrayScale D32) -> P (Image GrayScale D32)) 
+            -> Image GrayScale D32 
+            -> IO ()
+mapImageInplace f image = withGenImage image $ \c_i -> do
+             d <- {#get IplImage->imageData#} c_i
+             s <- {#get IplImage->widthStep#} c_i
+             let (w,h) = getSize image
+                 cs = fromIntegral s
+                 fs = sizeOf (undefined :: Float)
+             forM_ [(x,y) | x<-[0..w-1], y <- [0..h-1]] $ \(x,y) -> do
+                   v <- peek (castPtr (d `plusPtr` (y*cs+x*fs))) 
+                   poke (castPtr (d `plusPtr` (y*cs+x*fs))) (f v)
+             
+
 instance  GetPixel (Image RGB D8) where
     type P (Image RGB D8) = (D8,D8,D8) 
-    getPixel (fromIntegral -> x, fromIntegral -> y) image 
-        = unsafePerformIO $ do 
-                     withGenImage image $ \img -> do
-                              r <- {#call wrapGet8U2DC#} img y x 0
-                              g <- {#call wrapGet8U2DC#} img y x 1
-                              b <- {#call wrapGet8U2DC#} img y x 2
-                              return (fromIntegral r,fromIntegral g, fromIntegral b)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: D8)
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
 
 
 convertTo :: CInt -> CInt -> BareImage -> BareImage
@@ -410,7 +453,8 @@ withROI pos size image op = unsafePerformIO $ do
                         resetROI image
                         return x
 
--- Manipulating image pixels
+
+-- | Manipulate image pixels. This is slow, ugly and should be avoided
 --setPixel :: (CInt,CInt) -> CDouble -> Image c d -> IO ()
 setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
 setPixel (x,y) v image = withGenImage image $ \img ->
