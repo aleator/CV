@@ -456,9 +456,19 @@ withROI pos size image op = unsafePerformIO $ do
 
 -- | Manipulate image pixels. This is slow, ugly and should be avoided
 --setPixel :: (CInt,CInt) -> CDouble -> Image c d -> IO ()
-setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
-setPixel (x,y) v image = withGenImage image $ \img ->
+{-#INLINE setPixelOld#-}
+setPixelOld :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
+setPixelOld (x,y) v image = withGenImage image $ \img ->
                           {#call wrapSet32F2D#} img (fromIntegral y) (fromIntegral x) (realToFrac v)
+
+{-#INLINE setPixel#-}
+setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
+setPixel (x,y) v image = withGenImage image $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         poke (castPtr (d`plusPtr` (y*(fromIntegral s) 
+                                              + x*sizeOf (0::Float))):: Ptr Float)
+                                              v
 
 
 getAllPixels image =  [getPixel (i,j) image 
