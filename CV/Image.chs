@@ -470,6 +470,15 @@ setPixel (x,y) v image = withGenImage image $ \c_i -> do
                                               + x*sizeOf (0::Float))):: Ptr Float)
                                               v
 
+{-#INLINE setPixel8U#-}
+setPixel8U :: (Int,Int) -> Word8 -> Image GrayScale D8 -> IO ()
+setPixel8U (x,y) v image = withGenImage image $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         poke (castPtr (d`plusPtr` (y*(fromIntegral s) 
+                                              + x*sizeOf (0::Word8))):: Ptr Word8)
+                                              v
+
 
 getAllPixels image =  [getPixel (i,j) image 
                       | i <- [0..width-1 ]

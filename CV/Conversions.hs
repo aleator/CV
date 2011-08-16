@@ -4,6 +4,7 @@
 module CV.Conversions (
      -- Arrays of Double
      copyCArrayToImage
+    ,copy8UCArrayToImage
     ,copyImageToCArray
      -- Arrays of Float
     ,copyFCArrayToImage
@@ -40,6 +41,13 @@ unsafe8UC_RGBFromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8U
 unsafe8UC_BGRFromPtr :: (Int,Int) -> Ptr Word8 -> IO (Image RGB D8)
 unsafe8UC_BGRFromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8UBGR' w h ptr)
 
+-- |Copy the contents of a CArray into CV.Image type.
+copy8UCArrayToImage :: CArray (Int,Int) Word8 -> Image GrayScale D8
+copy8UCArrayToImage carr = S $ unsafePerformIO $
+                          creatingBareImage (withCArray carr (acquireImageSlow8U' w h))
+    where
+     ((sx,sy),(ex,ey)) = bounds carr
+     (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
 -- |Copy the contents of a CArray into CV.Image type.
 copyCArrayToImage :: CArray (Int,Int) Double -> Image GrayScale D32
 copyCArrayToImage carr = S $ unsafePerformIO $
@@ -118,6 +126,9 @@ foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow8URGB"
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow8UBGR"
   acquireImageSlow8UBGR' :: (Int -> (Int -> ((Ptr Word8) -> (IO (Ptr (BareImage))))))
+
+foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow8U"
+  acquireImageSlow8U' :: (Int -> (Int -> ((Ptr Word8) -> (IO (Ptr (BareImage))))))
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowComplex"
   acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (Complex Double)) -> (IO (Ptr (BareImage))))))

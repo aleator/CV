@@ -1838,6 +1838,18 @@ IplImage *acquireImageSlowF(int w, int h, float *d)
 #define RED = 2
 
 
+IplImage *acquireImageSlow8U(int w, int h, uint8_t *d)
+{
+ IplImage *img;
+ int i,j;
+ img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,1);
+ for (i=0; i<h; i++) {
+   for (j=0; j<w; j++) { 
+         UGETC(img,0,j,i) = *d; d++; 
+         }
+    }
+ return img;
+}
 
 IplImage *acquireImageSlow8URGB(int w, int h, uint8_t *d)
 {
