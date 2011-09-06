@@ -1,8 +1,9 @@
 {-#LANGUAGE ParallelListComp#-}
--- | This module provides wrappers for CvMat type.
+-- | This module provides wrappers for CvMat type. This is still preliminary as the type of the
+--   matrix isn't coded in the haskell type.
 module CV.Matrix 
     (
-    Matrix,fromList,toList,get,put
+    Matrix, emptyMatrix ,fromList,toList,get,put,withMatPtr
     )where
 
 {-#OPTIONS_GHC -fwarn-unused-imports#-}
@@ -46,12 +47,16 @@ instance Show Matrix where
 
 matrixFinalizer ptr = with ptr c'cvReleaseMat
 
-emptyMatrix r c = creatingMat (c'cvCreateMat r c c'CV_32FC1) 
+emptyMatrix :: (Int, Int) -> Matrix
+emptyMatrix (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC1) 
+
+withMatPtr :: Matrix -> (Ptr C'CvMat -> IO a) -> IO a
+withMatPtr (Matrix m) op = withForeignPtr m op 
 
 -- | Convert a list of floats into Matrix
 fromList :: (Int,Int) -> [Float] -> Matrix
 fromList (w,h) lst = unsafePerformIO $ do
-                Matrix e <- emptyMatrix w h
+                let Matrix e = emptyMatrix (w,h)
                 withForeignPtr e $ \mat -> do
                          mat' <- peek mat
                          let d = c'CvMat'data'ptr mat'
