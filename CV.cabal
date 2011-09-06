@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.2.0
+Version:             0.3.2.1
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -49,7 +49,8 @@ Library
     Build-Depends:     haskell98, base >= 3 && < 5, parallel > 1.1, unix > 2.3, array >= 0.2.0.0,
                        mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1, 
                        containers >= 0.2, JYU-Utils >= 0.1 && < 0.2,
-                       storable-complex, binary >= 0.5, deepseq >= 1.1
+                       storable-complex, binary >= 0.5, deepseq >= 1.1,
+                       bindings-DSL >= 1.0.14 && < 1.1
     Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters, 
                        CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
                        CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
@@ -57,8 +58,8 @@ Library
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline,  CV.Gabor,
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration
-                       CV.Pixelwise
-    Other-modules:     C2HSTools, C2HS
+                       CV.Pixelwise, CV.Matrix
+    Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix
 
 source-repository head
   type:     git
