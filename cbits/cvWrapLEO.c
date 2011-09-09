@@ -2321,6 +2321,10 @@ int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners
  cvDrawChessboardCorners(image,s,corners,cornerCount,wasFound);
 }
 
+double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints, const CvMat* pointCounts, CvSize *imageSize, CvMat* cameraMatrix, CvMat* distCoeffs, CvMat* rvecs, CvMat* tvecs, int flags)
+{
+return cvCalibrateCamera2(objectPoints, imagePoints, pointCounts, *imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags);
+}
 //@-node:aleator.20051220091717:Matrix multiplication
 //@-all
 //@-node:aleator.20050908100314:@thin cvWrapLEO.c

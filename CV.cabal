@@ -59,7 +59,7 @@ Library
                        CV.MultiresolutionSpline,  CV.Gabor,
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration
                        CV.Pixelwise, CV.Matrix
-    Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix
+    Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix, CV.Bindings.Calibrate
 
 source-repository head
   type:     git

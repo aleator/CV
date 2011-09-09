@@ -2,7 +2,7 @@
 #include "cvWrapLEO.h"
 -- | This module is for camera calibration using a chessboard rig.
 
-module CV.Calibration (findChessboardCorners, drawChessboardCorners, defaultFlags, FindFlags(..)) where
+module CV.Calibration (findChessboardCorners, drawChessboardCorners, defaultFlags, FindFlags(..), calibrateCamera2) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
 import Foreign.C.Types
 import Foreign.C.String
@@ -17,6 +17,10 @@ import CV.Image
 import C2HSTools
 import Utils.Point
 import Control.Applicative
+
+import CV.Matrix
+import CV.Bindings.Calibrate
+
 {#import CV.Image#}
 
 #c
@@ -80,4 +84,37 @@ instance Storable CvPoint where
   poke p (CvPt (hx,hy)) = do
     {#set CvPoint2D32f.x #} p (hx)
     {#set CvPoint2D32f.y #} p (hy)
+
+--calibrateCamera2 :: [[((Float,Float,Float),(Float,Float))]] -> (Int,Int) -> IO Double
+calibrateCamera2 views (w,h) = do
+    let 
+        pointCounts :: Matrix Int
+        pointCounts  = fromList (1,length views) (map (length) views)
+        m = length views
+        totalPts = length (concat views)
+        objectPoints :: Matrix Float
+        objectPoints = fromList (3,totalPts) $ concat [[x,y,z] | ((x,y,z),_) <- concat views]
+        imagePoints :: Matrix Float
+        imagePoints  = fromList (2,totalPts) $ concat [[x,y]   | (_,(x,y))   <- concat views]
+        flags = 0 
+        size = C'CvSize (fromIntegral w) (fromIntegral h)
+        cameraMatrix,distCoeffs,rvecs,tvecs :: Matrix Float
+        cameraMatrix = emptyMatrix (3,3)
+        distCoeffs   = emptyMatrix (1,8)
+        rvecs        = emptyMatrix (m,3)
+        tvecs        = emptyMatrix (m,3)
+
+    with size $ \c_size ->
+     withMatPtr objectPoints $ \c_objectPoints ->
+     withMatPtr imagePoints $ \c_imagePoints ->
+     withMatPtr pointCounts $ \c_pointCounts ->
+     withMatPtr cameraMatrix $ \c_cameraMatrix ->
+     withMatPtr distCoeffs $ \c_distCoeffs ->
+     withMatPtr rvecs $ \c_rvecs ->
+     withMatPtr tvecs $ \c_tvecs ->
+      c'wrapCalibrateCamera2 c_objectPoints c_imagePoints c_pointCounts c_size 
+                             c_cameraMatrix c_distCoeffs c_rvecs c_tvecs flags
+
+    -- print ( objectPoints, imagePoints, pointCounts,cameraMatrix, distCoeffs, rvecs, tvecs )
+    return (cameraMatrix, distCoeffs, rvecs, tvecs)
 

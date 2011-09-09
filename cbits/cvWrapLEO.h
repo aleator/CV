@@ -280,6 +280,8 @@ int wrapFindChessBoardCorners(const void* image, int pw, int ph, CvPoint2D32f* c
 
 int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners, int cornerCount, int wasFound);
 
+double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints, const CvMat* pointCounts, CvSize *imageSize, CvMat* cameraMatrix, CvMat* distCoeffs, CvMat* rvecs, CvMat* tvecs, int flags);
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo
