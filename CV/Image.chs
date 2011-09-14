@@ -139,17 +139,20 @@ loadColorImage n = do
                               bw <- imageTo32F i
                               return . Just . S  $ bw
 
-class IntSized a where
-    getSize :: a -> (Int,Int)
+class Sized a where
+    type Size a :: *
+    getSize :: a -> Size a
 
-instance IntSized BareImage where
+instance Sized BareImage where
+    type Size BareImage = (Int,Int)
    -- getSize :: (Integral a, Integral b) => Image c d -> (a,b)
     getSize image = unsafePerformIO $ withBareImage image $ \i -> do
                  w <- {#call getImageWidth#} i
                  h <- {#call getImageHeight#} i
                  return (fromIntegral w,fromIntegral h)
 
-instance IntSized (Image c d) where
+instance Sized (Image c d) where
+    type Size (Image c d) = (Int,Int)
     getSize = getSize . unS
 
 
@@ -296,7 +299,7 @@ saveImage filename image = do
 							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
 
 
-getArea :: (IntSized a) => a -> Int
+getArea :: (Sized a,Num b, Size a ~ (b,b)) => a -> b
 getArea = uncurry (*).getSize
 
 getRegion :: (Int,Int) -> (Int,Int) -> Image c d -> Image c d

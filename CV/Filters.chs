@@ -173,7 +173,8 @@ verticalAverage image = unsafePerformIO $ do
 --   above and left of it. Such images are used for significantly accelerating the calculation of
 --   area averages. 
 newtype IntegralImage = IntegralImage (Image GrayScale D64)
-instance IntSized IntegralImage where
+instance Sized IntegralImage where
+    type Size IntegralImage = (Int,Int)
     getSize (IntegralImage i) = getSize i
 
 instance GetPixel IntegralImage where

@@ -2,7 +2,7 @@
 #include "cvWrapLEO.h"
 -- | This module is for camera calibration using a chessboard rig.
 
-module CV.Calibration (findChessboardCorners, drawChessboardCorners, defaultFlags, FindFlags(..), calibrateCamera2) where
+module CV.Calibration (findChessboardCorners,refineChessboardCorners, drawChessboardCorners, defaultFlags, FindFlags(..), calibrateCamera2) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
 import Foreign.C.Types
 import Foreign.C.String
@@ -40,7 +40,7 @@ flagsToNum fs = foldl (.|.) 0 $ map (fromIntegral . fromEnum) fs
 defaultFlags = [AdaptiveThresh]
 
 -- | Find the inner corners of a chessboard in a given image. 
-findChessboardCorners :: CV.Image.Image RGB D8 -> (Int, Int) -> [FindFlags] -> [(Double,Double)]
+findChessboardCorners :: CV.Image.Image RGB D8 -> (Int, Int) -> [FindFlags] -> [(Float,Float)]
 findChessboardCorners image (w,h) flags =
    unsafePerformIO $ 
     with 1 $ \(c_corner_count::Ptr CInt) -> 
@@ -54,9 +54,26 @@ findChessboardCorners image (w,h) flags =
         return (map cvPt2Pt arr) 
   where len = w*h
 
+refineChessboardCorners :: Image GrayScale D8 -> [(Float,Float)] -> (Int,Int) -> (Int,Int) 
+                                        -> [(Float,Float)]
+refineChessboardCorners img pts (winW,winH) (zeroW,zeroH) = unsafePerformIO $ do
+    with 1 $ \(c_corner_count::Ptr CInt) -> 
+      withImage img $ \c_img ->
+      withArray (map mkPt pts) $ \(c_corners :: Ptr C'CvPoint2D32f ) -> do 
+        c'wrapFindCornerSubPix c_img c_corners (length pts) winW winH zeroW zeroH tType maxIter epsilon 
+        map fromPt `fmap` peekArray (length pts) c_corners
+ where
+    mkPt (x,y) = C'CvPoint2D32f x y
+    fromPt (C'CvPoint2D32f x y) = (x,y)
+    tType = c'CV_TERMCRIT_ITER
+    maxIter = 100
+    epsilon = 0.01
+
+    
+
 -- Draw the found chessboard corners to an image
 drawChessboardCorners
-  :: CV.Image.Image RGB D8 -> (Int, Int) -> [(Double,Double)] -> CV.Image.Image RGB D8
+  :: CV.Image.Image RGB D8 -> (Int, Int) -> [(Float,Float)] -> CV.Image.Image RGB D8
 drawChessboardCorners image (w,h) corners =
    unsafePerformIO $ 
     withClone image $ \clone -> 
@@ -96,7 +113,15 @@ calibrateCamera2 views (w,h) = do
         objectPoints = fromList (3,totalPts) $ concat [[x,y,z] | ((x,y,z),_) <- concat views]
         imagePoints :: Matrix Float
         imagePoints  = fromList (2,totalPts) $ concat [[x,y]   | (_,(x,y))   <- concat views]
-        flags = 0 
+        flags = c'CV_CALIB_FIX_K1
+                .|.  c'CV_CALIB_FIX_K1
+                .|.  c'CV_CALIB_FIX_K2
+                .|.  c'CV_CALIB_FIX_K3
+                .|.  c'CV_CALIB_FIX_K4
+                .|.  c'CV_CALIB_FIX_K5
+                .|.  c'CV_CALIB_FIX_K6
+                .|.  c'CV_CALIB_ZERO_TANGENT_DIST
+
         size = C'CvSize (fromIntegral w) (fromIntegral h)
         cameraMatrix,distCoeffs,rvecs,tvecs :: Matrix Float
         cameraMatrix = emptyMatrix (3,3)
@@ -104,7 +129,7 @@ calibrateCamera2 views (w,h) = do
         rvecs        = emptyMatrix (m,3)
         tvecs        = emptyMatrix (m,3)
 
-    with size $ \c_size ->
+    err <- with size $ \c_size ->
      withMatPtr objectPoints $ \c_objectPoints ->
      withMatPtr imagePoints $ \c_imagePoints ->
      withMatPtr pointCounts $ \c_pointCounts ->
@@ -116,5 +141,5 @@ calibrateCamera2 views (w,h) = do
                              c_cameraMatrix c_distCoeffs c_rvecs c_tvecs flags
 
     -- print ( objectPoints, imagePoints, pointCounts,cameraMatrix, distCoeffs, rvecs, tvecs )
-    return (cameraMatrix, distCoeffs, rvecs, tvecs)
+    return (err, transpose cameraMatrix, toCols distCoeffs, toCols rvecs, toCols tvecs)
 

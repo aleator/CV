@@ -16,7 +16,8 @@ instance GetPixel (Pixelwise x) where
     type P (Pixelwise x) = x
     getPixel p (MkP s e) = e p
 
-instance IntSized (Pixelwise a) where
+instance Sized (Pixelwise a) where
+    type Size (Pixelwise a) = (Int,Int)
     getSize (MkP s _) = s 
 
 instance Functor Pixelwise where
@@ -31,7 +32,7 @@ remap :: (((Int,Int) -> b) -> ((Int,Int) -> x)) -> Pixelwise b -> Pixelwise x
 remap f (MkP s e) = MkP s (f e)
 
 -- | Convert a pixelwise construct into an image.
-fromImage :: (GetPixel b, IntSized b) => b -> Pixelwise (P b)
+fromImage :: (GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
 fromImage i = MkP (getSize i) (flip getPixel $ i)
 
 -- | Convert an image to pixelwise construct.
