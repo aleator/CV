@@ -68,7 +68,7 @@ laplace s i = unsafeOperate (laplaceOp s) i
 --  Works only on 8-bit images
 canny :: Int -> Int -> Int -> Image GrayScale D8 -> Image GrayScale D8
 canny t1 t2 aperture src = unsafePerformIO $ do
-                           withClone src $ \clone -> 
+                           withCloneValue src $ \clone -> 
                             withGenImage src $ \si ->
                              withGenImage clone $ \ci -> do
                                {#call cvCanny#} si ci (fromIntegral t1) 

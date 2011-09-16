@@ -48,8 +48,8 @@ img <## [] = img
 img <## op = unsafeOperate (foldl1 (#>) op) img
 
 
--- runImageOperation :: Image c d -> ImageOperation c d -> IO (Image c d)
-operate (ImgOp op) img = withClone img $ \clone -> 
+operate ::ImageOperation c d -> Image c d -> IO (Image c d)
+operate (ImgOp op) img = withCloneValue img $ \clone -> 
                                     op clone >> return clone
 
 operateOn = flip operate

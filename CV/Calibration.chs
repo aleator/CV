@@ -76,7 +76,7 @@ drawChessboardCorners
   :: CV.Image.Image RGB D8 -> (Int, Int) -> [(Float,Float)] -> CV.Image.Image RGB D8
 drawChessboardCorners image (w,h) corners =
    unsafePerformIO $ 
-    withClone image $ \clone -> 
+    withCloneValue image $ \clone -> 
      withArray (map pt2CvPt corners) $ \(c_corners :: Ptr CvPoint )-> 
       withGenImage clone$ \c_image -> do
         r <- {#call wrapDrawChessBoardCorners#} c_image (fromIntegral w) (fromIntegral h)

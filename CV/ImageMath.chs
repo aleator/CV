@@ -21,7 +21,7 @@ import C2HS
 mkBinaryImageOpIO f = \a -> \b -> 
           withGenImage a $ \ia -> 
           withGenImage b $ \ib ->
-          withClone a    $ \clone ->
+          withCloneValue a    $ \clone ->
           withGenImage clone $ \cl -> do
             f ia ib cl 
             return clone
@@ -29,7 +29,7 @@ mkBinaryImageOpIO f = \a -> \b ->
 mkBinaryImageOp f = \a -> \b -> unsafePerformIO $
           withGenImage a $ \ia -> 
           withGenImage b $ \ib ->
-          withClone a    $ \clone ->
+          withCloneValue a    $ \clone ->
           withGenImage clone $ \cl -> do
             f ia ib cl 
             return clone

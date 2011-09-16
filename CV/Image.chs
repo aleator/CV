@@ -375,11 +375,19 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
 cloneImage img = withGenImage img $ \image ->  
                     creatingImage ({#call cvCloneImage #} image)
 
+withClone
+  :: Image channels depth
+     -> (Image channels depth -> IO ())
+     -> IO (Image channels depth)
 withClone img fun = do 
                 result <- cloneImage img
                 fun result
                 return result
 
+withCloneValue
+  :: Image channels depth
+     -> (Image channels depth -> IO a)
+     -> IO a
 withCloneValue img fun = do 
                 result <- cloneImage img
                 r <- fun result
