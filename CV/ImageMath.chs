@@ -26,6 +26,12 @@ mkBinaryImageOpIO f = \a -> \b ->
             f ia ib cl 
             return clone
  
+mkBinaryImageOp
+  :: (Ptr () -> Ptr () -> Ptr () -> IO a)
+     -> CV.Image.Image c1 d1
+     -> CV.Image.Image c1 d1
+     -> CV.Image.Image c1 d1
+
 mkBinaryImageOp f = \a -> \b -> unsafePerformIO $
           withGenImage a $ \ia -> 
           withGenImage b $ \ib ->

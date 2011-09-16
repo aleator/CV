@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
 #include "cvWrapLEO.h"
 module CV.Image where
 
@@ -393,6 +393,7 @@ withCloneValue img fun = do
                 r <- fun result
                 return r
 
+unsafeImageTo32F :: Image c d -> Image c D32
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image -> 
                 creatingImage 
                  ({#call ensure32F #} image)
@@ -423,7 +424,18 @@ enum ImageDepth {
  
 {#enum ImageDepth {}#}
 
-getImageDepth i = withImage i $ \c_img -> {#get IplImage->depth #} c_img
+deriving instance Show ImageDepth
+
+getImageDepth :: Image c d -> IO ImageDepth
+getImageDepth i = withImage i $ \c_img -> {#get IplImage->depth #} c_img >>= return.toEnum.fromIntegral
+getImageChannels i = withImage i $ \c_img -> {#get IplImage->nChannels #} c_img
+
+getImageInfo x = do
+    let s = getSize x
+    d <- getImageDepth x
+    c <- getImageChannels x
+    return (s,d,c)
+
 
 -- Manipulating regions of interest:
 setROI (fromIntegral -> x,fromIntegral -> y) 
