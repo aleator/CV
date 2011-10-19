@@ -119,6 +119,24 @@ composeMultichannelImage (c1)
 --                              bw <- imageTo32F i
 --                              return $ Just bw
 
+class Loadable a where
+    readFromFile :: FilePath -> IO a
+
+
+instance Loadable ((Image GrayScale D32)) where
+    readFromFile fp = do
+        e <- loadImage fp
+        case e of
+         Just i -> return i
+         Nothing -> fail $ "Could not load "++fp
+
+instance Loadable ((Image RGB D32)) where
+    readFromFile fp = do
+        e <- loadColorImage fp
+        case e of
+         Just i -> return i
+         Nothing -> fail $ "Could not load "++fp
+
 loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage n = do
               exists <- fileExist n
