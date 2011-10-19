@@ -26,8 +26,8 @@ main = do
         ,stretchHistogram . toImage $ fmap log . fromImage $ x 
         
         ,stretchHistogram . gaussian (3,3) 
-                          . toImage $ atan2 <$$> fromImage (sobel (1,0) s5 x) 
-                                            <+> fromImage (sobel (0,1) s5 x) 
+                          . toImage $ atan2 <$$> (sobel (1,0) s5 x) 
+                                            <+>  (sobel (0,1) s5 x) 
         ,toImage $ fmap (\x -> if x > 0.5 then 0 else 1) . fromImage $ x
         ,toImage $ fmap (\x -> if x > 0.5 && x < 0.6 then 0 else 1) . fromImage $ x
         ]
