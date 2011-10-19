@@ -44,7 +44,7 @@ countBlobs image = fromIntegral $ unsafePerformIO $ do
      {#call blobCount#} i
 
 -- |Remove all connected components that fall outside of given size range from the image.
-selectSizedComponents :: Double -> CDouble -> Image GrayScale D8 -> Image GrayScale D8
+selectSizedComponents :: Double -> Double -> Image GrayScale D8 -> Image GrayScale D8
 selectSizedComponents minSize maxSize image = unsafePerformIO $ do
     withGenImage image $ \i ->
      creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize))
