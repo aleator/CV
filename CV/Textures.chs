@@ -17,13 +17,14 @@ import C2HSTools
 
 -- | Various simple Local Binary Pattern operators
 
-lbp = broilerPlate ({#call localBinaryPattern#})
+lbp   = broilerPlate256 ({#call localBinaryPattern#})
+lbpRI = broilerPlate' 32 ({#call localBinaryPattern#})
 
-lbp3 = broilerPlate ({#call localBinaryPattern3#})
-lbp5 = broilerPlate ({#call localBinaryPattern5#})
-lbpHorizontal = broilerPlate 
+lbp3 = broilerPlate256 ({#call localBinaryPattern3#})
+lbp5 = broilerPlate256 ({#call localBinaryPattern5#})
+lbpHorizontal = broilerPlate256 
     ({#call localHorizontalBinaryPattern#})
-lbpVertical = broilerPlate 
+lbpVertical = broilerPlate256 
     ({#call localVerticalBinaryPattern#})
 
 -- LBP with weights and adjustable sampling points
@@ -31,16 +32,17 @@ weightedLBP offsetX offsetXY weights image = unsafePerformIO $ do
              withGenImage image $ \img ->
               withGenImage weights $ \ws ->
                   withArray (replicate 256 0) $ \ptrn -> do
-                    {#call weighted_localBinaryPattern#} img (fromIntegral offsetX) (fromIntegral offsetXY) ws ptrn 
+                    {#call weighted_localBinaryPattern#} img 
+                        (fromIntegral offsetX) 
+                        (fromIntegral offsetXY) ws ptrn 
                     p <- peekArray 256 ptrn
                     return p
 
-emptyPattern :: [CInt]
-emptyPattern = replicate 256 0
-broilerPlate op image = unsafePerformIO $ do
+broilerPlate256  = broilerPlate' 256
+broilerPlate' l op image = unsafePerformIO $ do
              withGenImage image $ \img ->
-              withArray emptyPattern $ \ptrn -> do
+              withArray (replicate l 0 :: [CInt]) $ \ptrn -> do
                 (op img ptrn )
-                p <- peekArray 256 ptrn
+                p <- peekArray l ptrn
                 let !maximum = fromIntegral $ sum p
                 return $ map (\x -> fromIntegral x / maximum) p
