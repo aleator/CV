@@ -1624,37 +1624,6 @@ void localBinaryPattern(IplImage *src, int *LBP)
         }
 }
 
-void localBinaryPatternRI(IplImage *src, int *LBP)
-{
-  int i,j;
-  uint8_t pattern = 0;
-  double center = 0;
-  CvSize imageSize = cvGetSize(src);  
-  for(i=1; i<imageSize.width-1; ++i)
-    for(j=1; j<imageSize.height-1; ++j)
-        {
-         center = cvGetReal2D(src,j,i);
-
-         pattern += (blurGet2D(src,i-1,j-1) > center) *1;
-         pattern += (blurGet2D(src,i,j-1)   > center) *2;
-         pattern += (blurGet2D(src,i+1,j-1) > center) *4;
-         
-         pattern += (blurGet2D(src,i-1,j)   > center) *8;
-         pattern += (blurGet2D(src,i+1,j)   > center) *16;
-         
-         pattern += (blurGet2D(src,i-1,j+1) > center) *32;
-         pattern += (blurGet2D(src,i,j+1)   > center) *64;
-         pattern += (blurGet2D(src,i+1,j+1) > center) *128;
-         uint8_t min = 255;
-         for(int shift=0; shift<8; shift++) {
-          min = pattern < min ? pattern : min;
-          pattern = pattern >> 1 | pattern << (7);
-         }
-         assert(pattern <32);
-         LBP[pattern]++;
-         pattern = 0;
-        }
-}
 
 void localBinaryPattern3(IplImage *src, int *LBP)
 {
@@ -1735,6 +1704,7 @@ void weighted_localBinaryPattern(IplImage *src,int offsetX,int offsetXY
          pattern = 0;
         }
 }
+
 
 void localHorizontalBinaryPattern(IplImage *src, int *LBP)
 {
