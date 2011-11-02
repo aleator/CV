@@ -2,7 +2,7 @@
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
 {-#LANGUAGE TypeFamilies#-}
-module CV.Pixelwise (Pixelwise, fromImage, toImage, toImageP, remap, (<$$>),(<+>)) where
+module CV.Pixelwise (Pixelwise(..), fromImage, toImage, toImageP, remap, (<$$>),(<+>)) where
 import Control.Applicative 
 import CV.Image
 import System.IO.Unsafe
