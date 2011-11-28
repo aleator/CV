@@ -216,7 +216,7 @@ average = realToFrac.unsafePerformIO.average'
 
 -- | Sum the pixels in the image. Notice that OpenCV automatically casts the
 --   result to double sum :: Image GrayScale D32 -> D32
-sum :: Image GrayScale a -> Double
+sum :: Image GrayScale D32 -> D32
 sum img = realToFrac $ unsafePerformIO $ withGenImage img $ \image ->
                     {#call wrapSum#} image
 
