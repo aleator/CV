@@ -3,6 +3,7 @@
 --   matrix isn't coded in the haskell type.
 module CV.Matrix 
     (
+    Exists,Exists(..),
     Matrix, emptyMatrix ,fromList,toList,toRows,toCols,get,put,withMatPtr
     , transpose, mxm, rodrigues2
     )where
@@ -72,6 +73,7 @@ instance Sized (Matrix a) where
                          return (fromIntegral $ c'CvMat'rows mat', 
                                 fromIntegral $ c'CvMat'cols mat')
 
+-- | Create an empty matrix of given dimensions
 emptyMatrix :: Exists (Matrix a) => Args (Matrix a) -> Matrix a
 emptyMatrix a = create a
 
