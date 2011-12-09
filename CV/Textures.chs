@@ -1,6 +1,9 @@
 {-#LANGUAGE ForeignFunctionInterface, ParallelListComp#-}
 #include "cvWrapLEO.h"
-module CV.Textures where
+-- |This module provides implementations for basic versions of Local Binary Pattern texture features introduced in
+-- T. Ojala, M. Pietikäinen, and D. Harwood (1994), "Performance evaluation of texture measures with classification
+--  based on Kullback discrimination of distributions", Proceedings of the 12th IAPR International Conference on Pattern Recognition (ICPR 1994).
+module CV.Textures (rotationInvariant,lbp,lbp5,weightedLBP) where
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -33,7 +36,7 @@ rotationInvariantE a =  fromIntegral
 keywords = V.fromList . nub . sort . map normalize $ allWords
 allWords = [minBound .. maxBound]
 
--- Convert an LBP histogram into rotation invariant form
+-- | Convert an LBP histogram into rotation invariant form
 rotationInvariant :: [Double] -> Vector Double
 rotationInvariant es = V.accum (+) (V.replicate 36 0) 
                          [(fromIntegral . rotationInvariantE $ i, e) 
@@ -41,13 +44,16 @@ rotationInvariant es = V.accum (+) (V.replicate 36 0)
                          | e <- es]
             
 
--- | Various simple Local Binary Pattern operators
+-- * Various simple Local Binary Pattern operators
+
+-- | The most basic 3x3 lbp operator
 lbp :: Image GrayScale D32 -> [Double] 
 lbp   = broilerPlate256 ({#call localBinaryPattern#})
 
-lbp3 :: Image GrayScale D32 -> [Double] 
-lbp3 = broilerPlate256 ({#call localBinaryPattern3#})
+-- lbp3 :: Image GrayScale D32 -> [Double] 
+-- lbp3 = broilerPlate256 ({#call localBinaryPattern3#})
 
+-- | The larger radius basic 5x5 lbp operator
 lbp5 :: Image GrayScale D32 -> [Double] 
 lbp5 = broilerPlate256 ({#call localBinaryPattern5#})
 
@@ -59,6 +65,8 @@ lbpVertical :: Image GrayScale D32 -> [Double]
 lbpVertical = broilerPlate256 
     ({#call localVerticalBinaryPattern#})
 
+-- | A variant of LBP which is weighted. This can be used to select only parts of the
+-- image by using binary masks, or to give higher weight for some areas of the image.
 weightedLBP :: (Integral a, Integral a1) =>
      a
      -> a1

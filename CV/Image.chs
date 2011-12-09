@@ -1,6 +1,93 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
 #include "cvWrapLEO.h"
-module CV.Image where
+module CV.Image (
+-- * Basic types 
+ Image(..) 
+, create
+, empty 
+, emptyCopy 
+, emptyCopy' 
+, cloneImage
+, withClone 
+, withCloneValue 
+, CreateImage 
+
+-- * Colour spaces
+, ChannelOf 
+, GrayScale
+, RGB
+, RGBA
+, RGB_Channel 
+, LAB
+, LAB_Channel 
+, D32 
+, D64 
+, D8 
+, Tag 
+, lab 
+, rgba 
+, rgb 
+, composeMultichannelImage 
+
+-- * IO operations
+, Loadable 
+, saveImage 
+, loadColorImage 
+, loadImage 
+
+-- * Pixel level access 
+, GetPixel(..)
+, getAllPixels 
+, getAllPixelsRowMajor 
+, setPixel 
+, setPixel8U 
+, mapImageInplace 
+
+-- * Image information
+, ImageDepth
+, Sized(..)
+, getArea 
+, getChannel
+, getImageChannels 
+, getImageDepth 
+, getImageInfo 
+
+-- * ROI's, COI's and subregions
+, setCOI 
+, setROI 
+, resetROI 
+, getRegion 
+, withIOROI 
+, withROI 
+
+-- * Blitting
+, blendBlit 
+, blit 
+, blitM 
+, subPixelBlit 
+, safeBlit 
+, montage 
+, tileImages 
+
+-- * Conversions
+, rgbToGray 
+, rgbToLab 
+, unsafeImageTo32F 
+, unsafeImageTo8Bit 
+
+-- * Low level access operations
+, BareImage(..)
+, creatingImage 
+, unImage 
+, unS 
+, withGenBareImage 
+, withBareImage 
+, creatingBareImage
+, withGenImage 
+, withImage 
+, ensure32F
+
+) where
 
 import System.Posix.Files
 import System.Mem

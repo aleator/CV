@@ -1,8 +1,31 @@
 {-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 #include "cvWrapLEO.h"
--- | This module is for camera calibration using a chessboard rig.
-
-module CV.Calibration (findChessboardCorners,refineChessboardCorners, drawChessboardCorners, defaultFlags, FindFlags(..), calibrateCamera2) where
+-- | This module exposes opencv functions for camera calibration using a chessboard rig. This module follows opencv quite closely and the best documentation
+--   is probably found there. As quick example however, the following program detects and draws chessboard corners from an image.
+--
+-- @
+-- module Main where
+-- import CV.Image
+-- import CV.Calibration
+-- 
+-- main = do
+--     Just i <- loadColorImage \"chess.png\"
+--     let corners = findChessboardCorners (unsafeImageTo8Bit i) (4,5) (FastCheck:defaultFlags)
+--     let y = drawChessboardCorners (unsafeImageTo8Bit i) (4,5) corners
+--     mapM_ print (corners)
+--     saveImage \"found_chessboard.png\" y
+-- @
+module CV.Calibration 
+    (
+     -- * Finding chessboard calibration rig
+     FindFlags(..)
+    ,defaultFlags
+    ,findChessboardCorners
+    ,refineChessboardCorners
+    -- * Visualization
+    ,drawChessboardCorners
+    -- * Camera calibration
+    ,calibrateCamera2) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
 import Foreign.C.Types
 import Foreign.C.String
@@ -32,11 +55,13 @@ enum FindFlags {
     };
 #endc
 
+-- | Flags for the chessboard corner detector. See opencv documentation for cvFindChessboardCorners.
 {#enum FindFlags {}#}
 
 flagsToNum fs = foldl (.|.) 0 $ map (fromIntegral . fromEnum) fs
 
--- Default flags for finding corners
+-- |Default flags for finding corners
+defaultFlags :: [FindFlags]
 defaultFlags = [AdaptiveThresh]
 
 -- | Find the inner corners of a chessboard in a given image. 
@@ -54,8 +79,8 @@ findChessboardCorners image (w,h) flags =
         return (map cvPt2Pt arr) 
   where len = w*h
 
-refineChessboardCorners :: Image GrayScale D8 -> [(Float,Float)] -> (Int,Int) -> (Int,Int) 
-                                        -> [(Float,Float)]
+-- |Given an estimate of chessboard corners, provide a subpixel estimation of actual corners.
+refineChessboardCorners :: Image GrayScale D8 -> [(Float,Float)] -> (Int,Int) -> (Int,Int) -> [(Float,Float)]
 refineChessboardCorners img pts (winW,winH) (zeroW,zeroH) = unsafePerformIO $ do
     with 1 $ \(c_corner_count::Ptr CInt) -> 
       withImage img $ \c_img ->
@@ -69,11 +94,8 @@ refineChessboardCorners img pts (winW,winH) (zeroW,zeroH) = unsafePerformIO $ do
     maxIter = 100
     epsilon = 0.01
 
-    
-
--- Draw the found chessboard corners to an image
-drawChessboardCorners
-  :: CV.Image.Image RGB D8 -> (Int, Int) -> [(Float,Float)] -> CV.Image.Image RGB D8
+-- | Draw the found chessboard corners to an image
+drawChessboardCorners :: CV.Image.Image RGB D8 -> (Int, Int) -> [(Float,Float)] -> CV.Image.Image RGB D8
 drawChessboardCorners image (w,h) corners =
    unsafePerformIO $ 
     withCloneValue image $ \clone -> 
@@ -102,7 +124,13 @@ instance Storable CvPoint where
     {#set CvPoint2D32f.x #} p (hx)
     {#set CvPoint2D32f.y #} p (hy)
 
---calibrateCamera2 :: [[((Float,Float,Float),(Float,Float))]] -> (Int,Int) -> IO Double
+-- | See opencv function cvCalibrateCamera2. This function takes a list of world-screen coordinate pairs acquired with find-chessboard corners
+--   and attempts to find the camera parameters for the system. It returns the fitting error, the camera matrix, list of distortion co-efficients
+--   and rotation and translation vectors for each coordinate pair. 
+calibrateCamera2 ::
+     [[((Float, Float, Float), (Float, Float))]]
+     -> (Int, Int)
+     -> IO (Double, Matrix Float, [[Float]], [[Float]], [[Float]])
 calibrateCamera2 views (w,h) = do
     let 
         pointCounts :: Matrix Int
