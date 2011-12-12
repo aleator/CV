@@ -30,7 +30,7 @@ module CV.Image (
 , composeMultichannelImage 
 
 -- * IO operations
-, Loadable 
+, Loadable(..) 
 , saveImage 
 , loadColorImage 
 , loadImage 
@@ -224,45 +224,41 @@ instance Loadable ((Image RGB D32)) where
          Just i -> return i
          Nothing -> fail $ "Could not load "++fp
 
+instance Loadable ((Image RGB D8)) where
+    readFromFile fp = do
+        e <- loadColorImage8 fp
+        case e of
+         Just i -> return i
+         Nothing -> fail $ "Could not load "++fp
+
+instance Loadable ((Image GrayScale D8)) where
+    readFromFile fp = do
+        e <- loadImage8 fp
+        case e of
+         Just i -> return i
+         Nothing -> fail $ "Could not load "++fp
+
+
+-- | This function loads and converts image to an arbitrary format. Notice that it is
+--   polymorphic enough to cause run time errors if the declared and actual types of the
+--   images do not match. Use with care.
+unsafeloadUsing x p n = do
+              exists <- fileExist n
+              if not exists then return Nothing
+                            else do
+                              i <- withCString n $ \name ->
+                                     creatingBareImage ({#call cvLoadImage #} name p)
+                              bw <- x i
+                              return . Just . S $ bw
+
 loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
-loadImage n = do
-              exists <- fileExist n
-              if not exists then return Nothing
-                            else do
-                              i <- withCString n $ \name ->
-                                     creatingBareImage ({#call cvLoadImage #} name (0))
-                              bw <- imageTo32F i
-                              return . Just . S $ bw
-
+loadImage = unsafeloadUsing imageTo32F 0
 loadImage8 :: FilePath -> IO (Maybe (Image GrayScale D8))
-loadImage8 n = do
-              exists <- fileExist n
-              if not exists then return Nothing
-                            else do
-                              i <- withCString n $ \name ->
-                                     creatingBareImage ({#call cvLoadImage #} name (0))
-                              bw <- imageTo8Bit i
-                              return . Just . S $ bw
-
+loadImage8 = unsafeloadUsing imageTo8Bit 0
 loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
-loadColorImage n = do
-              exists <- fileExist n
-              if not exists then return Nothing
-                            else do
-                              i <- withCString n $ \name ->
-                                     creatingBareImage ({#call cvLoadImage #} name 1)
-                              bw <- imageTo32F i
-                              return . Just . S  $ bw
-
+loadColorImage = unsafeloadUsing imageTo32F 1
 loadColorImage8 :: FilePath -> IO (Maybe (Image RGB D8))
-loadColorImage8 n = do
-              exists <- fileExist n
-              if not exists then return Nothing
-                            else do
-                              i <- withCString n $ \name ->
-                                     creatingBareImage ({#call cvLoadImage #} name 1)
-                              bw <- imageTo8Bit i
-                              return . Just . S  $ bw
+loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
 class Sized a where
     type Size a :: *
