@@ -17,9 +17,9 @@ module CV.Image (
 , GrayScale
 , RGB
 , RGBA
-, RGB_Channel 
+, RGB_Channel(..) 
 , LAB
-, LAB_Channel 
+, LAB_Channel(..) 
 , D32 
 , D64 
 , D8 

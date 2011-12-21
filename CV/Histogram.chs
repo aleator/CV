@@ -142,17 +142,6 @@ getHistogram bins image = unsafePerformIO $ do
                          cbins = fromIntegral bins
 
 
---getHistgramHS bins image =  calcHistogram bins $ getAllPixels image
---
----- Calculate image histogram from _Floating Point_ Image
---calcHistogram :: Int -> [CDouble] -> HistogramData Int Double
---calcHistogram bins pixels = HGD $ map (\(a,b) -> (realToFrac a, b/l)) $ assocs $ accumArray (+) 0 (0,bins) binned 
---                    where
---                     l = fromIntegral $ length pixels
---                     bin :: CDouble -> (Int,Double)
---                     bin d = (floor $ (fromIntegral bins) * d,1.0)
---                     binned = map bin pixels
---
 ---- Low level interaface:
 
 {#pointer *CvHistogram as Histogram foreign newtype#}

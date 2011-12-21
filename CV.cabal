@@ -57,7 +57,7 @@ Library
     cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
      
-    Build-Depends:     haskell98, base >= 3 && < 5, parallel > 1.1, unix > 2.3, array >= 0.2.0.0,
+    Build-Depends:     haskell98, base >= 3 && < 5, parallel > 3.1, unix > 2.3, array >= 0.2.0.0,
                        mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1, 
                        containers >= 0.2, 
                        storable-complex, binary >= 0.5, deepseq >= 1.1,
