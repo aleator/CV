@@ -37,12 +37,19 @@ Extra-Source-Files:
                      examples/smallLena.jpg
                      examples/elaine.jpg
 
+Flag opencv23
+  Description: Compatability for opencv 2.3.1
+  Default:     False
+
 Library
     Build-Tools:       c2hs >= 0.16.0
     Include-dirs:      cbits/  
     Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, cbits/cvWrapLEO.h
     c-sources:         cbits/cvWrapLEO.c
     install-includes:  cbits/cvWrapLEO.h
+    if flag(opencv23)
+         cpp-options: -DOpenCV23
+         cc-options: -DOpenCV23
     cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
      
@@ -60,6 +67,7 @@ Library
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary
     Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix, CV.Bindings.Calibrate
+    Extensions: CPP
 
 source-repository head
   type:     git
