@@ -2,7 +2,7 @@
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
 {-#LANGUAGE TypeFamilies#-}
-module CV.Pixelwise (Pixelwise(..), fromImage, toImage, toImageP, remap, (<$$>),(<+>)) where
+module CV.Pixelwise (Pixelwise(..), fromImage, toImage, remap, (<$$>),(<+>)) where
 import Control.Applicative 
 import CV.Image
 import System.IO.Unsafe
@@ -54,7 +54,10 @@ toImageP (MkP (w,h) e) = unsafePerformIO $ do
                                  [0..h-1]
         all (==True) rs `seq` return img
 
--- | Shorthand for a <$> fromImage b
+-- | Shorthand for `a <$> fromImage b`
+(<$$>) :: (Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => (P b1 -> b) -> b1 -> Pixelwise b
 a <$$> b = a <$> fromImage b
--- | Shorthand for a <*> fromImage b
+
+-- | Shorthand for `a <*> fromImage b`
+(<+>) :: (Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => Pixelwise (P b1 -> b) -> b1 -> Pixelwise b
 a <+> b = a <*> fromImage b

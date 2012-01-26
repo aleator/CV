@@ -1,3 +1,5 @@
+-- | This module provides the elementary image splining (seamless merging) using the burt-adelson multiresolution splines
+-- introduced in "A multiresolution spline with application to image mosaics", Burt, P.J. and Adelson, E.H., ACM Transactions on Graphics,1983.
 module CV.MultiresolutionSpline where
 
 import CV.Image
@@ -7,14 +9,13 @@ import CV.ImageMathOp
 import CV.Filters
 
 
--- stitchHalfAndHalf i1 i2 = montage (2,1) 0 [getRegion (0,0) (hw,dh) i1,getRegion (hw,0) (hw,dh) i2]
---     where
---      dh = h
---      (w,h) = getSize i1
---      (hw,hh) = (w`div`2,h`div`2)
 
--- | Do a burt-adelson multiresolution splining for two images.
---   Notice, that the mask should contain a tiny blurred region between images 
+-- | This function merges two images based on given mask, the first image dominates on areas where the mask
+--   is 1 and the second where the mask is 0. The merging should be relatively seamless and is controlled by
+--   the `levels` parameter, which adjusts the accuracy. Usually, decent results can be obtained with 4 pyramid 
+--   levels.
+--   
+--   Note that the mask should contain a tiny blurred region between images for optimal result.
 burtAdelsonMerge :: Int -> Image GrayScale D8 -> Image GrayScale D32 -> Image GrayScale D32 
                         -> Image GrayScale D32
 burtAdelsonMerge levels mask img1 img2 
