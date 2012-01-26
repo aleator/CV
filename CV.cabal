@@ -5,6 +5,7 @@ License:             GPL
 License-file:        LICENSE
 Category:            AI, Graphics, Machine Vision
 Synopsis:            OpenCV based machine vision library
+Homepage:            http://aleator.github.com/CV/
 Description:         This is a machine vision package that wraps some functionality
                      of OpenCV library. This package has been developed for personal use and
                      is not meant to be a complete wrapper. It also includes some things not
@@ -77,7 +78,6 @@ Library
     Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix, CV.Bindings.Calibrate
     Extensions: CPP
 
-homepage: http://aleator.github.com/CV/
 
 source-repository head
   type:     git
