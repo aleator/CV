@@ -1,0 +1,672 @@
+<ul>
+<li><a href="index.html">Contents</a></li>
+<li><a href="doc-index.html">Index</a></li>
+</ul>
+<p>CV-0.3.4: OpenCV based machine vision library</p>
+<p>CV.Image</p>
+<p>Contents</p>
+<ul>
+<li><a href="#g:1">Basic types</a></li>
+<li><a href="#g:2">Colour spaces</a></li>
+<li><a href="#g:3">IO operations</a></li>
+<li><a href="#g:4">Pixel level access</a></li>
+<li><a href="#g:5">Image information</a></li>
+<li><a href="#g:6">ROI's, COI's and subregions</a></li>
+<li><a href="#g:7">Blitting</a></li>
+<li><a href="#g:8">Conversions</a></li>
+<li><a href="#g:9">Low level access operations</a></li>
+</ul>
+<p>Synopsis</p>
+<ul>
+<li>newtype <a href="#t:Image">Image</a> channels depth = <a href="#v:S">S</a> <a href="CV-Image.html#t:BareImage">BareImage</a></li>
+<li><a href="#v:empty">empty</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> a b</li>
+<li><a href="#v:emptyCopy">emptyCopy</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; <a href="CV-Image.html#t:Image">Image</a> a b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> a b)</li>
+<li><a href="#v:emptyCopy-39-">emptyCopy'</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; <a href="CV-Image.html#t:Image">Image</a> a b -&gt; <a href="CV-Image.html#t:Image">Image</a> a b</li>
+<li><a href="#v:cloneImage">cloneImage</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</li>
+<li><a href="#v:withClone">withClone</a> :: <a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; (<a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</li>
+<li><a href="#v:withCloneValue">withCloneValue</a> :: <a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; (<a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a>
+<ol style="list-style-type: lower-alpha">
+<li>-&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</li>
+</ol></li>
+<li>class <a href="#t:CreateImage">CreateImage</a> a where
+<ul>
+<li><a href="#v:create">create</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</li>
+</ul></li>
+<li>type family <a href="#t:ChannelOf">ChannelOf</a> a :: *</li>
+<li>data <a href="#t:GrayScale">GrayScale</a></li>
+<li>data <a href="#t:RGB">RGB</a></li>
+<li>data <a href="#t:RGBA">RGBA</a></li>
+<li>data <a href="#t:RGB_Channel">RGB_Channel</a>
+<ul>
+<li>= <a href="#v:Red">Red</a></li>
+<li>| <a href="#v:Green">Green</a></li>
+<li>| <a href="#v:Blue">Blue</a></li>
+</ul></li>
+<li>data <a href="#t:LAB">LAB</a></li>
+<li>data <a href="#t:LAB_Channel">LAB_Channel</a>
+<ul>
+<li>= <a href="#v:LAB_L">LAB_L</a></li>
+<li>| <a href="#v:LAB_A">LAB_A</a></li>
+<li>| <a href="#v:LAB_B">LAB_B</a></li>
+</ul></li>
+<li>type <a href="#t:D32">D32</a> = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Float">Float</a></li>
+<li>type <a href="#t:D64">D64</a> = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Double">Double</a></li>
+<li>type <a href="#t:D8">D8</a> = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Word.html#t:Word8">Word8</a></li>
+<li>data <a href="#t:Tag">Tag</a> tp</li>
+<li><a href="#v:lab">lab</a> :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:LAB">LAB</a></li>
+<li><a href="#v:rgba">rgba</a> :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:RGBA">RGBA</a></li>
+<li><a href="#v:rgb">rgb</a> :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:RGB">RGB</a></li>
+<li><a href="#v:composeMultichannelImage">composeMultichannelImage</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> tp a) =&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="CV-Image.html#t:Tag">Tag</a> tp -&gt; <a href="CV-Image.html#t:Image">Image</a> tp a</li>
+<li>class <a href="#t:Loadable">Loadable</a> a where
+<ul>
+<li><a href="#v:readFromFile">readFromFile</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</li>
+</ul></li>
+<li><a href="#v:saveImage">saveImage</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></li>
+<li><a href="#v:loadColorImage">loadColorImage</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>))</li>
+<li><a href="#v:loadImage">loadImage</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>))</li>
+<li>class <a href="#t:GetPixel">GetPixel</a> a where
+<ul>
+<li>type <a href="#t:P">P</a> a :: *</li>
+<li><a href="#v:getPixel">getPixel</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; a -&gt; <a href="CV-Image.html#t:P">P</a> a</li>
+</ul></li>
+<li><a href="#v:getAllPixels">getAllPixels</a> :: (<a href="CV-Image.html#t:Size">Size</a> a ~ (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Sized">Sized</a> a, <a href="CV-Image.html#t:GetPixel">GetPixel</a> a) =&gt; a -&gt; [<a href="CV-Image.html#t:P">P</a> a]</li>
+<li><a href="#v:getAllPixelsRowMajor">getAllPixelsRowMajor</a> :: (<a href="CV-Image.html#t:Size">Size</a> a ~ (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Sized">Sized</a> a, <a href="CV-Image.html#t:GetPixel">GetPixel</a> a) =&gt; a -&gt; [<a href="CV-Image.html#t:P">P</a> a]</li>
+<li><a href="#v:setPixel">setPixel</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></li>
+<li><a href="#v:setPixel8U">setPixel8U</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Word.html#t:Word8">Word8</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></li>
+<li><a href="#v:mapImageInplace">mapImageInplace</a> :: (<a href="CV-Image.html#t:P">P</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>) -&gt; <a href="CV-Image.html#t:P">P</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)) -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></li>
+<li>data <a href="#t:ImageDepth">ImageDepth</a></li>
+<li>class <a href="#t:Sized">Sized</a> a where
+<ul>
+<li>type <a href="#t:Size">Size</a> a :: *</li>
+<li><a href="#v:getSize">getSize</a> :: a -&gt; <a href="CV-Image.html#t:Size">Size</a> a</li>
+</ul></li>
+<li><a href="#v:getArea">getArea</a> :: (<a href="CV-Image.html#t:Sized">Sized</a> a, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Num">Num</a> b, <a href="CV-Image.html#t:Size">Size</a> a ~ (b, b)) =&gt; a -&gt; b</li>
+<li><a href="#v:getChannel">getChannel</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Enum">Enum</a> a =&gt; a -&gt; <a href="CV-Image.html#t:Image">Image</a> (<a href="CV-Image.html#t:ChannelOf">ChannelOf</a> a) d -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> d</li>
+<li><a href="#v:getImageChannels">getImageChannels</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a></li>
+<li><a href="#v:getImageDepth">getImageDepth</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="CV-Image.html#t:ImageDepth">ImageDepth</a></li>
+<li><a href="#v:getImageInfo">getImageInfo</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ((<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:ImageDepth">ImageDepth</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>)</li>
+<li><a href="#v:setCOI">setCOI</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> a =&gt; a -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</li>
+<li><a href="#v:setROI">setROI</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t1, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t3, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t2, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a>
+<ol start="20" style="list-style-type: lower-alpha">
+<li>=&gt; (t, t1) -&gt; (t2, t3) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</li>
+</ol></li>
+<li><a href="#v:resetROI">resetROI</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</li>
+<li><a href="#v:getRegion">getRegion</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</li>
+<li><a href="#v:withIOROI">withIOROI</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t3, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t2, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t1) =&gt; (t, t1) -&gt; (t2, t3) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b</li>
+<li><a href="#v:withROI">withROI</a> :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="CV-Image.html#t:Image">Image</a> c d -&gt; a) -&gt; a</li>
+<li><a href="#v:blendBlit">blendBlit</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; <a href="CV-Image.html#t:Image">Image</a> c3 d3 -&gt; <a href="CV-Image.html#t:Image">Image</a> c2 d2 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</li>
+<li><a href="#v:blit">blit</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</li>
+<li><a href="#v:blitM">blitM</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> c d) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; [((<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Image">Image</a> c d)] -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</li>
+<li><a href="#v:subPixelBlit">subPixelBlit</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CDouble">CDouble</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CDouble">CDouble</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></li>
+<li><a href="#v:safeBlit">safeBlit</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c2 d2 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1</li>
+<li><a href="#v:montage">montage</a> :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> c d) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a> -&gt; [<a href="CV-Image.html#t:Image">Image</a> c d] -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</li>
+<li><a href="#v:tileImages">tileImages</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> channels depth</li>
+<li><a href="#v:rgbToGray">rgbToGray</a> :: <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a></li>
+<li><a href="#v:rgbToLab">rgbToLab</a> :: <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D32">D32</a></li>
+<li><a href="#v:unsafeImageTo32F">unsafeImageTo32F</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c <a href="CV-Image.html#t:D32">D32</a></li>
+<li><a href="#v:unsafeImageTo8Bit">unsafeImageTo8Bit</a> :: <a href="CV-Image.html#t:Image">Image</a> cspace a -&gt; <a href="CV-Image.html#t:Image">Image</a> cspace <a href="CV-Image.html#t:D8">D8</a></li>
+<li>newtype <a href="#t:BareImage">BareImage</a> = <a href="#v:BareImage">BareImage</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-ForeignPtr.html#t:ForeignPtr">ForeignPtr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>)</li>
+<li><a href="#v:creatingImage">creatingImage</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</li>
+<li><a href="#v:unImage">unImage</a> :: <a href="CV-Image.html#t:Image">Image</a> t t1 -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-ForeignPtr.html#t:ForeignPtr">ForeignPtr</a> <a href="CV-Image.html#t:BareImage">BareImage</a></li>
+<li><a href="#v:unS">unS</a> :: <a href="CV-Image.html#t:Image">Image</a> t t1 -&gt; <a href="CV-Image.html#t:BareImage">BareImage</a></li>
+<li><a href="#v:withGenBareImage">withGenBareImage</a> :: <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b1) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b1</li>
+<li><a href="#v:withBareImage">withBareImage</a> :: <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>-&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b</li>
+</ol></li>
+<li><a href="#v:creatingBareImage">creatingBareImage</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="CV-Image.html#t:BareImage">BareImage</a></li>
+<li><a href="#v:withGenImage">withGenImage</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a>
+<ol style="list-style-type: lower-alpha">
+<li>-&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</li>
+</ol></li>
+<li><a href="#v:withImage">withImage</a> :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a>
+<ol style="list-style-type: lower-alpha">
+<li>-&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</li>
+</ol></li>
+<li><a href="#v:ensure32F">ensure32F</a> :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>)</li>
+</ul>
+<h1 id="basic-types">Basic types</h1>
+<p>newtype Image channels depth</p>
+<p>Constructors</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left">S <a href="CV-Image.html#t:BareImage">BareImage</a></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="/Users/aleator/.cabal/share/doc/binary-0.5.0.2/html/Data-Binary.html#t:Binary">Binary</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="/Users/aleator/.cabal/share/doc/deepseq-1.1.0.2/html/Control-DeepSeq.html#t:NFData">NFData</a> (<a href="CV-Image.html#t:Image">Image</a> a b)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> (<a href="CV-Image.html#t:Image">Image</a> c d)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Filters.html#t:HasMedianFiltering">HasMedianFiltering</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Filters.html#t:HasMedianFiltering">HasMedianFiltering</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>empty :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> a b</p>
+<p>emptyCopy :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; <a href="CV-Image.html#t:Image">Image</a> a b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> a b)</p>
+<p>emptyCopy' :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> a b) =&gt; <a href="CV-Image.html#t:Image">Image</a> a b -&gt; <a href="CV-Image.html#t:Image">Image</a> a b</p>
+<p>cloneImage :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</p>
+<p>withClone :: <a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; (<a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</p>
+<p>Blit image2 onto image1. This uses an alpha channel bitmap for determining the regions where the image should be <a href="blended.html">blended</a> with the base image.</p>
+<p>withCloneValue :: <a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; (<a href="CV-Image.html#t:Image">Image</a> channels depth -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</p>
+<p>class CreateImage a where</p>
+<p>Methods</p>
+<p>create :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<h1 id="colour-spaces">Colour spaces</h1>
+<p>type family ChannelOf a :: *</p>
+<p>data GrayScale</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Drawing.html#t:Drawable">Drawable</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="/Users/aleator/.cabal/share/doc/binary-0.5.0.2/html/Data-Binary.html#t:Binary">Binary</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Filters.html#t:HasMedianFiltering">HasMedianFiltering</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>data RGB</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Drawing.html#t:Drawable">Drawable</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Filters.html#t:HasMedianFiltering">HasMedianFiltering</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>data RGBA</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGBA">RGBA</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>data RGB_Channel</p>
+<p>Constructors</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left">Red</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Green</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Blue</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Enum">Enum</a> <a href="CV-Image.html#t:RGB_Channel">RGB_Channel</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Eq.html#t:Eq">Eq</a> <a href="CV-Image.html#t:RGB_Channel">RGB_Channel</a></td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Ord.html#t:Ord">Ord</a> <a href="CV-Image.html#t:RGB_Channel">RGB_Channel</a></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>data LAB</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D64">D64</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>data LAB_Channel</p>
+<p>Constructors</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left">LAB_L</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">LAB_A</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">LAB_B</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Enum">Enum</a> <a href="CV-Image.html#t:LAB_Channel">LAB_Channel</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Eq.html#t:Eq">Eq</a> <a href="CV-Image.html#t:LAB_Channel">LAB_Channel</a></td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Ord.html#t:Ord">Ord</a> <a href="CV-Image.html#t:LAB_Channel">LAB_Channel</a></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>type D32 = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Float">Float</a></p>
+<p>type D64 = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Double">Double</a></p>
+<p>type D8 = <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Word.html#t:Word8">Word8</a></p>
+<p>data Tag tp</p>
+<p>lab :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:LAB">LAB</a></p>
+<p>rgba :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:RGBA">RGBA</a></p>
+<p>rgb :: <a href="CV-Image.html#t:Tag">Tag</a> <a href="CV-Image.html#t:RGB">RGB</a></p>
+<p>composeMultichannelImage :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> tp a) =&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> a) -&gt; <a href="CV-Image.html#t:Tag">Tag</a> tp -&gt; <a href="CV-Image.html#t:Image">Image</a> tp a</p>
+<h1 id="io-operations">IO operations</h1>
+<p>class Loadable a where</p>
+<p>Methods</p>
+<p>readFromFile :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Loadable">Loadable</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>saveImage :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></p>
+<p>Save image. This will convert the image to 8 bit one before saving</p>
+<p>loadColorImage :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>))</p>
+<p>loadImage :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:FilePath">FilePath</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Maybe.html#t:Maybe">Maybe</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>))</p>
+<p>This function loads and converts image to an arbitrary format. Notice that it is polymorphic enough to cause run time errors if the declared and actual types of the images do not match. Use with care.</p>
+<h1 id="pixel-level-access">Pixel level access</h1>
+<p>class GetPixel a where</p>
+<p>Associated Types</p>
+<p>type P a :: *</p>
+<p>Methods</p>
+<p>getPixel :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; a -&gt; <a href="CV-Image.html#t:P">P</a> a</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> <a href="CV-Filters.html#t:IntegralImage">IntegralImage</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Pixelwise.html#t:Pixelwise">Pixelwise</a> x)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D8">D8</a>)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:GetPixel">GetPixel</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>getAllPixels :: (<a href="CV-Image.html#t:Size">Size</a> a ~ (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Sized">Sized</a> a, <a href="CV-Image.html#t:GetPixel">GetPixel</a> a) =&gt; a -&gt; [<a href="CV-Image.html#t:P">P</a> a]</p>
+<p>getAllPixelsRowMajor :: (<a href="CV-Image.html#t:Size">Size</a> a ~ (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Sized">Sized</a> a, <a href="CV-Image.html#t:GetPixel">GetPixel</a> a) =&gt; a -&gt; [<a href="CV-Image.html#t:P">P</a> a]</p>
+<p>setPixel :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></p>
+<p>setPixel8U :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Word.html#t:Word8">Word8</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D8">D8</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></p>
+<p>mapImageInplace :: (<a href="CV-Image.html#t:P">P</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>) -&gt; <a href="CV-Image.html#t:P">P</a> (<a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a>)) -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></p>
+<p>Perform (a destructive) inplace map of the image. This should be wrapped inside withClone or an image operation</p>
+<h1 id="image-information">Image information</h1>
+<p>data ImageDepth</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Enum">Enum</a> <a href="CV-Image.html#t:ImageDepth">ImageDepth</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Text-Show.html#t:Show">Show</a> <a href="CV-Image.html#t:ImageDepth">ImageDepth</a></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>class Sized a where</p>
+<p>Associated Types</p>
+<p>type Size a :: *</p>
+<p>Methods</p>
+<p>getSize :: a -&gt; <a href="CV-Image.html#t:Size">Size</a> a</p>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> <a href="CV-Image.html#t:BareImage">BareImage</a></td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> <a href="CV-Filters.html#t:IntegralImage">IntegralImage</a></td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> (<a href="CV-Matrix.html#t:Matrix">Matrix</a> a)</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> (<a href="CV-Pixelwise.html#t:Pixelwise">Pixelwise</a> a)</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> (<a href="CV-Image.html#t:Image">Image</a> c d)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>getArea :: (<a href="CV-Image.html#t:Sized">Sized</a> a, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Num">Num</a> b, <a href="CV-Image.html#t:Size">Size</a> a ~ (b, b)) =&gt; a -&gt; b</p>
+<p>getChannel :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Enum">Enum</a> a =&gt; a -&gt; <a href="CV-Image.html#t:Image">Image</a> (<a href="CV-Image.html#t:ChannelOf">ChannelOf</a> a) d -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> d</p>
+<p>getImageChannels :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a></p>
+<p>getImageDepth :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="CV-Image.html#t:ImageDepth">ImageDepth</a></p>
+<p>getImageInfo :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ((<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:ImageDepth">ImageDepth</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>)</p>
+<h1 id="rois-cois-and-subregions">ROI's, COI's and subregions</h1>
+<p>setCOI :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> a =&gt; a -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</p>
+<p>setROI :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t1, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t3, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t2, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t) =&gt; (t, t1) -&gt; (t2, t3) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</p>
+<p>resetROI :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</p>
+<p>getRegion :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</p>
+<p>withIOROI :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t3, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t2, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Prelude.html#t:Integral">Integral</a> t1) =&gt; (t, t1) -&gt; (t2, t3) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b</p>
+<p>withROI :: (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="CV-Image.html#t:Image">Image</a> c d -&gt; a) -&gt; a</p>
+<h1 id="blitting">Blitting</h1>
+<p>blendBlit :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; <a href="CV-Image.html#t:Image">Image</a> c3 d3 -&gt; <a href="CV-Image.html#t:Image">Image</a> c2 d2 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</p>
+<p>blit :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> ()</p>
+<p>blitM :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> c d) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; [((<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>), <a href="CV-Image.html#t:Image">Image</a> c d)] -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</p>
+<p>Tile images by overlapping them on a black canvas.</p>
+<p>Blit image2 onto image1.</p>
+<p>subPixelBlit :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CDouble">CDouble</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CDouble">CDouble</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/ghc-prim-0.2.0.0/GHC-Unit.html#t:-40--41-">()</a></p>
+<p>safeBlit :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c2 d2 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1</p>
+<p>montage :: <a href="CV-Image.html#t:CreateImage">CreateImage</a> (<a href="CV-Image.html#t:Image">Image</a> c d) =&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Data-Int.html#t:Int">Int</a> -&gt; [<a href="CV-Image.html#t:Image">Image</a> c d] -&gt; <a href="CV-Image.html#t:Image">Image</a> c d</p>
+<p>Create a montage form given images (u,v) determines the layout and space the spacing between images. Images are assumed to be the same size (determined by the first image)</p>
+<p>tileImages :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c1 d1 -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>, <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-C-Types.html#t:CInt">CInt</a>) -&gt; <a href="CV-Image.html#t:Image">Image</a> channels depth</p>
+<h1 id="conversions">Conversions</h1>
+<p>rgbToGray :: <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:GrayScale">GrayScale</a> <a href="CV-Image.html#t:D32">D32</a></p>
+<p>rgbToLab :: <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:RGB">RGB</a> <a href="CV-Image.html#t:D32">D32</a> -&gt; <a href="CV-Image.html#t:Image">Image</a> <a href="CV-Image.html#t:LAB">LAB</a> <a href="CV-Image.html#t:D32">D32</a></p>
+<p>unsafeImageTo32F :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; <a href="CV-Image.html#t:Image">Image</a> c <a href="CV-Image.html#t:D32">D32</a></p>
+<p>unsafeImageTo8Bit :: <a href="CV-Image.html#t:Image">Image</a> cspace a -&gt; <a href="CV-Image.html#t:Image">Image</a> cspace <a href="CV-Image.html#t:D8">D8</a></p>
+<h1 id="low-level-access-operations">Low level access operations</h1>
+<p>newtype BareImage</p>
+<p>Constructors</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left">BareImage (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-ForeignPtr.html#t:ForeignPtr">ForeignPtr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>)</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>Instances</p>
+<table>
+<tbody>
+<tr class="odd">
+<td align="left"><a href="CV-Image.html#t:Sized">Sized</a> <a href="CV-Image.html#t:BareImage">BareImage</a></td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+<p>creatingImage :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="CV-Image.html#t:Image">Image</a> channels depth)</p>
+<p>unImage :: <a href="CV-Image.html#t:Image">Image</a> t t1 -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-ForeignPtr.html#t:ForeignPtr">ForeignPtr</a> <a href="CV-Image.html#t:BareImage">BareImage</a></p>
+<p>unS :: <a href="CV-Image.html#t:Image">Image</a> t t1 -&gt; <a href="CV-Image.html#t:BareImage">BareImage</a></p>
+<p>withGenBareImage :: <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b1) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b1</p>
+<p>withBareImage :: <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> b</p>
+<p>creatingBareImage :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> <a href="CV-Image.html#t:BareImage">BareImage</a></p>
+<p>withGenImage :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> b -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</p>
+<p>withImage :: <a href="CV-Image.html#t:Image">Image</a> c d -&gt; (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a) -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> a</p>
+<p>ensure32F :: <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a> -&gt; <a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/System-IO.html#t:IO">IO</a> (<a href="/usr/local/stow/ghc-7.0.2/share/doc/ghc/html/libraries/base-4.3.1.0/Foreign-Ptr.html#t:Ptr">Ptr</a> <a href="CV-Image.html#t:BareImage">BareImage</a>)</p>
+<p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.9.2</p>
