@@ -128,7 +128,7 @@ dilateOp se count = ImgOp $ \(unS -> img) -> dilation img img se count
 erode se count  i = unsafeOperate (erodeOp se count)  i
 dilate se count i = unsafeOperate (dilateOp se count) i
 
-a ⊕ b = erode b 1 a
+a ⊕ b = dilate b 1 a
 a ⊖ b = erode b 1 a
                        
 erode' se count img = withImage img $ \image ->
