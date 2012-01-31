@@ -75,7 +75,10 @@ Library
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary
                        Utils.List, Utils.Point, Utils.Rectangle, Utils.Stream, Utils.Function
-    Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix, CV.Bindings.Calibrate
+    Other-modules:     C2HSTools, C2HS, 
+                       CV.Bindings.Matrix,
+                       CV.Bindings.Calibrate,
+                       CV.Bindings.Types
     Extensions: CPP
 
 
