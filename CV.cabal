@@ -15,7 +15,7 @@ Description:         This is a machine vision package that wraps some functional
                      and code clean-up, but is somewhat tested.
                      .
                      (The scarce) Documentation is available at 
-                      <http://http://aleator.github.com/CV/>
+                      <http://aleator.github.com/CV/>
                      .
                      Changelog.
                      0.3.4 - Pixelwise operations, bug fixes and additional documentation
