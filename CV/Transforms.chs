@@ -22,6 +22,7 @@ takeEvenSized img = getRegion (0,0) (w-wadjust,h-hadjust) img
              | otherwise = 2
 
 -- |Perform Discrete Cosine Transform
+dct :: Image GrayScale d -> Image GrayScale d
 dct img | (x,y) <- getSize img, even x && even y 
         = unsafePerformIO $
             withGenImage img $ \i -> 
@@ -31,6 +32,7 @@ dct img | (x,y) <- getSize img, even x && even y
         | otherwise = error "DCT needs even sized image"
 
 -- |Perform Inverse Discrete Cosine Transform
+idct :: Image GrayScale d -> Image GrayScale d
 idct img | (x,y) <- getSize img, even x && even y 
         = unsafePerformIO $
             withGenImage img $ \i -> 
@@ -42,6 +44,7 @@ idct img | (x,y) <- getSize img, even x && even y
 data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 
 -- |Mirror an image over a cardinal axis
+flip :: CreateImage (Image c d) => MirrorAxis -> Image c d -> Image c d
 flip axis img = unsafePerformIO $ do
                  cl <- emptyCopy img
                  withGenImage img $ \cimg -> 
@@ -50,7 +53,8 @@ flip axis img = unsafePerformIO $ do
                  return cl
 
 -- |Rotate `img` `angle` radians.
-rotate angle img = unsafePerformIO $
+rotate :: Double -> Image c d -> Image c d
+rotate (realToFrac -> angle) img = unsafePerformIO $
                     withImage img $ \i -> 
                         creatingImage 
                          ({#call rotateImage#} i 1 angle)
@@ -73,7 +77,7 @@ scaleSingleRatio tpe x img = scale tpe (x,x) img
 
 
 -- |Scale an image with different ratios for axes
-scale :: (RealFloat a) => Interpolation -> (a,a) -> Image GrayScale D32 -> Image GrayScale D32
+scale :: (CreateImage (Image c D32), RealFloat a) => Interpolation -> (a,a) -> Image c D32 -> Image c D32
 scale tpe (x,y) img = unsafePerformIO $ do
                     target <- create (w',h') 
                     withGenImage img $ \i -> 
@@ -87,7 +91,8 @@ scale tpe (x,y) img = unsafePerformIO $ do
                        ,round $ fromIntegral h*x)
 
 -- |Scale an image to a given size
-scaleToSize :: Interpolation -> Bool -> (Int,Int) -> Image GrayScale D32 -> Image GrayScale D32
+scaleToSize :: (CreateImage (Image c D32)) => 
+    Interpolation -> Bool -> (Int,Int) -> Image c D32 -> Image c D32
 scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
                     target <- create (w',h') 
                     withGenImage img $ \i -> 
@@ -103,13 +108,9 @@ scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
              ratio  = max (fromIntegral w/fromIntegral ow)
                           (fromIntegral h/fromIntegral oh)
 
--- | DEPRECATED: A simple one parameter shrinking of the image
-oneParamPerspective img k
-    = unsafePerformIO $ 
-       withImage img $ \cimg -> creatingImage $ {#call simplePerspective#} k cimg
-
 -- |Apply a perspective transform to the image. The transformation 3x3 matrix is supplied as
 --  a row ordered, flat, list.
+perspectiveTransform :: Real a => Image c d -> [a] -> Image c d
 perspectiveTransform img (map realToFrac -> [a1,a2,a3,a4,a5,a6,a7,a8,a9])
     = unsafePerformIO $ 
        withImage img $ \cimg -> creatingImage $ {#call wrapPerspective#} cimg a1 a2 a3 a4 a5 a6 a7 a8 a9
@@ -130,6 +131,7 @@ getHomography srcPts dstPts =
 
 --- Pyramid transforms
 -- |Return a copy of an image with an even size
+evenize :: Image channels depth -> Image channels depth
 evenize img = if (odd w || odd h)
               then  
                 unsafePerformIO $     
@@ -140,6 +142,7 @@ evenize img = if (odd w || odd h)
      (w,h)  = getSize img
 
 -- |Return a copy of an image with an odd size
+oddize :: Image channels depth -> Image channels depth
 oddize img = if (even w || even h)
               then  
                 unsafePerformIO $     
@@ -152,6 +155,7 @@ oddize img = if (even w || even h)
      (w,h)  = getSize img
 
 -- |Pad images to same size
+sameSizePad :: Image channels depth -> Image c d -> Image channels depth
 sameSizePad img img2 = if (size1 /= size2)
               then unsafePerformIO $ do
                 r <- creatingImage $

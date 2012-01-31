@@ -8,27 +8,10 @@ import Data.Word
 import Foreign.C.Types
 import CV.Bindings.Matrix
 import CV.Image
+import CV.Bindings.Types
 
 #strict_import
 
--- typedef struct
--- {
---     int width;
---     int height;
--- }
--- CvSize;
-
-#starttype CvSize
-#field width , CInt
-#field height , CInt
-#stoptype
-
-#starttype CvPoint2D32f
-#field x , Float
-#field y , Float
-#stoptype
-
- 
 #ccall wrapCalibrateCamera2 , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvSize> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> ->  Ptr <CvMat> -> CInt -> IO Double
 
 #ccall wrapFindCornerSubPix , Ptr BareImage -> Ptr <CvPoint2D32f> -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Double -> IO ()
