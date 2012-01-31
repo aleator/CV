@@ -5,6 +5,7 @@ License:             GPL
 License-file:        LICENSE
 Category:            AI, Graphics, Machine Vision
 Synopsis:            OpenCV based machine vision library
+Homepage:            http://aleator.github.com/CV/
 Description:         This is a machine vision package that wraps some functionality
                      of OpenCV library. This package has been developed for personal use and
                      is not meant to be a complete wrapper. It also includes some things not
@@ -14,9 +15,11 @@ Description:         This is a machine vision package that wraps some functional
                      and code clean-up, but is somewhat tested.
                      .
                      (The scarce) Documentation is available at 
-                      <http://users.jyu.fi/~aleator/CV-0.3.0.2/html/index.html>
+                      <http://aleator.github.com/CV/>
                      .
                      Changelog.
+                     0.3.4 - Pixelwise operations, bug fixes and additional documentation
+                     .
                      0.3.3.0 - Improvements, including compatablity with opencv 2.3.1 and removal of
                      dependency with deprecated JYU.Utils
                      .
@@ -44,10 +47,6 @@ Flag opencv23
   Description: Compatability for opencv 2.3.1
   Default:     False
 
-
-Flag opencv23
-  Description: Compatability for opencv 2.3.1
-  Default:     False
 
 Library
     Build-Tools:       c2hs >= 0.16.0
@@ -78,6 +77,7 @@ Library
                        Utils.List, Utils.Point, Utils.Rectangle, Utils.Stream, Utils.Function
     Other-modules:     C2HSTools, C2HS, CV.Bindings.Matrix, CV.Bindings.Calibrate
     Extensions: CPP
+
 
 source-repository head
   type:     git
