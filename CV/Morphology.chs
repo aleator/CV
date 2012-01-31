@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, UnicodeSyntax#-}
+{-#LANGUAGE ForeignFunctionInterface, ScopedTypeVariables, UnicodeSyntax, ViewPatterns#-}
 #include "cvWrapLEO.h"
 module CV.Morphology (StructuringElement
                   ,structuringElement
@@ -122,13 +122,13 @@ createCustomSE (w,h) (x,y) shape = unsafePerformIO $ do
     ,`Int'} -> `()' #}
 
 
-erodeOp se count = ImgOp $ \(S img)  -> erosion img img se count
-dilateOp se count = ImgOp $ \(S img) -> dilation img img se count
+erodeOp se count = ImgOp $ \(unS -> img)  -> erosion img img se count
+dilateOp se count = ImgOp $ \(unS -> img) -> dilation img img se count
 
 erode se count  i = unsafeOperate (erodeOp se count)  i
 dilate se count i = unsafeOperate (dilateOp se count) i
 
-a ⊕ b = erode b 1 a
+a ⊕ b = dilate b 1 a
 a ⊖ b = erode b 1 a
                        
 erode' se count img = withImage img $ \image ->

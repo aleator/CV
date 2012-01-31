@@ -3,7 +3,7 @@
 -- | This module is a collection of various image filters
 module CV.Filters(gaussian,gaussianOp
               ,blurOp,blur,blurNS
-              ,median
+              ,HasMedianFiltering,median
               ,susan,getCentralMoment,getAbsCentralMoment
               ,getMoment,secondMomentBinarize,secondMomentBinarizeOp
               ,secondMomentAdaptiveBinarize,secondMomentAdaptiveBinarizeOp
@@ -115,7 +115,6 @@ bilateral colorS spaceS img = unsafePerformIO $
                         (fromIntegral colorS) (fromIntegral spaceS) 0 0
 
 
--- | Perform median filtering on an eight bit image.
 -- TODO: The type is not exactly correct
 
 class HasMedianFiltering a where
@@ -127,6 +126,7 @@ instance HasMedianFiltering (Image GrayScale D8) where
 instance HasMedianFiltering (Image RGB D8) where
     median = median'
 
+-- | Perform median filtering on an eight bit image.
 median' :: (Int,Int) -> Image c D8 -> Image c D8
 median' (w,h) img 
   | maskIsOk (w,h) = unsafePerformIO $ do

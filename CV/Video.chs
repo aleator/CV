@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns#-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns, CPP#-}
 #include "cvWrapLEO.h"
 module CV.Video where
 {#import CV.Image#}
@@ -77,11 +77,17 @@ enum CapProp {
     , CAP_PROP_GAIN           =  CV_CAP_PROP_GAIN         
     , CAP_PROP_EXPOSURE       =  CV_CAP_PROP_EXPOSURE     
     , CAP_PROP_CONVERT_RGB    =  CV_CAP_PROP_CONVERT_RGB  
-    , CAP_PROP_WHITE_BALANCE  =  CV_CAP_PROP_WHITE_BALANCE
+#ifdef OpenCV23
+    , CAP_PROP_WHITE_BALANCE_BLUE_U = CV_CAP_PROP_WHITE_BALANCE_BLUE_U 
+    , CAP_PROP_WHITE_BALANCE_RED_V  = CV_CAP_PROP_WHITE_BALANCE_RED_V
+#else
+    , CAP_PROP_WHITE_BALANCE  = CV_CAP_PROP_WHITE_BALANCE
+#endif
     , CAP_PROP_RECTIFICATION  =  CV_CAP_PROP_RECTIFICATION 
     , CAP_PROP_MONOCROME      =  CV_CAP_PROP_MONOCROME    
 };
 #endc
+
 {#enum CapProp {}#}
 
 fromProp = fromIntegral . fromEnum
