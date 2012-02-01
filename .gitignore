@@ -1,4 +1,5 @@
 dist/
 *.hi
 *.o
+*.swp
 tags
