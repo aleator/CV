@@ -11,7 +11,7 @@ import Data.Array.ST
 import Foreign.C.Types
 import Foreign.ForeignPtr
 import Foreign.Ptr
-import C2HSTools
+import C2HSTools hiding (unsafePerformIO)
 
 import System.IO.Unsafe
 

@@ -29,7 +29,7 @@ import System.IO.Unsafe
 import Foreign.ForeignPtr
 import Control.Monad ((>=>))
 
-import C2HSTools
+import C2HSTools hiding (unsafePerformIO)
 
 {#import CV.Image#}
 

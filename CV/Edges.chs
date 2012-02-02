@@ -1,4 +1,5 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface #-}
+
 #include "cvWrapLEO.h"
 -- | This module is a collection of simple edge detectors.
 module CV.Edges (
@@ -27,6 +28,7 @@ import C2HSTools
 -- | Perform Sobel filtering on image. First argument gives order of horizontal and vertical
 --   derivative estimates and second one is the aperture. This function can also calculate
 --   Scharr filter with aperture specification of sScharr
+
 
 sobelOp :: (Int,Int) -> SobelAperture -> ImageOperation GrayScale D32
 sobelOp (dx,dy) (Sb aperture)
