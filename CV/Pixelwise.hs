@@ -27,6 +27,25 @@ instance Applicative Pixelwise where
   pure x               = MkP maxBound  (pure x)
   MkP i f <*> MkP j g  = MkP (min i j) (f <*> g)
 
+instance (Eq a) => Eq (Pixelwise a) where
+    (MkP (s1@(w1,h1)) e1)  == (MkP s2 e2) 
+        = s1==s2 && and [e1 (i,j) == e2 (i,j) | i <- [0..w1-1] , j <- [0..h1-1]] 
+
+instance Show (Pixelwise a) where
+    show (MkP s1 e1)  
+        = "MkP "++show (s1)++" <image-data>" 
+
+instance (Num a) => Num (Pixelwise a) where
+  a + b = (+) <$> a <*> b 
+  a * b = (*) <$> a <*> b 
+  a - b = (-) <$> a <*> b 
+  negate = fmap negate
+  abs    = fmap abs 
+  signum = error "Signum is undefined for images"
+  fromInteger i = MkP{sizeOf = (1,1),eltOf=const (fromIntegral i)}
+
+withPixels x = toImage . x . fromImage
+
 -- | Re-arrange pixel positions and values
 remap :: (((Int,Int) -> b) -> ((Int,Int) -> x)) -> Pixelwise b -> Pixelwise x
 remap f (MkP s e) = MkP s (f e)

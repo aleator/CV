@@ -20,12 +20,12 @@ can be obtained at http://opencv.willowgarage.com or through your systems packag
 
 Possible build problems are documented at the page [BuildProblems].
 
-[BuildProblems]:BuildProblems.html
+[BuildProblems]:BuildProblems
 
 # Cookbook
 
 This section gives examples of the basic functionality of the library.
 
-* [Loading and Saving Images](LoadingSaving.html)
-* [Pixelwise image manipulation](Pixelwise.html)
+* [Loading and Saving Images](LoadingSaving)
+* [Pixelwise image manipulation](Pixelwise)
 

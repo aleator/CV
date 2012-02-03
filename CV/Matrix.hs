@@ -1,9 +1,9 @@
 {-#LANGUAGE ParallelListComp, TypeFamilies, FlexibleInstances, FlexibleContexts, ScopedTypeVariables#-}
 -- | This module provides wrappers for CvMat type. This is still preliminary as the type of the
 --   matrix isn't coded in the haskell type.
-module CV.Matrix 
+module CV.Matrix
     (
-    Exists,Exists(..),
+    Exists(..),
     Matrix, emptyMatrix ,fromList,toList,toRows,toCols,get,put,withMatPtr
     , transpose, mxm, rodrigues2
     )where
@@ -17,8 +17,9 @@ import Foreign.C.Types
 import Foreign.C.String
 import Foreign.Marshal.Utils
 import Foreign.ForeignPtr hiding (newForeignPtr)
-import Foreign.Concurrent 
+import Foreign.Concurrent
 import Foreign.Ptr
+import Foreign.Storable.Tuple
 import Control.Parallel.Strategies
 import Control.DeepSeq
 
@@ -56,43 +57,47 @@ class Exists a where
 
 instance Exists (Matrix Float) where
     type Args (Matrix Float) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC1) 
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC1)
 
 instance Exists (Matrix Int) where
     type Args (Matrix Int) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC1) 
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC1)
+
+instance Exists (Matrix (Float,Float)) where
+    type Args (Matrix (Float,Float)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
 
 instance Exists (Matrix Double) where
     type Args (Matrix Double) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC1) 
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC1)
 
 instance Sized (Matrix a) where
     type Size (Matrix a) = (Int,Int)
     getSize (Matrix e) = unsafePerformIO $ withForeignPtr e $ \mat -> do
                          mat' <- peek mat
-                         return (fromIntegral $ c'CvMat'rows mat', 
+                         return (fromIntegral $ c'CvMat'rows mat',
                                 fromIntegral $ c'CvMat'cols mat')
 
 -- | Create an empty matrix of given dimensions
 emptyMatrix :: Exists (Matrix a) => Args (Matrix a) -> Matrix a
 emptyMatrix a = create a
 
-identity :: (Num a, Sized (Matrix a), Args (Matrix a) ~ (Int,Int),  Size (Matrix a) ~ (Int,Int),  Storable a, Exists (Matrix a)) => 
+identity :: (Num a, Sized (Matrix a), Args (Matrix a) ~ (Int,Int),  Size (Matrix a) ~ (Int,Int),  Storable a, Exists (Matrix a)) =>
              (Matrix a) -> Matrix a
 identity a = unsafePerformIO $ do
-             let res = create (getSize a) 
+             let res = create (getSize a)
                  (rows,cols) = getSize a
-             sequence_ [put res row col 1 
+             sequence_ [put res row col 1
                        | row <- [0..rows-1]
                        | col <- [0..cols-1]]
              return res
 
--- | Transpose a matrix. Does not do complex conjugation for complex matrices  
+-- | Transpose a matrix. Does not do complex conjugation for complex matrices
 transpose :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Matrix a
 transpose m@(Matrix f_m) = unsafePerformIO $ do
                  let res@(Matrix f_c) = create (getSize m)
                  withForeignPtr f_m $ \c_m ->
-                  withForeignPtr f_c $ c'cvTranspose c_m 
+                  withForeignPtr f_c $ c'cvTranspose c_m
                  return res
 
 -- | Convert a rotation vector to a rotation matrix (1x3 -> 3x3)
@@ -110,7 +115,7 @@ mxm m1@(Matrix a_m) m2@(Matrix b_m) = unsafePerformIO $ do
                  let (w1,h1) = getSize m1
                      (w2,h2) = getSize m2
                      res@(Matrix f_c) = create (w1,h2)
-                 when (h1 /= w2) . error  $ 
+                 when (h1 /= w2) . error  $
                     "Matrix dimensions do not match for multiplication: "
                     ++show (w1,h1)
                     ++" vs. "
@@ -121,10 +126,10 @@ mxm m1@(Matrix a_m) m2@(Matrix b_m) = unsafePerformIO $ do
                  return res
 
 withMatPtr :: Matrix x -> (Ptr C'CvMat -> IO a) -> IO a
-withMatPtr (Matrix m) op = withForeignPtr m op 
+withMatPtr (Matrix m) op = withForeignPtr m op
 
 -- | Convert a list of floats into Matrix
-fromList :: forall t . (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int)) 
+fromList :: forall t . (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int))
                         => (Int,Int) -> [t] -> Matrix t
 fromList (w,h) lst = unsafePerformIO $ do
                 let m@(Matrix e) = emptyMatrix (w,h)
@@ -133,18 +138,19 @@ fromList (w,h) lst = unsafePerformIO $ do
                          let d :: Ptr t
                              d = castPtr $ c'CvMat'data'ptr mat'
                              s = c'CvMat'step mat'
-                         sequence_ [putRaw d s row col v 
+                             size = sizeOf (undefined :: t)
+                         sequence_ [putRaw d s size row col v
                                    | (row,col) <- [(r,c) | c <- [0..h-1], r <- [0..w-1]]
                                    | v <- lst ]
                 return $ m
 
 
 -- | Convert a matrix to flat list (row major order)
-toList :: (Storable a) => Matrix a -> [a] 
+toList :: (Storable a) => Matrix a -> [a]
 toList =  concat . toRows
 
 -- | Convert matrix to rows represented as nested lists
-toRows :: forall t . (Storable t) => Matrix t -> [[t]] 
+toRows :: forall t . (Storable t) => Matrix t -> [[t]]
 toRows (Matrix e) = unsafePerformIO $ do
                 withForeignPtr e $ \mat -> do
                          mat' <- peek mat
@@ -157,7 +163,7 @@ toRows (Matrix e) = unsafePerformIO $ do
                                    ]
 
 -- | Convert matrix to cols represented as nested lists
-toCols :: forall t . (Storable t) => Matrix t -> [[t]] 
+toCols :: forall t . (Storable t) => Matrix t -> [[t]]
 toCols (Matrix e) = unsafePerformIO $ do
                 withForeignPtr e $ \mat -> do
                          mat' <- peek mat
@@ -185,7 +191,7 @@ get (Matrix m) row col = withForeignPtr m $ \mat -> do
 
 {-#INLINE getRaw#-}
 getRaw :: forall t . (Storable t) => Ptr t -> Int -> Int -> Int -> IO t
-getRaw d s col row = 
+getRaw d s col row =
          peek (castPtr (d `plusPtr` (col*s+row*sizeOf (undefined::t))):: Ptr t)
 
 {-#INLINE put#-}
@@ -193,15 +199,15 @@ getRaw d s col row =
 put :: forall t . (Storable t) => (Matrix t) -> Int -> Int -> t -> IO ()
 put (Matrix m) row col v = withForeignPtr m $ \mat -> do
          mat' <- peek mat
-         let 
+         let
             d :: Ptr t
             d = castPtr $ c'CvMat'data'ptr mat'
             s = c'CvMat'step mat'
-         putRaw d s row col v
+            size = sizeOf (undefined :: t)
+         putRaw d s size row col v
 
 {-#INLINE putRaw#-}
-putRaw :: forall t. (Storable t) => Ptr t -> CInt -> Int -> Int -> t -> IO ()
-putRaw d s col row v = 
-         poke (castPtr (d `plusPtr` (col*(fromIntegral s)+row*sizeOf (undefined::t))):: Ptr t)
-              v
+putRaw :: forall t. (Storable t) => Ptr t -> CInt -> Int -> Int -> Int -> t -> IO ()
+putRaw d step eltSize col row v =
+         poke (castPtr (d `plusPtr` (col*(fromIntegral step)+row*eltSize))) v
 

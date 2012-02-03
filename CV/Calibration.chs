@@ -43,6 +43,7 @@ import Control.Applicative
 
 import CV.Matrix
 import CV.Bindings.Calibrate
+import CV.Bindings.Types
 
 {#import CV.Image#}
 
