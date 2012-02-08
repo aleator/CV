@@ -1,3 +1,16 @@
+cabal-dev/
+examples/Combine.png
+examples/Fitting
+examples/Fuse
+examples/KJ12.tif
+examples/Monster
+examples/cabal-dev/
+examples/fusing_result.png
+examples/img_channel1.tif
+examples/img_channel2.tif
+examples/img_channel3.tif
+tutorial/*.swp
+
 dist/
 *.hi
 *.o
