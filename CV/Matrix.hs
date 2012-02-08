@@ -1,4 +1,5 @@
-{-#LANGUAGE ParallelListComp, TypeFamilies, FlexibleInstances, FlexibleContexts, ScopedTypeVariables#-}
+{-#LANGUAGE ParallelListComp, TypeFamilies, FlexibleInstances, FlexibleContexts, ScopedTypeVariables,
+            ConstraintKinds#-}
 -- | This module provides wrappers for CvMat type. This is still preliminary as the type of the
 --   matrix isn't coded in the haskell type.
 module CV.Matrix
@@ -128,9 +129,10 @@ mxm m1@(Matrix a_m) m2@(Matrix b_m) = unsafePerformIO $ do
 withMatPtr :: Matrix x -> (Ptr C'CvMat -> IO a) -> IO a
 withMatPtr (Matrix m) op = withForeignPtr m op
 
+type StdElement t = (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int))
+
 -- | Convert a list of floats into Matrix
-fromList :: forall t . (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int))
-                        => (Int,Int) -> [t] -> Matrix t
+fromList :: forall t . (StdElement t) => (Int,Int) -> [t] -> Matrix t
 fromList (w,h) lst = unsafePerformIO $ do
                 let m@(Matrix e) = emptyMatrix (w,h)
                 withForeignPtr e $ \mat -> do
