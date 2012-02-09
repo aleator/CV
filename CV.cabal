@@ -14,7 +14,7 @@ Description:         This is a machine vision package that wraps some functional
                      Currently this package is quite dirty and requires much work on documentation
                      and code clean-up, but is somewhat tested.
                      .
-                     (The scarce) Documentation is available at 
+                     (The scarce) Documentation is available at
                       <http://aleator.github.com/CV/>
                      .
                      Changelog.
@@ -24,7 +24,7 @@ Description:         This is a machine vision package that wraps some functional
                      dependency with deprecated JYU.Utils
                      .
                      Changelog.
-                     0.3.2.0 - Improvements, including fancier pixel-wise manipulations 
+                     0.3.2.0 - Improvements, including fancier pixel-wise manipulations
                      .
                      Changelog.
                      0.3.0.2 - Workaround for compiling with OS X 10.6 & fixed errors about M_PI
@@ -50,7 +50,7 @@ Flag opencv23
 
 Library
     Build-Tools:       c2hs >= 0.16.0
-    Include-dirs:      cbits/  
+    Include-dirs:      cbits/
     Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, cbits/cvWrapLEO.h
     c-sources:         cbits/cvWrapLEO.c
     install-includes:  cbits/cvWrapLEO.h
@@ -59,29 +59,32 @@ Library
          cc-options: -DOpenCV23
     cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,opencv_contrib,opencv_core,opencv_features2d,opencv_highgui,opencv_imgproc,opencv_legacy,opencv_ml,opencv_objdetect,opencv_video
-     
+
     Build-Depends:     haskell98, base >= 3 && < 5, parallel > 3.1, unix > 2.3, array >= 0.2.0.0,
-                       mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1, 
-                       containers >= 0.2, 
+                       mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1,
+                       containers >= 0.2,
                        storable-complex, binary >= 0.5, deepseq >= 1.1,
                        bindings-DSL >= 1.0.14 && < 1.1, vector >= 0.7.0.1 && < 1.1,
                        lazysmallcheck >= 0.5 && < 1,
                        storable-tuple >= 0.0.2 && <= 1
-    Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters, 
+    Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters,
                        CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
                        CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
                        CV.TemplateMatching, CV.Transforms, CV.Conversions,
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
-                       CV.MultiresolutionSpline,  CV.Gabor,
-                       CV.ConnectedComponents, CV.HighGUI, CV.Calibration
-                       CV.Pixelwise, CV.Matrix, CV.Arbitrary
+                       CV.MultiresolutionSpline, CV.Gabor, CV.Corners, CV.Operations,
+                       CV.ConnectedComponents, CV.HighGUI, CV.Calibration,
+                       CV.Pixelwise, CV.Matrix, CV.Arbitrary,
                        Utils.List, Utils.Point, Utils.Rectangle,
-                       Utils.Stream, Utils.Function, CV.Fitting
-    Other-modules:     C2HSTools, C2HS, 
+                       Utils.Stream, Utils.Function
+-- , CV.Fitting
+    Other-modules:     C2HSTools, C2HS,
                        CV.Bindings.Matrix,
                        CV.Bindings.Calibrate,
-                       CV.Bindings.Fittings,
-                       CV.Bindings.Types
+                       -- CV.Bindings.Fittings,
+                       CV.Bindings.Types,
+                       CV.Bindings.Core,
+                       CV.Bindings.ImgProc
     Extensions: CPP
 
 
@@ -92,4 +95,4 @@ source-repository head
 source-repository head
   type:     git
   location: http://yousource.it.jyu.fi/cv
- 
+
