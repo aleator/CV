@@ -51,9 +51,9 @@ Flag opencv23
 Library
     Build-Tools:       c2hs >= 0.16.0
     Include-dirs:      cbits/
-    Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, cbits/cvWrapLEO.h
-    c-sources:         cbits/cvWrapLEO.c
-    install-includes:  cbits/cvWrapLEO.h
+    Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, cbits/cvWrapLEO.h, cbits/cvIterators.h
+    c-sources:         cbits/cvWrapLEO.c, cbits/cvIterators.c
+    install-includes:  cbits/cvWrapLEO.h, cbits/cvIterators.h
     if flag(opencv23)
          cpp-options: -DOpenCV23
          cc-options: -DOpenCV23
@@ -73,7 +73,7 @@ Library
                        CV.TemplateMatching, CV.Transforms, CV.Conversions,
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline, CV.Gabor, CV.Corners, CV.Operations,
-                       CV.ConnectedComponents, CV.HighGUI, CV.Calibration,
+                       CV.ConnectedComponents, CV.HighGUI, CV.Calibration, CV.Iterators,
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary,
                        Utils.List, Utils.Point, Utils.Rectangle,
                        Utils.Stream, Utils.Function
@@ -84,7 +84,8 @@ Library
                        -- CV.Bindings.Fittings,
                        CV.Bindings.Types,
                        CV.Bindings.Core,
-                       CV.Bindings.ImgProc
+                       CV.Bindings.ImgProc,
+                       CV.Bindings.Iterators
     Extensions: CPP
 
 
