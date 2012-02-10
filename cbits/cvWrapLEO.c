@@ -2336,6 +2336,13 @@ void wrapFindCornerSubPix(const CvArr* image, CvPoint2D32f* corners, int count, 
  cvFindCornerSubPix(image, corners, count, searchWindow, zero, t);
 };
 
+void wrapFitEllipse(CvArr* pts, CvBox2D *out) {
+CvBox2D box = cvFitEllipse2(pts);
+out->center = box.center;
+out->size = box.size;
+out->angle = box.angle;
+}
+
 
 //
 //@-node:aleator.20051220091717:Matrix multiplication

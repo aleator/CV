@@ -282,6 +282,8 @@ int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners
 
 double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints, const CvMat* pointCounts, CvSize *imageSize, CvMat* cameraMatrix, CvMat* distCoeffs, CvMat* rvecs, CvMat* tvecs, int flags);
 
+void wrapFitEllipse(CvArr* pts, CvBox2D *out);
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo
