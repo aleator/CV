@@ -85,6 +85,7 @@ module CV.Image (
 , creatingBareImage
 , withGenImage 
 , withImage 
+, imageFPTR
 , ensure32F
 
 ) where
@@ -135,6 +136,9 @@ type D64 = Double
 newtype Image channels depth = S BareImage
 
 unS (S i) = i -- Unsafe and ugly
+
+imageFPTR :: Image c d -> ForeignPtr BareImage
+imageFPTR (S (BareImage fptr)) = fptr
 
 withImage :: Image c d -> (Ptr BareImage ->IO a) -> IO a
 withImage (S i) op = withBareImage i op

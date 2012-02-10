@@ -2343,6 +2343,9 @@ out->size = box.size;
 out->angle = box.angle;
 }
 
+int wrapCamShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp, CvBox2D* box)
+{ return cvCamShift(prob_image, *window, *criteria, comp, box); }
+
 
 //
 //@-node:aleator.20051220091717:Matrix multiplication

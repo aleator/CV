@@ -9,7 +9,16 @@ import Foreign.Storable
 #include <bindings.dsl.h>
 #include "cvWrapLEO.h"
 
+#opaque_t IplImage
+#opaque_t CvHistogram
 #opaque_t CvArr
+
+#starttype CvRect
+#field x , Int
+#field y , Int
+#field width , Int
+#field height , Int
+#stoptype
 
 #starttype CvScalar
 #field val[0] , CDouble
@@ -50,6 +59,26 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #field size   ,<CvSize2D32f>
 #field angle  ,CFloat
 #stoptype
+
+-- #startype CvHistogram
+-- #field type, Int
+-- #field bins, Ptr <CvArr>
+-- #array_field thresh, Ptr (Ptr Float)
+-- #field thresh2, Ptr (Ptr Float)
+-- #array_field mat, <CvMatND>
+-- #endtype
+
+#starttype CvTermCriteria
+#field type, Int
+#field max_iter, Int
+#field epsilon, Double
+#stoptype
+
+#num CV_TERMCRIT_ITER    
+#num CV_TERMCRIT_NUMBER  
+#num CV_TERMCRIT_EPS     
+
+
 
 #num CV_8UC1 
 #num CV_8UC2 

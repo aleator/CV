@@ -1,9 +1,14 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 module CV.Bindings.ImgProc where
 
 import Foreign.C.Types
 import Foreign.Ptr
+import Foreign.Marshal.Utils
+import Foreign.Marshal.Array
+import Foreign.ForeignPtr hiding (newForeignPtr)
+import Foreign.Concurrent
 import CV.Bindings.Types
+import CV.Bindings.Core
 
 #strict_import
 
@@ -33,3 +38,30 @@ import CV.Bindings.Types
 
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
 
+#starttype CvConnectedComp
+#field area, Double
+#field value, <CvScalar>
+#field rect,  <CvRect>
+#field contour, Ptr <CvSeq>
+#stoptype
+
+#ccall wrapCamShift, Ptr <CvArr> -> Ptr <CvRect> -> Ptr <CvTermCriteria>-> Ptr <CvConnectedComp> -> Ptr <CvBox2D> -> IO ()
+
+#ccall cvCalcArrBackProject, Ptr (Ptr <IplImage>) -> Ptr <CvArr> -> Ptr <CvHistogram> -> IO ()
+
+#num CV_HIST_ARRAY 
+
+#ccall cvCreateHist, Int -> Ptr Int -> Int -> Ptr (Ptr Float) -> Int -> IO (Ptr <CvHistogram>)
+#ccall cvReleaseHist, Ptr (Ptr <CvHistogram>) -> IO ()
+#ccall cvCalcArrHist, Ptr (Ptr <IplImage>) -> Ptr <CvHistogram> -> Int -> Ptr <CvArr> -> IO ()
+
+newtype Histogram = Histogram (ForeignPtr C'CvHistogram)
+creatingHistogram fun = do
+    iptr :: Ptr C'CvHistogram <- fun
+    fptr :: ForeignPtr C'CvHistogram <- newForeignPtr iptr (with iptr c'cvReleaseHist)
+    return . Histogram $ fptr
+
+
+emptyUniformHistogramND dims = 
+    withArray dims $ \c_sizes -> 
+    c'cvCreateHist 1 c_sizes c'CV_HIST_ARRAY nullPtr 1
