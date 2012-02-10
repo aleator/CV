@@ -1,90 +1,91 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
 #include "cvWrapLEO.h"
 module CV.Image (
--- * Basic types 
- Image(..) 
+-- * Basic types
+ Image(..)
 , create
-, empty 
-, emptyCopy 
-, emptyCopy' 
+, empty
+, emptyCopy
+, emptyCopy'
 , cloneImage
-, withClone 
-, withCloneValue 
-, CreateImage 
+, withClone
+, withCloneValue
+, CreateImage
 
 -- * Colour spaces
-, ChannelOf 
+, ChannelOf
 , GrayScale
+, Complex
 , RGB
 , RGBA
-, RGB_Channel(..) 
+, RGB_Channel(..)
 , LAB
-, LAB_Channel(..) 
-, D32 
-, D64 
-, D8 
-, Tag 
-, lab 
-, rgba 
-, rgb 
-, composeMultichannelImage 
+, LAB_Channel(..)
+, D32
+, D64
+, D8
+, Tag
+, lab
+, rgba
+, rgb
+, composeMultichannelImage
 
 -- * IO operations
-, Loadable(..) 
-, saveImage 
-, loadColorImage 
-, loadImage 
+, Loadable(..)
+, saveImage
+, loadColorImage
+, loadImage
 
--- * Pixel level access 
+-- * Pixel level access
 , GetPixel(..)
-, getAllPixels 
-, getAllPixelsRowMajor 
-, setPixel 
-, setPixel8U 
-, mapImageInplace 
+, getAllPixels
+, getAllPixelsRowMajor
+, setPixel
+, setPixel8U
+, mapImageInplace
 
 -- * Image information
 , ImageDepth
 , Sized(..)
-, getArea 
+, getArea
 , getChannel
-, getImageChannels 
-, getImageDepth 
-, getImageInfo 
+, getImageChannels
+, getImageDepth
+, getImageInfo
 
 -- * ROI's, COI's and subregions
-, setCOI 
-, setROI 
-, resetROI 
-, getRegion 
-, withIOROI 
-, withROI 
+, setCOI
+, setROI
+, resetROI
+, getRegion
+, withIOROI
+, withROI
 
 -- * Blitting
-, blendBlit 
-, blit 
-, blitM 
-, subPixelBlit 
-, safeBlit 
-, montage 
-, tileImages 
+, blendBlit
+, blit
+, blitM
+, subPixelBlit
+, safeBlit
+, montage
+, tileImages
 
 -- * Conversions
-, rgbToGray 
-, rgbToLab 
-, unsafeImageTo32F 
-, unsafeImageTo8Bit 
+, rgbToGray
+, rgbToLab
+, unsafeImageTo32F
+, unsafeImageTo8Bit
 
 -- * Low level access operations
 , BareImage(..)
-, creatingImage 
-, unImage 
-, unS 
-, withGenBareImage 
-, withBareImage 
+, creatingImage
+, unImage
+, unS
+, withGenBareImage
+, withBareImage
 , creatingBareImage
-, withGenImage 
-, withImage 
+, withGenImage
+, withImage
 , imageFPTR
 , ensure32F
 
@@ -118,6 +119,7 @@ import Control.Monad
 
 -- Colorspaces
 data GrayScale
+data Complex
 data RGB
 data BGR
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
@@ -287,8 +289,8 @@ cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 
 #c
 enum CvtFlags {
-    CvtFlip   = CV_CVTIMG_FLIP,  
-    CvtSwapRB = CV_CVTIMG_SWAP_RB 
+    CvtFlip   = CV_CVTIMG_FLIP,
+    CvtSwapRB = CV_CVTIMG_SWAP_RB
      };
 #endc
 
@@ -403,6 +405,8 @@ class CreateImage a where
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image Complex D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
 instance CreateImage (Image RGB D32) where

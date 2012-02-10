@@ -18,6 +18,8 @@ IplImage* wrapCreateImage64F(const int width, const int height, const int channe
 
 IplImage* wrapCreateImage8U(const int width, const int height, const int channels);
 
+IplImage *wrapCopyMakeBorder(IplImage* src, const int top, const int bottom, const int left, const int right, const int borderType, const float value);
+
 void wrapSubRS(const CvArr *src, double s,CvArr *dst);
 void wrapSubS(const CvArr *src, double s,CvArr *dst);
 void wrapAddS(const CvArr *src, double s, CvArr *dst);
@@ -118,7 +120,7 @@ void smab(IplImage *image,int w, int h,double t);
 IplImage* selectiveAvgFilter(IplImage *src,double t
                             ,int wwidth, int wheight);
 
-IplImage* wrapFilter2D(IplImage *src, int ax,int ay, 
+IplImage* wrapFilter2D(IplImage *src, int ax,int ay,
                     int w, int h, double *kernel);
 IplImage* wrapFilter2DImg(IplImage *src
                          ,IplImage *mask
@@ -138,8 +140,8 @@ void localBinaryPattern5(IplImage *src, int *LBP);
 void localHorizontalBinaryPattern(IplImage *src, int *LBP);
 void localVerticalBinaryPattern(IplImage *src, int *LBP);
 
-void get_weighted_histogram(IplImage *src, IplImage *weights, 
-                       double start, double end, 
+void get_weighted_histogram(IplImage *src, IplImage *weights,
+                       double start, double end,
                        int bins, double *histo);
 
 
@@ -163,7 +165,7 @@ void wrapProbHoughLines(IplImage *img, double rho, double theta
 double average_of_line(int x0, int y0
                      ,int x1, int y1
                      ,IplImage *src);
-                     
+
 IplImage* adaUpdateDistrImage(IplImage *target
                           ,IplImage *weigths
                           ,IplImage *test
@@ -172,7 +174,7 @@ IplImage* adaUpdateDistrImage(IplImage *target
 double adaFitness1(IplImage *target
                  ,IplImage *weigths
                  ,IplImage *test);
-           
+
 CvMoments* getMoments(IplImage *src, int isBinary);
 
 void freeCvMoments(CvMoments *x);
@@ -181,14 +183,14 @@ void getHuMoments(CvMoments *src,double *hu);
 
 void freeCvHuMoments(CvHuMoments *x);
 
-void haarFilter(IplImage *intImg, 
+void haarFilter(IplImage *intImg,
                 int a, int b, int c, int d,
                 IplImage *target);
 
-double haar_at(IplImage *intImg, 
+double haar_at(IplImage *intImg,
                 int x1, int y1, int w, int h);
 
-void wrapDrawRectangle(CvArr *img, int x1, int y1, 
+void wrapDrawRectangle(CvArr *img, int x1, int y1,
                        int x2, int y2, float r, float g, float b,
                        int thickness);
 
@@ -201,7 +203,7 @@ typedef struct {
   CvMemStorage *storage;
   CvSeq *contour;
   CvSeq *start;
-  
+
 } FoundContours;
 
 CvMoments* contour_moments(FoundContours *f);
@@ -270,7 +272,7 @@ void exportImageSlowComplex(IplImage *img, complex double *d);
 void subpixel_blit(IplImage *a, IplImage *b, double offset_y, double offset_x);
 double bicubicInterp(IplImage *tex, double u, double v);
 
-CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color); 
+CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color);
 
 double wrapGet32F2DC(CvArr *arr, int x, int y,int c);
 void maximal_covering_circle(int ox,int oy, double or, IplImage *distmap

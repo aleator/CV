@@ -45,5 +45,5 @@ normalize a b t src =
     withCloneValue src $ \clone ->
       withGenImage src $ \si ->
         withGenImage clone $ \ci -> do
-          c'cvNormalize si ci a b (cNormType t) nullPtr
+          c'cvNormalize si ci (realToFrac a) (realToFrac b) (cNormType t) nullPtr
           return clone

@@ -9,11 +9,47 @@ import Foreign.ForeignPtr hiding (newForeignPtr)
 import Foreign.Concurrent
 import CV.Bindings.Types
 import CV.Bindings.Core
+import CV.Image
+import C2HSTools hiding (newForeignPtr)
 
 #strict_import
 
 #include <bindings.dsl.h>
-#include <opencv/cv.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include "cvWrapLEO.h"
+
+-- CVAPI(void) cvCopyMakeBorder(
+--   const CvArr* src,
+--   CvArr* dst,
+--   CvPoint offset,
+--   int bordertype,
+--   CvScalar value CV_DEFAULT(cvScalarAll(0))
+-- );
+
+-- Copies source 2D array inside of the larger destination array and
+-- makes a border of the specified type (IPL_BORDER_*) around the copied area.
+
+#ccall wrapCopyMakeBorder , Ptr <CvArr> -> CInt -> CInt -> CInt -> CInt -> CInt -> CFloat -> IO (Ptr BareImage)
+
+data BorderType = BorderConstant | BorderReplicate | BorderReflect | BorderWrap
+
+cBorderType t = case t of
+  BorderConstant -> c'IPL_BORDER_CONSTANT
+  BorderReplicate -> c'IPL_BORDER_REPLICATE
+  BorderReflect -> c'IPL_BORDER_REFLECT
+  BorderWrap -> c'IPL_BORDER_WRAP
+
+copyMakeBorder :: Image d c -> Int -> Int -> Int -> Int -> BorderType -> Float -> IO (Image d c)
+copyMakeBorder i t b l r border value =
+  withGenImage i $ \iptr ->
+      creatingImage $
+        c'wrapCopyMakeBorder iptr
+            (fromIntegral t)
+            (fromIntegral b)
+            (fromIntegral l)
+            (fromIntegral r)
+            (cBorderType border)
+            (realToFrac value)
 
 -- CVAPI(void) cvCornerHarris(
 --   const CvArr* image,
@@ -49,7 +85,7 @@ import CV.Bindings.Core
 
 #ccall cvCalcArrBackProject, Ptr (Ptr <IplImage>) -> Ptr <CvArr> -> Ptr <CvHistogram> -> IO ()
 
-#num CV_HIST_ARRAY 
+#num CV_HIST_ARRAY
 
 #ccall cvCreateHist, Int -> Ptr Int -> Int -> Ptr (Ptr Float) -> Int -> IO (Ptr <CvHistogram>)
 #ccall cvReleaseHist, Ptr (Ptr <CvHistogram>) -> IO ()
@@ -62,6 +98,6 @@ creatingHistogram fun = do
     return . Histogram $ fptr
 
 
-emptyUniformHistogramND dims = 
-    withArray dims $ \c_sizes -> 
+emptyUniformHistogramND dims =
+    withArray dims $ \c_sizes ->
     c'cvCreateHist 1 c_sizes c'CV_HIST_ARRAY nullPtr 1
