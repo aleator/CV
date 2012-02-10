@@ -12,6 +12,9 @@ import CV.Bindings.Types
 
 -- types of array norm
 
+-- TODO: This might be expanded:
+#opaque_t CvSeq
+
 #num CV_C
 #num CV_L1
 #num CV_L2

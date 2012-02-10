@@ -74,7 +74,7 @@ Library
                        CV.Binary, CV.Marking, CV.FunnyStatistics,
                        CV.MultiresolutionSpline, CV.Gabor, CV.Corners, CV.Operations,
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration, CV.Iterators,
-                       CV.Pixelwise, CV.Matrix, CV.Arbitrary,
+                       CV.Pixelwise, CV.Matrix, CV.Arbitrary, CV.HoughTransform,
                        Utils.List, Utils.Point, Utils.Rectangle,
                        Utils.Stream, Utils.Function
 -- , CV.Fitting

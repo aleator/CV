@@ -36,6 +36,7 @@ import Data.Word
 import Control.Monad
 
 import CV.Bindings.Matrix
+import CV.Bindings.Types
 import CV.Image hiding (create)
 
 -- #define CV_MAT_ELEM_PTR_FAST( mat, row, col, pix_size )  \
@@ -66,6 +67,14 @@ instance Exists (Matrix Int) where
 instance Exists (Matrix (Float,Float)) where
     type Args (Matrix (Float,Float)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
+
+instance Exists (Matrix (Float,Float,Float)) where
+    type Args (Matrix (Float,Float,Float)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC3)
+
+instance Exists (Matrix (Int,Int,Int,Int)) where
+    type Args (Matrix (Int,Int,Int,Int)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
 
 instance Exists (Matrix Double) where
     type Args (Matrix Double) = (Int,Int)
