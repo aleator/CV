@@ -16,10 +16,6 @@ import CV.Bindings.Types
 
 #ccall wrapFindCornerSubPix , Ptr BareImage -> Ptr <CvPoint2D32f> -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Double -> IO ()
 
-#num CV_TERMCRIT_ITER
-#num CV_TERMCRIT_EPS
-
-
 #num CV_CALIB_USE_INTRINSIC_GUESS  
 #num CV_CALIB_FIX_ASPECT_RATIO     
 #num CV_CALIB_FIX_PRINCIPAL_POINT  

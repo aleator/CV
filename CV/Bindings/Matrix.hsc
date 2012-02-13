@@ -34,40 +34,6 @@ import Foreign.C.Types
 #num CV_GEMM_B_T
 #num CV_GEMM_C_T
 
-#num CV_8UC1 
-#num CV_8UC2 
-#num CV_8UC3 
-#num CV_8UC4 
-
-#num CV_8SC1 
-#num CV_8SC2 
-#num CV_8SC3 
-#num CV_8SC4 
-
-#num CV_16UC1 
-#num CV_16UC2 
-#num CV_16UC3 
-#num CV_16UC4 
-
-#num CV_16SC1 
-#num CV_16SC2 
-#num CV_16SC3 
-#num CV_16SC4 
-
-#num CV_32SC1 
-#num CV_32SC2 
-#num CV_32SC3 
-#num CV_32SC4 
-
-#num CV_32FC1 
-#num CV_32FC2 
-#num CV_32FC3 
-#num CV_32FC4 
-
-#num CV_64FC1 
-#num CV_64FC2 
-#num CV_64FC3 
-#num CV_64FC4 
 
 
 -- typedef struct CvMat
