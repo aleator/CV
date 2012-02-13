@@ -1,5 +1,5 @@
 {-#LANGUAGE ForeignFunctionInterface#-}
--- |This  module provides slow but functional means for exporting images from and to 
+-- |This  module provides slow but functional means for exporting images from and to
 --  CArrays, which can easily be passed into foreign functions.
 module CV.Conversions (
      -- Arrays of Double
@@ -22,7 +22,7 @@ module CV.Conversions (
     ,acquireImageSlow8URGB'
     ) where
 
-import Complex
+import Data.Complex
 
 import CV.Image
 import Data.Word
@@ -67,7 +67,7 @@ copyFCArrayToImage carr = S $ unsafePerformIO $
 -- |Copy D32 grayscale image to CArray
 copyImageToFCArray :: Image GrayScale D32 -> CArray (Int,Int) Float
 copyImageToFCArray (S img) = unsafePerformIO $
-         withBareImage img $ \cimg -> 
+         withBareImage img $ \cimg ->
           createCArray ((0,0),(w-1,h-1)) (exportImageSlowF' cimg) --({#call exportImageSlow#} cimg)
     where
      (w,h) = getSize img
@@ -86,14 +86,14 @@ copyComplexCArrayToImage carr = S $ unsafePerformIO $
 -- |Copy the contents of a CV.Image into a CArray.
 copyImageToCArray :: Image GrayScale D32 -> CArray (Int,Int) Double
 copyImageToCArray (S img) = unsafePerformIO $
-         withBareImage img $ \cimg -> 
+         withBareImage img $ \cimg ->
           createCArray ((0,0),(w-1,h-1)) (exportImageSlow' cimg) --({#call exportImageSlow#} cimg)
     where
      (w,h) = getSize img
 -- |Copy the contents of CV.Image into a pre-existing CArray.
 --
-copyImageToExistingCArray (S img) arr = 
-         withBareImage img $ \cimg -> 
+copyImageToExistingCArray (S img) arr =
+         withBareImage img $ \cimg ->
           withCArray arr $ \carr -> (exportImageSlow' cimg carr) --({#call exportImageSlow#} cimg)
     where
      (w,h) = getSize img
@@ -101,7 +101,7 @@ copyImageToExistingCArray (S img) arr =
 -- |Copy image as a real part of a complex CArray
 copyImageToComplexCArray :: Image GrayScale D32 -> CArray (Int,Int) (Complex Double)
 copyImageToComplexCArray (S img) = unsafePerformIO $
-         withBareImage img $ \cimg -> 
+         withBareImage img $ \cimg ->
           createCArray ((0,0),(w-1,h-1)) (exportImageSlowComplex' cimg) --({#call exportImageSlow#} cimg)
     where
      (w,h) = getSize img

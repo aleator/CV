@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ParallelListComp#-}
+{-#LANGUAGE ForeignFunctionInterface, ParallelListComp, BangPatterns#-}
 #include "cvWrapLEO.h"
 -- |This module provides implementations for basic versions of Local Binary Pattern texture features introduced in
 -- T. Ojala, M. Pietikäinen, and D. Harwood (1994), "Performance evaluation of texture measures with classification

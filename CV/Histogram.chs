@@ -12,7 +12,7 @@ import Foreign.C.Types
 import Foreign.ForeignPtr
 import Foreign.Marshal.Array
 import Foreign.Ptr
-import C2HSTools
+import C2HSTools hiding (unsafePerformIO)
 import CV.Bindings.Types
 import qualified CV.Bindings.ImgProc as I
 import System.IO.Unsafe
@@ -25,7 +25,7 @@ newtype (Num a) => HistogramData a = HGD [(a,a)]
 -- | Given a set of images, such as the color channels of color image, and
 --   a histogram with corresponding number of channels, replace the pixels of
 --   the image with the likelihoods from the histogram
-backProjectHistogram :: [Image GrayScale D8] -> Histogram -> Image GrayScale D8
+backProjectHistogram :: [Image GrayScale D8] -> I.Histogram -> Image GrayScale D8
 backProjectHistogram images@(img:_) (I.Histogram hist) = unsafePerformIO $ do
     r <- cloneImage img
     withImage r $ \c_r ->
@@ -40,7 +40,7 @@ backProjectHistogram _ _ = error "Empty list of images"
 histogram :: [(Image GrayScale D8, Int)] -> Bool -> Maybe (Image GrayScale D8)
                -> I.Histogram
 
-histogram imageBins  
+histogram imageBins accumulate mask  = unsafePerformIO $
  I.creatingHistogram $ do
         hist <-  I.emptyUniformHistogramND ds 
         withPtrList (map imageFPTR images) $ \ptrs -> 

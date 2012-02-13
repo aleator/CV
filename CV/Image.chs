@@ -119,10 +119,10 @@ import Control.Monad
 -- Colorspaces
 data GrayScale
 data RGB
+data LAB
 data BGR
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 data RGBA
-data LAB
 data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
 type family ChannelOf a :: *
 type instance ChannelOf RGB_Channel = RGB
