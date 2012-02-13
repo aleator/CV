@@ -39,13 +39,13 @@ nibblyr (w,h) k i = IM.lessThan t flat
      flat = i #- gaussian (w,h) i
 
 
--- TODO: Convert Histograms from Doubles to Floats..
-otsu bs image = IM.moreThan (realToFrac threshold) image
-    where
-        histogram  = getHistogram bs $ image
-        partitions = histogramPartitions histogram 
-        (threshold,_,_) = maximumBy (comparing otsuCmp) partitions 
-        otsuCmp (t,as,bs) = betweenClassVariance (as) (bs)
+---- TODO: Convert Histograms from Doubles to Floats..
+--otsu bs image = IM.moreThan (realToFrac threshold) image
+--    where
+--        histogram  = getHistogram bs $ image
+--        partitions = histogramPartitions histogram 
+--        (threshold,_,_) = maximumBy (comparing otsuCmp) partitions 
+--        otsuCmp (t,as,bs) = betweenClassVariance (as) (bs)
 
 -- This is excruciatingly slow means of finding kittler-illingworth threshold
 -- for an image
@@ -67,9 +67,9 @@ kittlerMeasure image t = unNaN $
      fgDev = realToFrac $ IM.stdDeviationMask image (IM.invert thresholded)
 
 
-histogramPartitions (HGD a) = zip3 (head.tails.map fst $ a) 
-                                   (tail.inits.map snd $ a) 
-                                   (reverse.tail.reverse.tails.map snd $ a)
+--histogramPartitions (HGD a) = zip3 (head.tails.map fst $ a) 
+--                                   (tail.inits.map snd $ a) 
+--                                   (reverse.tail.reverse.tails.map snd $ a)
 
 betweenClassVariance as bs = sum as * sum bs 
                              * (average bs - average as)^2
