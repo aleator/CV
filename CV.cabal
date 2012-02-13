@@ -87,7 +87,7 @@ Library
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration, CV.Iterators,
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary, CV.HoughTransform,
                        Utils.List, Utils.Point, Utils.Rectangle, Utils.Pointer
-                       Utils.Stream, Utils.Function
+                       Utils.Stream, Utils.Function, Utils.GeometryClass,
                        CV.Fitting, CV.Features,
                        CV.Bindings.Types
     Other-modules:     C2HSTools, C2HS,

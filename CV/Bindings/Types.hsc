@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, TypeFamilies #-}
 module CV.Bindings.Types where
 import Data.Word
 import Foreign.C.Types
@@ -6,6 +6,8 @@ import Foreign.Storable
 import Foreign.Ptr
 import Foreign.Marshal.Utils
 import Foreign.Marshal.Array
+import Utils.GeometryClass
+import GHC.Float
 
 
 #strict_import
@@ -79,10 +81,18 @@ cvSeqToList ptrseq = do
 #field y , CInt
 #stoptype
 
+instance Point2D C'CvPoint where
+   type EL C'CvPoint = Int
+   pt (C'CvPoint x y) = (fromIntegral x,fromIntegral y)
+
 #starttype CvPoint2D32f
 #field x , Float
 #field y , Float
 #stoptype
+
+instance Point2D C'CvPoint2D32f where
+   type EL C'CvPoint2D32f = Double
+   pt (C'CvPoint2D32f x y) = (realToFrac x,realToFrac y)
 
 -- // #starttype CV_32FC2
 -- // #field x , Float
