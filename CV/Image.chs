@@ -119,6 +119,7 @@ import Control.Monad
 data GrayScale
 data RGB
 data LAB
+data BGR
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 data RGBA
 data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
@@ -280,12 +281,35 @@ instance Sized (Image c d) where
 cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
 cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 
+#c
+enum CvtFlags {
+    CvtFlip   = CV_CVTIMG_FLIP,  
+    CvtSwapRB = CV_CVTIMG_SWAP_RB 
+     };
+#endc
+
+{#enum CvtFlags {}#}
+
 
 rgbToLab :: Image RGB D32 -> Image LAB D32
 rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
 
 rgbToGray :: Image RGB D32 -> Image GrayScale D32
 rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
+
+bgrToRgb :: Image BGR depth -> Image RGB depth
+bgrToRgb = S . swapRB . unS
+
+rgbToBgr :: Image BGR depth -> Image RGB depth
+rgbToBgr = S . swapRB . unS
+
+swapRB :: BareImage -> BareImage
+swapRB img = unsafePerformIO $ do
+    res <- cloneBareImage img
+    withBareImage img $ \cimg ->
+     withBareImage res $ \cres ->
+        {#call cvConvertImage#} (castPtr cimg) (castPtr cres) (fromIntegral . fromEnum $ CvtSwapRB)
+    return res
 
 
 class GetPixel a where
@@ -493,8 +517,13 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
                                    ({#call alphaBlit#} i1 i1a i2 i2a x y)
 
 
+cloneImage :: Image a b -> IO (Image a b)
 cloneImage img = withGenImage img $ \image ->
                     creatingImage ({#call cvCloneImage #} image)
+
+cloneBareImage :: BareImage -> IO BareImage
+cloneBareImage img = withGenBareImage img $ \image ->
+                    creatingBareImage ({#call cvCloneImage #} image)
 
 withClone
   :: Image channels depth

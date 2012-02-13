@@ -28,7 +28,6 @@ horMax :: Image GrayScale D32 -> [Double]
 horMax (pixels) = [fromIntegral $ snd $ maximumBy (comparing value) [(i,j) | j<-[0..height-1]] | i <- [0..width-1] ]
     where
         value (x,y) = getPixel (x,y) pixels
-        value (x,y) = getPixel (x,y) pixels
         (width,height) = getSize pixels
 
 getMarks :: Image GrayScale D32 -> [(Float,Float)]
@@ -38,7 +37,6 @@ getMarks pixels = [(realToFrac i,realToFrac j) | j <- [0..height-1]
     where
         value (x,y) = getPixel (x,y) pixels
         value (x,y) = getPixel (x,y) pixels
-        (width,height) = getSize pixels
 
 ntimes n op = (!! n) . iterate op
 
