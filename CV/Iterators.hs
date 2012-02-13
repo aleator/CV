@@ -1,4 +1,5 @@
-{-#LANGUAGE TypeFamilies, TypeSynonymInstances, ParallelListComp#-}
+{-#LANGUAGE TypeFamilies, TypeSynonymInstances, ParallelListComp,
+            FlexibleContexts, FlexibleInstances #-}
 module CV.Iterators
 ( ImageContext(..)
 , F32I
