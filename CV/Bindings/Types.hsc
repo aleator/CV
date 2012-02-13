@@ -3,15 +3,52 @@ module CV.Bindings.Types where
 import Data.Word
 import Foreign.C.Types
 import Foreign.Storable
+import Foreign.Ptr
+import Foreign.Marshal.Utils
+import Foreign.Marshal.Array
+
 
 #strict_import
 
 #include <bindings.dsl.h>
 #include "cvWrapLEO.h"
 
+#opaque_t CvMemStorage
+#opaque_t CvSeqBlock
+#opaque_t CvArr
 #opaque_t IplImage
 #opaque_t CvHistogram
-#opaque_t CvArr
+
+#starttype CvSeq
+#field flags, CInt
+#field header_size, CInt
+#field h_prev, Ptr <CvSeq>
+#field h_next, Ptr <CvSeq>
+#field v_prev, Ptr <CvSeq>
+#field v_next, Ptr <CvSeq>
+#field total,  CInt
+#field elem_size, CInt
+#field block_max, Ptr Char
+#field ptr, Ptr Char
+#field delta_elems, CInt
+#field free_blocks, Ptr <CvSeqBlock>
+#field first, Ptr <CvSeqBlock>
+#stoptype 
+
+#ccall extractCVSeq, Ptr <CvSeq> -> Ptr () -> IO ()
+#ccall printSeq, Ptr <CvSeq> -> IO ()
+
+-- | Convert a CvSeq object into list of its contents. Note that
+-- since CvSeq can be approximately anything, including a crazy man from the moon, 
+-- this is pretty unsafe and you must make sure that `a` is actually the element
+-- in the seq, and the seq is something that remotely represents a sequence of elements.
+cvSeqToList :: (Storable a) => Ptr C'CvSeq -> IO [a]
+cvSeqToList ptrseq = do
+   seq <- peek ptrseq
+   dest <- mallocArray (fromIntegral $ c'CvSeq'total seq)
+   c'extractCVSeq ptrseq (castPtr dest)
+   peekArray (fromIntegral $ c'CvSeq'total seq) dest
+
 
 #starttype CvRect
 #field x , Int
@@ -68,6 +105,8 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 -- #array_field mat, <CvMatND>
 -- #endtype
 
+
+
 #starttype CvTermCriteria
 #field type, Int
 #field max_iter, Int
@@ -78,6 +117,16 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #num CV_TERMCRIT_NUMBER  
 #num CV_TERMCRIT_EPS     
 
+
+-- Memory Storage
+#ccall cvCreateMemStorage, Int -> IO (Ptr <CvMemStorage>) 
+#ccall cvReleaseMemStorage, Ptr (Ptr <CvMemStorage>) -> IO ()
+
+withNewMemory fun = do
+    mem <- c'cvCreateMemStorage 0
+    res <- fun mem
+    with mem c'cvReleaseMemStorage
+    return res
 
 
 #num CV_8UC1 
@@ -114,3 +163,14 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #num CV_64FC2 
 #num CV_64FC3 
 #num CV_64FC4 
+
+
+#starttype CvSURFPoint
+#field pt, <CvPoint2D32f> 
+#field laplacian, Int     
+#field size, Int          
+#field dir, Float         
+#field hessian, Float     
+#stoptype
+
+

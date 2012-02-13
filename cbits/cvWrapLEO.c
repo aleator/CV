@@ -6,6 +6,7 @@
 //@+node:aleator.20050908100314.1:Includes
 #include "cvWrapLEO.h"
 #include <stdio.h>
+#include <opencv2/core/types_c.h>
 #include <complex.h>
 #include <stdint.h>
 
@@ -2345,6 +2346,20 @@ out->angle = box.angle;
 
 int wrapCamShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp, CvBox2D* box)
 { return cvCamShift(prob_image, *window, *criteria, comp, box); }
+
+
+
+void extractCVSeq(const CvSeq* seq,void *dest){
+CvSeqReader reader;
+cvStartReadSeq( seq, &reader, 0 );
+void *index=dest;
+printf("Seq-len-c ,%d\n",seq->total);
+for( int i = 0; i < seq->total; i++ )
+{
+    memcpy(index,(void*)reader.ptr,seq->elem_size);
+    index += seq->elem_size;
+    CV_NEXT_SEQ_ELEM( seq->elem_size, reader );
+}}
 
 
 //
