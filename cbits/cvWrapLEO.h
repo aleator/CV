@@ -296,6 +296,11 @@ printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %d",
        seq->flags, seq->header_size, seq->total, seq->ptr);
 }
 
+void wrapSnakeImage(const IplImage* image, CvPoint* points, int length, float* alpha, float* beta, float* gamma, int coeff_usage, CvSize *win, CvTermCriteria *criteria, int calc_gradient) {
+
+return wrapSnakeImage(image, points, length, alpha, beta, gamma, coeff_usage, win, criteria, calc_gradient);
+};
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo

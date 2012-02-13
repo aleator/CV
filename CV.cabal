@@ -88,7 +88,7 @@ Library
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary, CV.HoughTransform,
                        Utils.List, Utils.Point, Utils.Rectangle, Utils.Pointer
                        Utils.Stream, Utils.Function, Utils.GeometryClass,
-                       CV.Fitting, CV.Features,
+                       CV.Fitting, CV.Features, CV.Tracking
                        CV.Bindings.Types
     Other-modules:     C2HSTools, C2HS,
                        CV.Bindings.Matrix,
@@ -97,6 +97,7 @@ Library
                        CV.Bindings.Core,
                        CV.Bindings.ImgProc,
                        CV.Bindings.Features,
+                       CV.Bindings.Tracking,
                        CV.Bindings.Iterators
     Extensions: CPP
 
