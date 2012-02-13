@@ -82,7 +82,7 @@ cvSeqToList ptrseq = do
 #stoptype
 
 instance Point2D C'CvPoint where
-   type EL C'CvPoint = Int
+   type ELP C'CvPoint = Int
    pt (C'CvPoint x y) = (fromIntegral x,fromIntegral y)
 
 #starttype CvPoint2D32f
@@ -91,7 +91,7 @@ instance Point2D C'CvPoint where
 #stoptype
 
 instance Point2D C'CvPoint2D32f where
-   type EL C'CvPoint2D32f = Double
+   type ELP C'CvPoint2D32f = Double
    pt (C'CvPoint2D32f x y) = (realToFrac x,realToFrac y)
 
 -- // #starttype CV_32FC2

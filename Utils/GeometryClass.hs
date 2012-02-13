@@ -2,6 +2,14 @@
 module Utils.GeometryClass where
 
 class Point2D a where
-   type EL a :: *
-   pt :: a -> (EL a, EL a)
+   type ELP a :: *
+   pt :: a -> (ELP a, ELP a)
+
+class Line2D a where
+   type ELL a :: *
+   offsetAngle :: a -> (ELL a, Double)
+
+class LineSegment a where
+   type ELS a :: *
+   startEnd :: a -> ((ELS a, ELS a),(ELS a, ELS a))
 

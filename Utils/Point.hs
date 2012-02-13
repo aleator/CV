@@ -3,11 +3,11 @@ module Utils.Point where
 import Utils.GeometryClass
 
 instance Point2D (Int,Int) where
-   type EL (Int,Int) = Int
+   type ELP (Int,Int) = Int
    pt = id
 
 instance Point2D (Double,Double) where
-   type EL (Double,Double) = Double
+   type ELP (Double,Double) = Double
    pt = id
 
 type Pt a = (a,a)
