@@ -17,3 +17,17 @@ import CV.Bindings.Types
 #stoptype
 
 #ccall wrapExtractSURF, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvSURFParams> -> Int -> IO ()
+
+#starttype CvMSERParams
+#field delta, Int
+#field maxArea, Int
+#field minArea, Int
+#field maxVariation, Float
+#field minDiversity, Float
+#field maxEvolution, Int
+#field areaThreshold, Double
+#field minMargin, Double
+#field edgeBlurSize, Int
+#stoptype
+
+#ccall wrapExtractMSER, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvMSERParams> -> IO ()

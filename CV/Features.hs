@@ -1,12 +1,57 @@
-{-#LANGUAGE RecordWildCards, ScopedTypeVariables#-}
-module CV.Features (SURFParams, defaultParams, getSURF) where
+{-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
+module CV.Features (SURFParams, defaultSURFParams, getSURF
+                   ,getMSER, MSERParams, mkMSERParams, defaultMSERParams ) where
 import CV.Image
 import CV.Bindings.Types
 import CV.Bindings.Features
 import Foreign.Ptr
+import Control.Monad
 import Foreign.Storable
 import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
+import Utils.GeometryClass
+import System.IO.Unsafe
+
+newtype MSERParams = MP C'CvMSERParams deriving (Show)
+
+-- | Create parameters for getMSER.
+mkMSERParams :: Int            -- ^ Delta
+                -> Int         -- ^ prune the area which bigger than maxArea
+                -> Int         -- ^ prune the area which smaller than minArea
+                -> Float       -- ^ prune the area have similar size to its children
+                -> Float       -- ^ trace back to cut off mser with diversity < min_diversity
+                -> Int         -- ^ for color image, the evolution steps
+                -> Double      -- ^ the area threshold to cause re-initialize
+                -> Double      -- ^ ignore too small margin
+                -> Int         -- ^ the aperture size for edge blur
+                -> MSERParams
+
+mkMSERParams a b c d e f g h i= MP $ C'CvMSERParams a b c d e f g h i
+defaultMSERParams = mkMSERParams 5 14400 60 0.25 0.2 200 1.01 0.003 5
+
+-- | The function encapsulates all the parameters of the MSER extraction algorithm (see
+--   <http://en.wikipedia.org/wiki/Maximally_stable_extremal_regions>
+getMSER :: (Point2D a, ELP a~Int)
+   => Image GrayScale D8 -> Maybe (Image GrayScale D8) -> MSERParams -> [[a]]
+getMSER image mask (MP params) = unsafePerformIO $
+   withMask mask $ \ptr_mask ->
+   with nullPtr $ \ptr_ptr_contours ->
+   withNewMemory $ \ptr_mem ->
+   with params  $ \ptr_params ->
+   withImage image $ \ptr_image -> do
+    c'wrapExtractMSER (castPtr ptr_image) ptr_mask ptr_ptr_contours
+                      ptr_mem ptr_params
+    ptr_contours <- peek ptr_ptr_contours
+    forM [0..10] $ \ix -> do
+      ptr_ctr <- c'cvGetSeqElem ptr_contours ix
+      ctr <- peek (castPtr ptr_ctr)
+      pts :: [C'CvPoint] <- cvSeqToList ctr
+      return (map convertPt pts)
+
+withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α
+withMask m f = case m of
+               Just m  -> withImage m (f.castPtr)
+               Nothing -> f nullPtr
 
 -- | Parameters for SURF feature extraction
 data SURFParams = SURF {hessianThreshold :: Double
@@ -28,8 +73,8 @@ data SURFParams = SURF {hessianThreshold :: Double
                         }
 
 -- | Default parameters for getSURF
-defaultParams :: SURFParams
-defaultParams = SURF 400 3 4 False
+defaultSURFParams :: SURFParams
+defaultSURFParams = SURF 400 3 4 False
 
 -- | Extract Speeded Up Robust Features from an image
 getSURF :: SURFParams -> Image GrayScale D8 -> IO [(C'CvSURFPoint,[Float])]

@@ -289,6 +289,11 @@ void wrapExtractSURF(const CvArr* image, const CvArr* mask, CvSeq** keypoints, C
 return cvExtractSURF(image, mask, keypoints, descriptors, storage, *param, useProvidedKeyPts);
 };
 
+void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
+cvExtractMSER( _img, _mask, contours, storage, *params );
+};
+
+
 void extractCVSeq(const CvSeq* seq,void *dest);
 
 void printSeq(const CvSeq *seq) {
