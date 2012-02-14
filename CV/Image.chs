@@ -140,6 +140,11 @@ unS (S i) = i -- Unsafe and ugly
 imageFPTR :: Image c d -> ForeignPtr BareImage
 imageFPTR (S (BareImage fptr)) = fptr
 
+-- | Copy an image from a pointer. Be sure to give an explicit return type for this.
+--   (This is mainly for interacting with c)
+copyFromPtr :: Ptr BareImage -> IO (Image s d)
+copyFromPtr ptr = creatingImage (castPtr `fmap` {#call cvCloneImage #} (castPtr ptr))
+
 withImage :: Image c d -> (Ptr BareImage ->IO a) -> IO a
 withImage (S i) op = withBareImage i op
 --withGenNewImage (S i) op = withGenImage i op
@@ -161,6 +166,7 @@ instance NFData (Image a b) where
     rnf a@(S (BareImage fptr)) = (unsafeForeignPtrToPtr) fptr `seq` a `seq` ()-- This might also need peek?
 
 
+creatingImage :: (IO (Ptr BareImage)) -> IO (Image c d)
 creatingImage fun = do
               iptr <- fun
 --              {#call incrImageC#} -- Uncomment this line to get statistics of number of images allocated by ghc
@@ -523,11 +529,11 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
 
 cloneImage :: Image a b -> IO (Image a b)
 cloneImage img = withGenImage img $ \image ->
-                    creatingImage ({#call cvCloneImage #} image)
+                    creatingImage (castPtr `fmap` {#call cvCloneImage #} image)
 
 cloneBareImage :: BareImage -> IO BareImage
 cloneBareImage img = withGenBareImage img $ \image ->
-                    creatingBareImage ({#call cvCloneImage #} image)
+                    creatingBareImage (castPtr `fmap` {#call cvCloneImage #} image)
 
 withClone
   :: Image channels depth
