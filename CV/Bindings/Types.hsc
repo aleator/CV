@@ -180,10 +180,14 @@ withNewMemory fun = do
 
 #starttype CvSURFPoint
 #field pt, <CvPoint2D32f> 
-#field laplacian, Int     
-#field size, Int          
-#field dir, Float         
-#field hessian, Float     
+#field laplacian, CInt     
+#field size, CInt          
+#field dir, CFloat         
+#field hessian, CFloat     
 #stoptype
 
+instance Point2D C'CvSURFPoint where
+   type ELP C'CvSURFPoint = Float
+   pt (C'CvSURFPoint (C'CvPoint2D32f x y) _ _ _ _) = (realToFrac x,realToFrac y)
+   toPt (x,y) = C'CvSURFPoint (C'CvPoint2D32f (realToFrac x) (realToFrac y)) 0 0 0 0
 
