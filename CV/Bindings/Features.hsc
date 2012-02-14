@@ -10,10 +10,10 @@ import CV.Bindings.Types
 #include <opencv/cv.h>
 
 #starttype CvSURFParams
-#field extended, Int
-#field hessianThreshold, Double
-#field nOctaves, Int
-#field nOctaveLayers, Int
+#field extended, CInt
+#field hessianThreshold, CDouble
+#field nOctaves, CInt
+#field nOctaveLayers, CInt
 #stoptype
 
 #ccall wrapExtractSURF, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvSURFParams> -> Int -> IO ()

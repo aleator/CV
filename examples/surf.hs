@@ -5,15 +5,16 @@ import CV.Drawing
 import CV.ImageOp
 import CV.Bindings.Types
 import CV.Transforms
+import Utils.GeometryClass
 
 main = do
    Just x <- loadImage "smallLena.jpg"
    let y = rotate (pi/2) x
-   lst <- getSURF defaultParams (unsafeImageTo8Bit x)
-   lsty <- getSURF defaultParams (unsafeImageTo8Bit y)
-   let result lst x = x <## [circleOp 1 (round x,round y) 6 (Stroked 1)
-                      | (pt,_) <- lst
-                      , let C'CvPoint2D32f x y = c'CvSURFPoint'pt pt ]
+       lst  = getSURF defaultSURFParams (unsafeImageTo8Bit x) Nothing
+       lsty = getSURF defaultSURFParams (unsafeImageTo8Bit y) Nothing
+   let result lst x = x <## [circleOp 1 (round x,round y) (fromIntegral s`div`3) (Stroked 1)
+                      | (C'CvSURFPoint (C'CvPoint2D32f x y) l s d h,_) <- lst
+                      ]
    saveImage "surf_result.png" $ montage (2,1) 2 [result lst x ,result lsty y]
    mapM_ print (take 5 lst)
 
