@@ -2353,7 +2353,6 @@ void extractCVSeq(const CvSeq* seq,void *dest){
 CvSeqReader reader;
 cvStartReadSeq( seq, &reader, 0 );
 void *index=dest;
-printf("Seq-len-c ,%d\n",seq->total);
 for( int i = 0; i < seq->total; i++ )
 {
     memcpy(index,(void*)reader.ptr,seq->elem_size);
