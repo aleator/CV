@@ -38,6 +38,7 @@ import GHC.Float
 #stoptype 
 
 #ccall extractCVSeq, Ptr <CvSeq> -> Ptr () -> IO ()
+#ccall cvGetSeqElem, Ptr <CvSeq> -> CInt -> IO (Ptr CChar)
 #ccall printSeq, Ptr <CvSeq> -> IO ()
 
 -- | Convert a CvSeq object into list of its contents. Note that
