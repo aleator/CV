@@ -13,8 +13,9 @@ main = do
    let y = rotate (pi/2) x
        lst  = getSURF defaultSURFParams (unsafeImageTo8Bit x) Nothing
        lsty = getSURF defaultSURFParams (unsafeImageTo8Bit y) Nothing
-   let result lst x = x <## [circleOp 1 (round x,round y) (fromIntegral s`div`3) (Stroked 1)
-                      | (C'CvSURFPoint (C'CvPoint2D32f x y) l s d h,_) <- lst
+   let result lst x = x <## [ellipseBoxOp 1 (C'CvBox2D c size d) 1 0
+                      | (C'CvSURFPoint c l s d h,_) <- lst
+                      , let size = C'CvSize2D32f (fromIntegral s) (fromIntegral s)
                       ]
    saveImage "surf_result.png" $ montage (2,1) 2 [result lst x ,result lsty y]
    mapM_ print (take 5 lst)

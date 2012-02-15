@@ -96,6 +96,7 @@ Library
                        CV.Bindings.Fittings,
                        CV.Bindings.Core,
                        CV.Bindings.ImgProc,
+                       CV.Bindings.Drawing,
                        CV.Bindings.Features,
                        CV.Bindings.Iterators
     Extensions: CPP
