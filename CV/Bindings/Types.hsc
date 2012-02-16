@@ -66,6 +66,11 @@ instance BoundingBox C'CvRect where
    bounds (C'CvRect x y w h) = Rectangle (f x) (f y) (f w) (f h)
     where f = fromIntegral
 
+instance FromBounds C'CvRect where
+   type ELFB C'CvRect = Int
+   fromBounds (Rectangle x y w h) = C'CvRect (f x) (f y) (f w) (f h)
+    where f = fromIntegral
+
 #starttype CvScalar
 #field val[0] , CDouble
 #field val[1] , CDouble
