@@ -54,10 +54,10 @@ cvSeqToList ptrseq = do
 
 
 #starttype CvRect
-#field x , Int
-#field y , Int
-#field width , Int
-#field height , Int
+#field x , CInt
+#field y , CInt
+#field width , CInt
+#field height , CInt
 #stoptype
 
 #starttype CvScalar
@@ -75,6 +75,13 @@ cvSeqToList ptrseq = do
 #starttype CvSize2D32f
 #field width , CFloat
 #field height , CFloat
+#stoptype
+
+#starttype CvConnectedComp
+#field area, CDouble
+#field value, <CvScalar>
+#field rect, <CvRect>
+#field contour, Ptr <CvSeq>
 #stoptype
 
 #starttype CvPoint
@@ -121,8 +128,8 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 
 
 #starttype CvTermCriteria
-#field type, Int
-#field max_iter, Int
+#field type, CInt
+#field max_iter, CInt
 #field epsilon, Double
 #stoptype
 

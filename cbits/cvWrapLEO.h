@@ -301,6 +301,10 @@ printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %d",
        seq->flags, seq->header_size, seq->total, seq->ptr);
 }
 
+int wrapMeanShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp)
+{
+return cvMeanShift(prob_image, *window, *criteria, comp);
+};
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo

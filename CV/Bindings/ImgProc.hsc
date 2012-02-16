@@ -38,14 +38,6 @@ import CV.Bindings.Core
 
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
 
-#starttype CvConnectedComp
-#field area, Double
-#field value, <CvScalar>
-#field rect,  <CvRect>
-#field contour, Ptr <CvSeq>
-#stoptype
-
-#ccall wrapCamShift, Ptr <CvArr> -> Ptr <CvRect> -> Ptr <CvTermCriteria>-> Ptr <CvConnectedComp> -> Ptr <CvBox2D> -> IO ()
 
 #ccall cvCalcArrBackProject, Ptr (Ptr <IplImage>) -> Ptr <CvArr> -> Ptr <CvHistogram> -> IO ()
 
