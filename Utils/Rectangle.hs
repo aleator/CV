@@ -10,6 +10,7 @@ data Rectangle a = Rectangle {-#UNPACK#-} !a
                              {-#UNPACK#-} !a
                              deriving (Eq,Show)
 
+
 a `s` b = rnf a `seq` b
 
 instance (NFData a) => NFData (Rectangle a) where

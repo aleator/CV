@@ -60,6 +60,11 @@ cvSeqToList ptrseq = do
 #field height , CInt
 #stoptype
 
+instance BoundingBox C'CvRect where
+   type ELBB C'CvRect = Int
+   bounds (C'CvRect x y w h) = Rectangle (f x) (f y) (f w) (f h)
+    where f = fromIntegral
+
 #starttype CvScalar
 #field val[0] , CDouble
 #field val[1] , CDouble

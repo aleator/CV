@@ -1,4 +1,5 @@
-{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances, 
+            ViewPatterns, FlexibleContexts#-}
 #include "cvWrapLEO.h"
 -- | Module for exposing opencv drawing functions. These are meant for quick and dirty marking
 --   and not for anything presentable. For any real drawing
@@ -13,7 +14,6 @@ module CV.Drawing(
                 ,Drawable(..)
                 -- * Extra drawing operations
                 ,drawLinesOp
-                ,rectOpS
                 -- * Floodfill operations
                 ,fillOp
                 ,floodfill
@@ -35,6 +35,8 @@ import Control.Monad(when)
 {#import CV.Image#}
 
 import CV.ImageOp
+import Utils.GeometryClass
+import Utils.Rectangle
 
 -- | Is the shape filled or just a boundary?
 data ShapeStyle = Filled | Stroked Int
@@ -55,9 +57,15 @@ class Drawable a b where
     -- | Draw a Circle
     circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
     -- | Draw a Rectangle by supplying two corners
-    rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ImageOperation a b
+    rectOp   :: (BoundingBox bb, Integral (ELBB bb)) => (Color a b) -> Int -> bb -> ImageOperation a b
     -- | Draw a filled polygon
     fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
+
+primRectOp (r,g,b) t (bounds -> Rectangle x y w h) = ImgOp $ \i -> do
+                         withGenImage i $ \img -> 
+                              {#call wrapDrawRectangle#} img (fromIntegral x)
+                               (fromIntegral y) (fromIntegral $ x+w) (fromIntegral $ y+h)
+                               (realToFrac r) (realToFrac g)(realToFrac b)(fromIntegral t)
 
 instance Drawable RGB D32 where
     type Color RGB D32 = (D32,D32,D32)
@@ -81,11 +89,9 @@ instance Drawable RGB D32 where
                                                            (fromIntegral r) (realToFrac red) 
                                                            (realToFrac g) (realToFrac b)
                                                            $ styleToCV s)
-    rectOp (r,g,b) t (x,y) (x1,y1) = ImgOp $ \i -> do
-                         withGenImage i $ \img -> 
-                              {#call wrapDrawRectangle#} img (fromIntegral x)
-                               (fromIntegral y) (fromIntegral x1) (fromIntegral y1)
-                               (realToFrac r) (realToFrac g)(realToFrac b)(fromIntegral t)
+
+    rectOp c = primRectOp c
+
     fillPolyOp (r,g,b) pts = ImgOp $ \i -> do
                              withImage i $ \img -> do
                                   let (xs,ys) = unzip pts
@@ -122,12 +128,7 @@ instance Drawable GrayScale D32 where
                                                            (realToFrac c) (realToFrac c) (realToFrac c) 
                                                            $ styleToCV s)
 
-    rectOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
-                         withGenImage i $ \img -> 
-                              {#call wrapDrawRectangle#} img (fromIntegral x)
-                               (fromIntegral y) (fromIntegral x1) (fromIntegral y1)
-                               (realToFrac c)(realToFrac c)(realToFrac c) (fromIntegral t)
-
+    rectOp c = primRectOp (c,c,c)
     fillPolyOp c pts = ImgOp $ \i -> do
                              withImage i $ \img -> do
                                   let (xs,ys) = unzip pts
@@ -139,11 +140,6 @@ instance Drawable GrayScale D32 where
                                   free xs'
                                   free ys'
 
-
--- | Draw a rectangle by giving top left corner and size.
-rectOpS :: Drawable a b => Color a b -> Int -> (Int, Int) -> (Int, Int) 
-            -> ImageOperation a b
-rectOpS c t pos@(x,y) (w,h) = rectOp c t pos (x+w,y+h)
 
 -- | Flood fill a region of the image
 fillOp :: (Int,Int) -> D32 -> D32 -> D32 -> Bool -> ImageOperation GrayScale D32
@@ -157,10 +153,11 @@ fillOp (x,y) color low high floats =
      toCINT True  = 1
 
 -- | Apply rectOp to an image
-rectangle :: Drawable c d => Color c d -> Int -> (Int, Int) -> (Int, Int) -> Image c d
+rectangle :: (BoundingBox bb, Integral (ELBB bb), Drawable c d) 
+             => Color c d -> Int -> bb -> Image c d
              -> IO (Image c d)
-rectangle color thickness a b i = 
-    operate (rectOp color thickness a b ) i
+rectangle color thickness rect i = 
+    operate (rectOp color thickness rect) i
 
 -- | Apply fillPolyOp to an image
 fillPoly :: Drawable c d => Color c d -> [(Int, Int)] -> Image c d -> IO (Image c d)
