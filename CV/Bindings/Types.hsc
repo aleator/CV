@@ -7,6 +7,7 @@ import Foreign.Ptr
 import Foreign.Marshal.Utils
 import Foreign.Marshal.Array
 import Utils.GeometryClass
+import Utils.Rectangle
 import GHC.Float
 
 
@@ -137,6 +138,11 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #field max_iter, CInt
 #field epsilon, Double
 #stoptype
+
+data TermCriteria = EPS Double | ITER Int deriving (Show, Eq)
+
+toCvTCrit (EPS d) = C'CvTermCriteria c'CV_TERMCRIT_EPS 0 d
+toCvTCrit (ITER i) = C'CvTermCriteria c'CV_TERMCRIT_ITER (fromIntegral i) 0
 
 #num CV_TERMCRIT_ITER    
 #num CV_TERMCRIT_NUMBER  
