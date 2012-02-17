@@ -28,9 +28,12 @@ import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
 import Foreign.Marshal.Alloc
 import System.IO.Unsafe
 import Control.Monad(when)
+import CV.Bindings.Types
+import CV.Bindings.Drawing
 
 {#import CV.Image#}
 
@@ -55,9 +58,22 @@ class Drawable a b where
     -- | Draw a Circle
     circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
     -- | Draw a Rectangle by supplying two corners
+    ellipseBoxOp :: (Color a b) -> C'CvBox2D -> Int -> Int -> ImageOperation a b
     rectOp   :: (Color a b) -> Int -> (Int,Int) -> (Int,Int)  -> ImageOperation a b
     -- | Draw a filled polygon
     fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
+
+
+-- | Primitive form of ellipse box. Not typesafe, not for end user.
+primEllipseBox (a,b,c,e) box thickness shift = 
+            ImgOp          $ \i -> 
+            withGenImage i $ \c_img -> 
+            with box       $ \c_box ->
+            with (C'CvScalar (rtf a) (rtf b) (rtf c) (rtf 0)) $ \c_color -> 
+             c'wrapEllipseBox c_img c_box c_color (fromIntegral thickness) 8 
+                              (fromIntegral shift)
+
+rtf = realToFrac
 
 instance Drawable RGB D32 where
     type Color RGB D32 = (D32,D32,D32)
@@ -75,6 +91,9 @@ instance Drawable RGB D32 where
                                                         (realToFrac r) (realToFrac g) 
                                                         (realToFrac b) (fromIntegral t) 
     
+    ellipseBoxOp (r,g,b)  = primEllipseBox (r,g,b,0) 
+
+
     circleOp (red,g,b) (x,y) r s = ImgOp $ \i -> do
                         when (r>0) $ withGenImage i $ \img -> 
                               ({#call wrapDrawCircle#} img (fromIntegral x) (fromIntegral y) 
@@ -121,6 +140,7 @@ instance Drawable GrayScale D32 where
                                                            (fromIntegral r) 
                                                            (realToFrac c) (realToFrac c) (realToFrac c) 
                                                            $ styleToCV s)
+    ellipseBoxOp c  = primEllipseBox (c,c,c,0) 
 
     rectOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
                          withGenImage i $ \img -> 

@@ -294,6 +294,12 @@ void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage*
 cvExtractMSER( _img, _mask, contours, storage, *params );
 };
 
+void wrapEllipseBox(CvArr* img, CvBox2D *box, CvScalar *color
+                   ,int thickness, int lineType, int shift)
+{
+cvEllipseBox(img, *box, *color, thickness, lineType, shift);
+};
+
 
 void extractCVSeq(const CvSeq* seq,void *dest);
 
