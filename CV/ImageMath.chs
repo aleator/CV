@@ -16,7 +16,7 @@ import Foreign.Ptr
 import System.IO.Unsafe
 import Control.Applicative ((<$>))
 
-import C2HS
+import C2HS hiding (unsafePerformIO)
 
 mkBinaryImageOpIO f = \a -> \b -> 
           withGenImage a $ \ia -> 

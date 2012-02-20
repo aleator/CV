@@ -71,7 +71,7 @@ Library
                         ,opencv_objdetect
                         ,opencv_video
 
-    Build-Depends:     haskell98, base >= 3 && < 5, parallel > 3.1, unix > 2.3, array >= 0.2.0.0,
+    Build-Depends:     base >= 4 && < 6, parallel > 3.1, unix > 2.3, array >= 0.2.0.0,
                        mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1,
                        containers >= 0.2,
                        storable-complex, binary >= 0.5, deepseq >= 1.1,
@@ -87,15 +87,18 @@ Library
                        CV.ConnectedComponents, CV.HighGUI, CV.Calibration, CV.Iterators,
                        CV.Pixelwise, CV.Matrix, CV.Arbitrary, CV.HoughTransform, CV.DFT,
                        Utils.List, Utils.Point, Utils.Rectangle, Utils.Pointer
-                       Utils.Stream, Utils.Function
--- , CV.Fitting
+                       Utils.Stream, Utils.Function, Utils.GeometryClass,
+                       CV.Fitting, CV.Features,
+                       CV.Bindings.Types
     Other-modules:     C2HSTools, C2HS,
                        CV.Bindings.Matrix,
                        CV.Bindings.Calibrate,
-                       -- CV.Bindings.Fittings,
+                       CV.Bindings.Fittings,
                        CV.Bindings.Types,
                        CV.Bindings.Core,
                        CV.Bindings.ImgProc,
+                       CV.Bindings.Drawing,
+                       CV.Bindings.Features,
                        CV.Bindings.Iterators
     Extensions: CPP
 

@@ -8,6 +8,7 @@
 #define M_PI           3.14159265358979323846
 #endif
 
+#include <stdio.h>
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
@@ -286,6 +287,28 @@ double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints,
 
 void wrapFitEllipse(CvArr* pts, CvBox2D *out);
 int wrapCamShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp, CvBox2D* box);
+
+void wrapExtractSURF(const CvArr* image, const CvArr* mask, CvSeq** keypoints, CvSeq** descriptors, CvMemStorage* storage, CvSURFParams *param, int useProvidedKeyPts){
+return cvExtractSURF(image, mask, keypoints, descriptors, storage, *param, useProvidedKeyPts);
+};
+
+void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
+cvExtractMSER( _img, _mask, contours, storage, *params );
+};
+
+void wrapEllipseBox(CvArr* img, CvBox2D *box, CvScalar *color
+                   ,int thickness, int lineType, int shift)
+{
+cvEllipseBox(img, *box, *color, thickness, lineType, shift);
+};
+
+
+void extractCVSeq(const CvSeq* seq,void *dest);
+
+void printSeq(const CvSeq *seq) {
+printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %d",
+       seq->flags, seq->header_size, seq->total, seq->ptr);
+}
 
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
