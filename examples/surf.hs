@@ -6,9 +6,10 @@ import CV.ImageOp
 import CV.Bindings.Types
 import CV.Transforms
 import Utils.GeometryClass
+import System.Environment
 
 main = do
-   Just x <- loadImage "smallLena.jpg"
+   Just x <- getArgs >>= loadImage . head
    let y = rotate (pi/2) x
        lst  = getSURF defaultSURFParams (unsafeImageTo8Bit x) Nothing
        lsty = getSURF defaultSURFParams (unsafeImageTo8Bit y) Nothing
