@@ -1,11 +1,15 @@
 module CV.Operations
 ( NormType(..)
 , normalize
+, unitNormalize
+, logNormalize
 ) where
 
 import CV.Bindings.Types
 import CV.Bindings.Core
 import CV.Image
+import CV.ImageMath as IM
+import CV.ImageMathOp
 import C2HSTools
 
 data NormType =
@@ -47,3 +51,7 @@ normalize a b t src =
         withGenImage clone $ \ci -> do
           c'cvNormalize si ci (realToFrac a) (realToFrac b) (cNormType t) nullPtr
           return clone
+
+unitNormalize = normalize 0 1 NormMinMax
+
+logNormalize = unitNormalize . IM.log . (1 |+)

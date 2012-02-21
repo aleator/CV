@@ -15,7 +15,7 @@ module CV.Image (
 -- * Colour spaces
 , ChannelOf
 , GrayScale
-, Complex
+, DFT
 , RGB
 , RGBA
 , RGB_Channel(..)
@@ -119,7 +119,7 @@ import Control.Monad
 
 -- Colorspaces
 data GrayScale
-data Complex
+data DFT
 data RGB
 data LAB
 data BGR
@@ -336,6 +336,19 @@ instance GetPixel (Image GrayScale D32) where
 getPixelOld (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
          withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
 
+instance GetPixel (Image DFT D32) where
+    type P (Image DFT D32) = (D32,D32)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
+                                         im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
+                                         return (re,im)
+
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
     type P (Image RGB D32) = (D32,D32,D32)
@@ -405,7 +418,7 @@ class CreateImage a where
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
-instance CreateImage (Image Complex D32) where
+instance CreateImage (Image DFT D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3

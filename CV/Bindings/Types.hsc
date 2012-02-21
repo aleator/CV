@@ -1,5 +1,6 @@
 {-# LANGUAGE ForeignFunctionInterface, TypeFamilies #-}
 module CV.Bindings.Types where
+
 import Data.Word
 import Foreign.C.Types
 import Foreign.Storable
@@ -8,7 +9,6 @@ import Foreign.Marshal.Utils
 import Foreign.Marshal.Array
 import Utils.GeometryClass
 import GHC.Float
-
 
 #strict_import
 
@@ -49,14 +49,14 @@ import GHC.Float
 #field delta_elems, CInt
 #field free_blocks, Ptr <CvSeqBlock>
 #field first, Ptr <CvSeqBlock>
-#stoptype 
+#stoptype
 
 #ccall extractCVSeq, Ptr <CvSeq> -> Ptr () -> IO ()
 #ccall cvGetSeqElem, Ptr <CvSeq> -> CInt -> IO (Ptr CChar)
 #ccall printSeq, Ptr <CvSeq> -> IO ()
 
 -- | Convert a CvSeq object into list of its contents. Note that
--- since CvSeq can be approximately anything, including a crazy man from the moon, 
+-- since CvSeq can be approximately anything, including a crazy man from the moon,
 -- this is pretty unsafe and you must make sure that `a` is actually the element
 -- in the seq, and the seq is something that remotely represents a sequence of elements.
 cvSeqToList :: (Storable a) => Ptr C'CvSeq -> IO [a]
@@ -146,7 +146,7 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 
 
 -- Memory Storage
-#ccall cvCreateMemStorage, Int -> IO (Ptr <CvMemStorage>) 
+#ccall cvCreateMemStorage, Int -> IO (Ptr <CvMemStorage>)
 #ccall cvReleaseMemStorage, Ptr (Ptr <CvMemStorage>) -> IO ()
 
 withNewMemory fun = do
@@ -193,11 +193,11 @@ withNewMemory fun = do
 
 
 #starttype CvSURFPoint
-#field pt, <CvPoint2D32f> 
-#field laplacian, CInt     
-#field size, CInt          
-#field dir, CFloat         
-#field hessian, CFloat     
+#field pt, <CvPoint2D32f>
+#field laplacian, CInt
+#field size, CInt
+#field dir, CFloat
+#field hessian, CFloat
 #stoptype
 
 instance Point2D C'CvSURFPoint where

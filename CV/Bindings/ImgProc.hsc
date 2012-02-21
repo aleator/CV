@@ -61,16 +61,21 @@ copyMakeBorder i t b l r border value =
 
 #ccall cvCornerHarris , Ptr <CvArr> -> Ptr <CvArr> -> Int -> Int -> Double -> IO ()
 
--- CVAPI(CvSeq*)  cvHoughLines2( CvArr* image, void* line_storage, int method,
---                               double rho, double theta, int threshold,
---                               double param1 CV_DEFAULT(0), double param2 CV_DEFA
--- ULT(0));
+-- CVAPI(CvSeq*) cvHoughLines2(
+--   CvArr* image,
+--   void* line_storage,
+--   int method,
+--   double rho,
+--   double theta,
+--   int threshold,
+--   double param1 CV_DEFAULT(0),
+--   double param2 CV_DEFAULT(0)
+-- );
 
 #num CV_HOUGH_STANDARD
 #num CV_HOUGH_PROBABILISTIC
 #num CV_HOUGH_MULTI_SCALE
 #num CV_HOUGH_GRADIENT
-
 
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
 
