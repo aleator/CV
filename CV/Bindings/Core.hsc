@@ -8,7 +8,6 @@ import CV.Image(BareImage)
 #strict_import
 
 #include <bindings.dsl.h>
--- #include <opencv/cv.h>
 #include "cvWrapCore.h"
 #include <opencv2/core/core_c.h>
 
@@ -19,6 +18,8 @@ import CV.Image(BareImage)
 -- );
 
 -- Creates IPL image (header and data)
+
+-- need to use wrapper functions since passing struct by value.
 
 -- #ccall wrapCreateImage , CInt -> CInt -> CInt -> CInt -> IO (Ptr IplImage)
 
@@ -39,6 +40,24 @@ import CV.Image(BareImage)
 -- CVAPI(void) cvReleaseMat(
 --   CvMat** mat
 -- );
+
+-- CVAPI(void) cvSet(
+--   CvArr* arr,
+--   CvScalar value,
+--   const CvArr* mask CV_DEFAULT(NULL)
+-- );
+
+-- Sets all or "masked" elements of input array
+-- to the same value
+
+-- need to use wrapper functions since passing struct by value.
+
+#ccall wrapSet , Ptr <CvArr> -> Ptr <CvScalar> -> Ptr <CvArr> -> IO ()
+#ccall wrapSetAll , Ptr <CvArr> -> CDouble -> Ptr <CvArr> -> IO ()
+#ccall wrapSet1 , Ptr <CvArr> -> CDouble -> Ptr <CvArr> -> IO ()
+#ccall wrapSet2 , Ptr <CvArr> -> CDouble -> CDouble -> Ptr <CvArr> -> IO ()
+#ccall wrapSet3 , Ptr <CvArr> -> CDouble -> CDouble -> CDouble -> Ptr <CvArr> -> IO ()
+#ccall wrapSet4 , Ptr <CvArr> -> CDouble -> CDouble -> CDouble -> CDouble -> Ptr <CvArr> -> IO ()
 
 -- CVAPI(void) cvSetZero(
 --   CvArr* arr
@@ -100,6 +119,19 @@ import CV.Image(BareImage)
 -- If magnitude is missing it is assumed to be all 1's
 
 #ccall cvPolarToCart , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
+
+-- Finds global minimum, maximum and their positions
+
+-- CVAPI(void) cvMinMaxLoc(
+--   const CvArr* arr,
+--   double* min_val,
+--   double* max_val,
+--   CvPoint* min_loc CV_DEFAULT(NULL),
+--   CvPoint* max_loc CV_DEFAULT(NULL),
+--   const CvArr* mask CV_DEFAULT(NULL)
+-- );
+
+#ccall cvMinMaxLoc , Ptr <CvArr> -> Ptr CDouble -> Ptr CDouble -> Ptr <CvPoint> -> Ptr <CvPoint> -> Ptr <CvArr> -> IO ()
 
 -- CVAPI(void) cvAvgSdv(
 --   const CvArr* arr,

@@ -8,7 +8,10 @@ import CV.Image
 import CV.Operations
 import C2HSTools
 
-
+type I32 = Image GrayScale D32
+type Idft32 = Image DFT D32
+data Icomplex32 = Icomplex32{ re :: I32, im :: I32 }
+data Ipolar32 = Ipolar32{ magnitude :: I32, phase :: I32 }
 
 dft :: Image GrayScale d -> Image DFT D32
 dft i = unsafePerformIO $ do
@@ -91,3 +94,34 @@ dftFromPolar (mag,ang) = unsafePerformIO $ do
   return $ dftMerge (re,im)
   where
     (w,h) = getSize mag
+
+--withPolar :: Image DFT D32 ->
+--    ((Image GrayScale D32, Image GrayScale D32) -> (Image GrayScale D32, Image GrayScale D32)) ->
+--    Image DFT D32
+
+
+rgbSplit :: Image RGB D32 -> (Image GrayScale D32, Image GrayScale D32, Image GrayScale D32)
+rgbSplit i = unsafePerformIO $ do
+  r::(Image GrayScale D32) <- create (w, h)
+  g::(Image GrayScale D32) <- create (w, h)
+  b::(Image GrayScale D32) <- create (w, h)
+  withImage i $ \i_ptr ->
+    withImage r $ \r_ptr ->
+      withImage g $ \g_ptr ->
+        withImage b $ \b_ptr -> do
+          c'cvSplit (castPtr i_ptr) (castPtr r_ptr) (castPtr g_ptr) (castPtr b_ptr) nullPtr
+          return (r,g,b)
+  where
+    (w,h) = getSize i
+
+rgbMerge :: (Image GrayScale D32, Image GrayScale D32, Image GrayScale D32) -> Image RGB D32
+rgbMerge (r,g,b) = unsafePerformIO $ do
+  i::(Image RGB D32) <- create (w, h)
+  withImage r $ \r_ptr ->
+    withImage g $ \g_ptr ->
+      withImage b $ \b_ptr ->
+        withImage i $ \i_ptr -> do
+          c'cvMerge (castPtr r_ptr) (castPtr g_ptr) (castPtr b_ptr) nullPtr (castPtr i_ptr)
+          return i
+  where
+    (w,h) = getSize r

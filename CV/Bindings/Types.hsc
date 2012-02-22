@@ -74,12 +74,43 @@ cvSeqToList ptrseq = do
 #field height , Int
 #stoptype
 
+-- CvScalar
+
+-- typedef struct CvScalar
+-- {
+-- double val[4];
+-- }
+-- CvScalar;
+
 #starttype CvScalar
 #field val[0] , CDouble
 #field val[1] , CDouble
 #field val[2] , CDouble
 #field val[3] , CDouble
 #stoptype
+
+-- CV_INLINE CvScalar cvScalar(
+--   double val0,
+--   double val1 CV_DEFAULT(0),
+--   double val2 CV_DEFAULT(0),
+--   double val3 CV_DEFAULT(0)
+-- )
+
+-- #cinline cvScalar , CDouble -> CDouble -> CDouble -> CDouble -> IO(<CvScalar>)
+
+-- CV_INLINE CvScalar cvRealScalar(
+--   double val0
+-- )
+
+-- #cinline cvRealScalar , CDouble -> IO(<CvScalar>)
+
+-- CV_INLINE CvScalar cvScalarAll(
+--   double val0123
+-- )
+
+-- #cinline cvScalarAll , CDouble -> IO(<CvScalar>)
+
+-- CvSize
 
 #starttype CvSize
 #field width , CInt

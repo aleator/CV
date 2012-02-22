@@ -73,9 +73,11 @@ module CV.Image (
 -- * Conversions
 , rgbToGray
 , rgbToLab
+, rgbToBgr
+, bgrToRgb
 , unsafeImageTo32F
 , unsafeImageTo8Bit
-
+-- , toD32
 -- * Low level access operations
 , BareImage(..)
 , creatingImage
@@ -226,16 +228,16 @@ instance Loadable ((Image GrayScale D32)) where
 
 instance Loadable ((Image RGB D32)) where
     readFromFile fp = do
-        e <- loadColorImage fp
+        e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ unsafeImageTo32F $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image RGB D8)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image GrayScale D8)) where
@@ -262,9 +264,9 @@ loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage = unsafeloadUsing imageTo32F 0
 loadImage8 :: FilePath -> IO (Maybe (Image GrayScale D8))
 loadImage8 = unsafeloadUsing imageTo8Bit 0
-loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
+loadColorImage :: FilePath -> IO (Maybe (Image BGR D32))
 loadColorImage = unsafeloadUsing imageTo32F 1
-loadColorImage8 :: FilePath -> IO (Maybe (Image RGB D8))
+loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
 class Sized a where
@@ -573,6 +575,13 @@ unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
 unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure8U #} image)
+
+--toD32 :: Image c d -> Image c D32
+--toD32 i =
+--  unsafePerformIO $
+--    withImage i $ \i_ptr ->
+--      creatingImage
+
 
 imageTo32F img = withGenBareImage img $ \image ->
                 creatingBareImage
