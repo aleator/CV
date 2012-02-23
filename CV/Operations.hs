@@ -4,6 +4,7 @@ module CV.Operations
 , NormType(..)
 , normalize
 , unitNormalize
+, unitStretch
 , logNormalize
 ) where
 
@@ -13,8 +14,6 @@ import CV.Image
 import CV.ImageMath as IM
 import CV.ImageMathOp
 import C2HSTools
-
-import Debug.Trace
 
 clear :: Image c d -> Image c d
 clear i = unsafePerformIO $ do
@@ -69,9 +68,11 @@ normalize a b t src =
           return clone
 
 unitNormalize i
-  | minval >= 0 && minval <= 1 && maxval >= 0 && maxval <= 1 = trace (show m) i
-  | otherwise = trace (show m) $ normalize 0 1 NormMinMax i
+  | minval >= 0 && minval <= 1 && maxval >= 0 && maxval <= 1 = i
+  | otherwise = normalize 0 1 NormMinMax i
   where
     m@(minval, maxval) = IM.imageMinMax i
+
+unitStretch i = normalize 0 1 NormMinMax i
 
 logNormalize = unitNormalize . IM.log . (1 |+)

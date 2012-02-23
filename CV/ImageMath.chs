@@ -6,6 +6,7 @@ import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
+import CV.Bindings.Types
 import CV.Bindings.Core
 import CV.Image
 import CV.ImageOp
@@ -278,6 +279,19 @@ imageMinMax i = unsafePerformIO $ do
         imin <- peek cminval
         imax <- peek cmaxval
         return ((realToFrac imin), (realToFrac imax))
+
+imageAvgSdv i = unsafePerformIO $ do
+  withImage i $ \i_ptr -> do
+    let
+      avg = (C'CvScalar 0 0 0 0)
+      sdv = (C'CvScalar 0 0 0 0)
+    with avg $ \avg_ptr ->
+      with sdv $ \sdv_ptr -> do
+        c'cvAvgSdv (castPtr i_ptr) avg_ptr sdv_ptr nullPtr
+        (C'CvScalar a1 a2 a3 a4) <- peek avg_ptr
+        (C'CvScalar s1 s2 s3 s4) <- peek sdv_ptr
+        return ((realToFrac a1, realToFrac a2, realToFrac a3, realToFrac a4),
+                (realToFrac s1, realToFrac s2, realToFrac s3, realToFrac s4))
 
 findMinMax i = unsafePerformIO $ do
                nullp <- newForeignPtr_ nullPtr

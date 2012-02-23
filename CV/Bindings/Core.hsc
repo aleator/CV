@@ -80,17 +80,15 @@ import CV.Image(BareImage)
 
 #ccall cvSplit , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> IO ()
 
--- CVAPI(void) cvMerge(
---   const CvArr* src0,
---   const CvArr* src1,
---   const CvArr* src2,
---   const CvArr* src3,
---   CvArr* dst
--- );
-
--- Merges a set of single-channel arrays into the single multi-channel array
--- or inserts one particular [color] plane to the array
-
+-- |CVAPI(void) cvMerge(
+-- |  const CvArr* src0,
+-- |  const CvArr* src1,
+-- |  const CvArr* src2,
+-- |  const CvArr* src3,
+-- |  CvArr* dst
+-- |);
+-- |Merges a set of single-channel arrays into the single multi-channel array
+-- |or inserts one particular [color] plane to the array
 #ccall cvMerge , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> IO ()
 
 -- CVAPI(void) cvCartToPolar(
@@ -106,41 +104,40 @@ import CV.Image(BareImage)
 
 #ccall cvCartToPolar , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
 
--- CVAPI(void) cvPolarToCart(
---   const CvArr* magnitude,
---   const CvArr* angle,
---   CvArr* x,
---   CvArr* y,
---   int angle_in_degrees CV_DEFAULT(0)
--- );
+-- | CVAPI(void) cvPolarToCart(
+-- |   const CvArr* magnitude,
+-- |   const CvArr* angle,
+-- |   CvArr* x,
+-- |   CvArr* y,
+-- |   int angle_in_degrees CV_DEFAULT(0)
+-- | );
 
--- Does polar->cartesian coordinates conversion.
--- Either of output components (magnitude or angle) is optional.
--- If magnitude is missing it is assumed to be all 1's
-
+-- | Does polar->cartesian coordinates conversion.
+--   Either of output components (magnitude or angle) is optional.
+--   If magnitude is missing it is assumed to be all 1's
 #ccall cvPolarToCart , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
 
--- Finds global minimum, maximum and their positions
+-- | CVAPI(void) cvMinMaxLoc(
+-- |   const CvArr* arr,
+-- |   double* min_val,
+-- |   double* max_val,
+-- |   CvPoint* min_loc CV_DEFAULT(NULL),
+-- |   CvPoint* max_loc CV_DEFAULT(NULL),
+-- |   const CvArr* mask CV_DEFAULT(NULL)
+-- | );
 
--- CVAPI(void) cvMinMaxLoc(
---   const CvArr* arr,
---   double* min_val,
---   double* max_val,
---   CvPoint* min_loc CV_DEFAULT(NULL),
---   CvPoint* max_loc CV_DEFAULT(NULL),
---   const CvArr* mask CV_DEFAULT(NULL)
--- );
-
+-- | Finds global minimum, maximum and their positions
 #ccall cvMinMaxLoc , Ptr <CvArr> -> Ptr CDouble -> Ptr CDouble -> Ptr <CvPoint> -> Ptr <CvPoint> -> Ptr <CvArr> -> IO ()
 
--- CVAPI(void) cvAvgSdv(
---   const CvArr* arr,
---   CvScalar* mean,
---   CvScalar* std_dev,
---   const CvArr* mask CV_DEFAULT(NULL)
--- );
+-- | CVAPI(void) cvAvgSdv(
+-- |   const CvArr* arr,
+-- |   CvScalar* mean,
+-- |   CvScalar* std_dev,
+-- |   const CvArr* mask CV_DEFAULT(NULL)
+-- | );
 
--- #ccall cvAvgSdv , Ptr BareImage -> Ptr <CvScalar> -> Ptr <CvScalar> -> Ptr <CvArr> -> IO ()
+-- | Calculates mean and standard deviation of pixel values.
+#ccall cvAvgSdv , Ptr BareImage -> Ptr <CvScalar> -> Ptr <CvScalar> -> Ptr <CvArr> -> IO ()
 
 -- types of array norm
 
