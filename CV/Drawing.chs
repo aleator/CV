@@ -1,4 +1,5 @@
-{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances#-}
+{-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances,
+            ViewPatterns#-}
 #include "cvWrapLEO.h"
 -- | Module for exposing opencv drawing functions. These are meant for quick and dirty marking
 --   and not for anything presentable. For any real drawing
@@ -13,6 +14,7 @@ module CV.Drawing(
                 ,Drawable(..)
                 -- * Extra drawing operations
                 ,drawLinesOp
+                ,drawBox2Dop 
                 ,rectOpS
                 -- * Floodfill operations
                 ,fillOp
@@ -34,6 +36,7 @@ import System.IO.Unsafe
 import Control.Monad(when)
 import CV.Bindings.Types
 import CV.Bindings.Drawing
+import Utils.Point
 
 {#import CV.Image#}
 
@@ -197,6 +200,25 @@ drawLines :: Drawable c d => Image c d -> Color c d -> Int -> [((Int, Int), (Int
                                 -> IO (Image c d)
 drawLines img color thickness segments = operateOn img
                     (drawLinesOp color thickness segments)
+
+-- | Draw C'CvBox2D
+drawBox2Dop :: Drawable c d => Color c d -> C'CvBox2D -> ImageOperation c d
+drawBox2Dop color (C'CvBox2D (C'CvPoint2D32f (realToFrac -> x) (realToFrac ->y))
+                             (C'CvSize2D32f  (realToFrac -> w) (realToFrac ->h)) 
+                             (degToRad -> θ)) 
+    = drawLinesOp color 1 (zip corners $ tail (cycle corners)) 
+  where
+    rot (x,y) = (x * sin (-θ) - y * cos (-θ)
+                ,x * cos (-θ) + y * sin (-θ))
+    corners = map (both round . (+ (x,y)) . rot) 
+              [( 0.5*h,  0.5*w)
+              ,(-0.5*h,  0.5*w)
+              ,(-0.5*h, -0.5*w)
+              ,( 0.5*h, -0.5*w) ]
+    both f (a,b) = (f a, f b)
+
+degToRad deg = deg/180*pi
+
 
 -- | Apply circleOp to an image
 circle :: Drawable c d => (Int, Int) -> Int -> Color c d -> ShapeStyle -> Image c d -> Image c d

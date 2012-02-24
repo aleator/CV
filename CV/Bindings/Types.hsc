@@ -88,8 +88,8 @@ instance Point2D C'CvPoint where
    toPt (x,y) = C'CvPoint (fromIntegral x) (fromIntegral y)
 
 #starttype CvPoint2D32f
-#field x , Float
-#field y , Float
+#field x , CFloat
+#field y , CFloat
 #stoptype
 
 instance Point2D C'CvPoint2D32f where
