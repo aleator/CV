@@ -3,6 +3,8 @@ module Main where
 import CV.Image
 import CV.Features
 import CV.Drawing
+import Utils.DrawingClass
+import CV.DrawableInstances
 import CV.ImageOp
 import CV.Bindings.Types
 import CV.Transforms
@@ -15,10 +17,11 @@ main = do
    let y = scale Area (2.2,2) . rotate (pi/2) $ x
        lst  = getSURF defaultSURFParams (unsafeImageTo8Bit x) Nothing
        lsty = getSURF defaultSURFParams (unsafeImageTo8Bit y) Nothing
-   let result lst x = x <## [ellipseBoxOp 1 (C'CvBox2D c size d) 1 0
-                      | (C'CvSURFPoint c l s d h,_) <- lst
-                      , let size = C'CvSize2D32f (fromIntegral s) (fromIntegral $ s`div`2)
-                      ]
+   let result lst x = (x <## map (draw.fst) lst) :: Image GrayScale D32
+  -- [ellipseBoxOp 1 (C'CvBox2D c size d) 1 0
+  --                    | (C'CvSURFPoint c l s d h,_) <- lst
+  --                    , let size = C'CvSize2D32f (fromIntegral s) (fromIntegral $ s`div`2)
+  --                    ]
    saveImage "surf_result.png" $ montage (2,1) 2 [padToSize (getSize y) (result lst x) ,result lsty y]
    mapM_ print (take 5 lst)
 
