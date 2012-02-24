@@ -11,7 +11,8 @@ import CV.Bindings.Types
 
 #ccall wrapFitEllipse , Ptr <CvArr> -> Ptr <CvBox2D> -> IO ()
 #ccall cvFitLine      , Ptr <CvArr> -> CInt -> Double  -> Double -> Double-> Ptr Float -> IO ()
-#ccall cvConvexHull2  , Ptr <CvArr> -> Ptr () -> CInt -> CInt -> IO ()
+#ccall cvConvexHull2  , Ptr <CvArr> -> Ptr () -> CInt -> CInt -> IO (Ptr <CvSeq>)
+#ccall cvConvexityDefects, Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvMemStorage> ->IO (Ptr <CvSeq>)
 #ccall wrapMinAreaRect2 , Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr <CvBox2D> -> IO ()
 #ccall wrapBoundingRect , Ptr <CvArr> -> CInt -> Ptr <CvRect> -> IO ()
 #ccall cvMinEnclosingCircle, Ptr <CvArr> -> Ptr <CvPoint2D32f> -> Ptr CFloat -> IO ()

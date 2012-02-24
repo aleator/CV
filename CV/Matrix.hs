@@ -64,6 +64,10 @@ instance Exists (Matrix Int) where
     type Args (Matrix Int) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC1)
 
+instance Exists (Matrix (Int,Int)) where
+    type Args (Matrix (Int,Int)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC2)
+
 instance Exists (Matrix (Float,Float)) where
     type Args (Matrix (Float,Float)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
