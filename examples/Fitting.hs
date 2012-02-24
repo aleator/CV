@@ -6,7 +6,7 @@ import CV.Matrix
 import CV.ImageOp
 
 main = do
-        let res :: Image GrayScale D32
+        let res :: Image RGB D32
             res = empty (400,400)
             testPts = [(200+100*sin x-80*cos x,200+60*cos x) | x <- [0,0.1..pi]] ++
                       [(150+100*sin (-x)+20*cos x,100+60*cos (-x)) | x <- [0,0.1..2*pi]]
@@ -16,9 +16,9 @@ main = do
             br  = boundingRect mat
             ch  = map (both round) . toList $ convexHull mat 
             segments = zip (ch) (tail . cycle $ ch)
-            pts = res <## [circleOp 1 (round x, round y) 3 Filled | (x,y) <- testPts]
-                      <#  drawLinesOp 0.5 2 segments
-                      <# drawBox2Dop 1 bb
+            pts = res <## [circleOp (0.5,0.5,0.5) (round x, round y) 3 Filled | (x,y) <- testPts]
+                      <#  drawLinesOp (1,0,0) 1 segments
+                      <# drawBox2Dop (0,1,0) bb
         saveImage "bb_result.png" pts
         print ell
         print bb
