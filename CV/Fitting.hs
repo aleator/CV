@@ -54,3 +54,10 @@ minAreaRect pts = unsafePerformIO $
            c'wrapMinAreaRect2 (castPtr cMat) nullPtr result
            peek result
 
+boundingRect :: Matrix (Float,Float) -> C'CvRect
+boundingRect pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with (C'CvRect 0 0 0 0) $ \result -> do
+           c'wrapBoundingRect (castPtr cMat) 0 result
+           peek result
+

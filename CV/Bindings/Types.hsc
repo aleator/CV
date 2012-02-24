@@ -54,10 +54,10 @@ cvSeqToList ptrseq = do
 
 
 #starttype CvRect
-#field x , Int
-#field y , Int
-#field width , Int
-#field height , Int
+#field x , CInt
+#field y , CInt
+#field width , CInt
+#field height , CInt
 #stoptype
 
 #starttype CvScalar

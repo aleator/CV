@@ -12,8 +12,10 @@ main = do
             mat = fromList (1,length testPts) testPts
             ell = fitEllipse mat
             bb  = minAreaRect mat
+            br  = boundingRect mat
             pts = res <## [circleOp 1 (round x, round y) 3 Filled | (x,y) <- testPts]
                       <# drawBox2Dop 1 bb
         saveImage "bb_result.png" pts
         print ell
         print bb
+        print br

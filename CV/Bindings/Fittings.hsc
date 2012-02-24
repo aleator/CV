@@ -12,6 +12,7 @@ import CV.Bindings.Types
 #ccall wrapFitEllipse , Ptr <CvArr> -> Ptr <CvBox2D> -> IO ()
 #ccall cvFitLine      , Ptr <CvArr> -> CInt -> Double  -> Double -> Double-> Ptr Float -> IO ()
 #ccall wrapMinAreaRect2 , Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr <CvBox2D> -> IO ()
+#ccall wrapBoundingRect , Ptr <CvArr> -> CInt -> Ptr <CvRect> -> IO ()
 
 #num CV_DIST_USER    
 #num CV_DIST_L1      
