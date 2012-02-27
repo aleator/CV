@@ -25,7 +25,7 @@ void wrapSubRS(const CvArr *src, double s,CvArr *dst);
 void wrapSubS(const CvArr *src, double s,CvArr *dst);
 void wrapAddS(const CvArr *src, double s, CvArr *dst);
 
-double wrapAvg(const CvArr *src);
+double wrapAvg(const CvArr *src, const CvArr *mask);
 double wrapStdDev(const CvArr *src);
 double wrapStdDevMask(const CvArr *src,const CvArr *mask);
 double wrapSum(const CvArr *src);

@@ -178,6 +178,7 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #starttype CvMoments
 #field m00, CDouble
 #field m10, CDouble
+#field m01, CDouble
 #field m20, CDouble
 #field m11, CDouble
 #field m02, CDouble

@@ -206,9 +206,14 @@ lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image GrayScale a -> IO D32
-average' img = withGenImage img $ \image -> -- TODO: Check c datatype size
-                {#call wrapAvg#} image >>= return . realToFrac
+averageMask :: Image GrayScale D32 -> Image GrayScale D8 -> IO D32
+averageMask img mask = withGenImage img $ \c_image -> 
+                   withGenImage mask $ \c_mask -> 
+                     {#call wrapAvg#} c_image c_mask >>= return . realToFrac
+
+average' :: Image GrayScale D32 -> IO D32
+average' img = withGenImage img $ \image -> 
+                {#call wrapAvg#} image nullPtr >>= return . realToFrac
 
 average :: Image GrayScale D32 -> D32
 average = realToFrac.unsafePerformIO.average'
@@ -233,10 +238,6 @@ stdDeviationMask img mask = unsafePerformIO $
                                   withGenImage mask $ \m ->
                                    {#call wrapStdDevMask#} i m
 
-averageMask img mask = unsafePerformIO $
-                                 withGenImage img $ \i ->
-                                  withGenImage mask $ \m ->
-                                   {#call wrapStdDevMask#} i m
 
 
 peekFloatConv :: (Storable a, RealFloat a, RealFloat b) => Ptr a -> IO b

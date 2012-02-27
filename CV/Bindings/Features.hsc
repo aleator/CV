@@ -33,3 +33,6 @@ import CV.Bindings.Types
 #ccall wrapExtractMSER, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvMSERParams> -> IO ()
 
 #ccall cvMoments ,  Ptr <CvArr> -> Ptr <CvMoments> -> Int -> IO ()
+#ccall cvGetSpatialMoment, Ptr <CvMoments> -> CInt -> CInt -> IO CDouble
+#ccall cvGetNormalizedCentralMoment, Ptr <CvMoments> -> CInt -> CInt -> IO CDouble
+#ccall cvGetCentralMoment, Ptr <CvMoments> -> CInt -> CInt -> IO CDouble

@@ -185,9 +185,9 @@ void wrapAbsDiffS(const CvArr *src, double s, CvArr *dst)
  cvAbsDiffS(src,dst,cvScalarAll(s));
 }
 
-double wrapAvg(const CvArr *src)
+double wrapAvg(const CvArr *src, const CvArr *mask)
 {
- CvScalar avg = cvAvg(src,0);
+ CvScalar avg = cvAvg(src,mask);
  return avg.val[0];
 }
 

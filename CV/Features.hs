@@ -1,6 +1,7 @@
 {-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
 module CV.Features (SURFParams, defaultSURFParams, getSURF
-                   ,getMSER, MSERParams, mkMSERParams, defaultMSERParams ) where
+                   ,getMSER, MSERParams, mkMSERParams, defaultMSERParams
+                   ,moments,Moments,getSpatialMoment,getCentralMoment,getNormalizedCentralMoment) where
 import CV.Image
 import CV.Bindings.Types
 import CV.Bindings.Features
@@ -130,9 +131,30 @@ instance Storable FloatBlock128 where
    poke ptr (FP128 e) = pokeArray (castPtr ptr) e
 
 
-moments :: Image GrayScale D32 -> C'CvMoments
+type Moments = C'CvMoments
+
+
+moments :: Image GrayScale D32 -> Moments
 moments img = unsafePerformIO $
               withGenImage img $ \c_img ->
-              with (C'CvMoments 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) $ \res -> do
+              with (C'CvMoments 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) $ \res -> do
                c'cvMoments c_img res 0
                peek res
+
+getSpatialMoment :: (Int,Int) -> Moments -> Double
+getSpatialMoment (x,y) m = realToFrac $
+                     unsafePerformIO $
+                     with m          $ \c_m ->
+                      c'cvGetSpatialMoment c_m (fromIntegral x) (fromIntegral y)
+
+getCentralMoment :: (Int,Int) -> Moments -> Double
+getCentralMoment (x,y) m = realToFrac $
+                     unsafePerformIO $
+                     with m          $ \c_m ->
+                      c'cvGetCentralMoment c_m (fromIntegral x) (fromIntegral y)
+
+getNormalizedCentralMoment :: (Int,Int) -> Moments -> Double
+getNormalizedCentralMoment (x,y) m = realToFrac $
+                     unsafePerformIO $
+                     with m          $ \c_m ->
+                      c'cvGetNormalizedCentralMoment c_m (fromIntegral x) (fromIntegral y)
