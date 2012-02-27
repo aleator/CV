@@ -31,3 +31,5 @@ import CV.Bindings.Types
 #stoptype
 
 #ccall wrapExtractMSER, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvMSERParams> -> IO ()
+
+#ccall cvMoments ,  Ptr <CvArr> -> Ptr <CvMoments> -> Int -> IO ()

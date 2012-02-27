@@ -129,3 +129,10 @@ instance Storable FloatBlock128 where
    peek ptr    = FP128 `fmap` peekArray 128 (castPtr ptr)
    poke ptr (FP128 e) = pokeArray (castPtr ptr) e
 
+
+moments :: Image GrayScale D32 -> C'CvMoments
+moments img = unsafePerformIO $
+              withGenImage img $ \c_img ->
+              with (C'CvMoments 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) $ \res -> do
+               c'cvMoments c_img res 0
+               peek res

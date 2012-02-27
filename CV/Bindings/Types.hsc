@@ -175,6 +175,28 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 
 
 
+#starttype CvMoments
+#field m00, CDouble
+#field m10, CDouble
+#field m20, CDouble
+#field m11, CDouble
+#field m02, CDouble
+#field m30, CDouble
+#field m21, CDouble
+#field m12, CDouble
+#field m03, CDouble
+
+#field mu20, CDouble
+#field mu11, CDouble
+#field mu02, CDouble
+#field mu30, CDouble
+#field mu21, CDouble
+#field mu12, CDouble
+#field mu03, CDouble
+
+#field inv_sqrt_m00, CDouble
+#stoptype
+
 #starttype CvTermCriteria
 #field type, CInt
 #field max_iter, CInt
