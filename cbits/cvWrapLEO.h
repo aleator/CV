@@ -19,6 +19,8 @@ IplImage* wrapCreateImage64F(const int width, const int height, const int channe
 
 IplImage* wrapCreateImage8U(const int width, const int height, const int channels);
 
+IplImage *wrapCopyMakeBorder(IplImage* src, const int top, const int bottom, const int left, const int right, const int borderType, const float value);
+
 void wrapSubRS(const CvArr *src, double s,CvArr *dst);
 void wrapSubS(const CvArr *src, double s,CvArr *dst);
 void wrapAddS(const CvArr *src, double s, CvArr *dst);
@@ -238,16 +240,12 @@ IplImage* vignettingModelX2Cyl(int w, int h,double m, double s, double c);
 void wrapDrawText(CvArr *img, char *text, float s, int x, int y,float r,float g,float b);
 
 IplImage* vignettingModelB3(int w, int h,double b1, double b2, double b3);
-inline CvPoint2D64f toNormalizedCoords(CvSize area, CvPoint from);
-inline CvPoint fromNormalizedCoords(CvSize area, CvPoint2D64f from);
-inline double eucNorm(CvPoint2D64f p);
 IplImage* vignettingModelP(int w, int h,double scalex, double scaley, double max);
 IplImage* wrapPerspective(IplImage* src, double a1, double a2, double a3
                                        , double a4, double a5, double a6
                                        , double a7, double a8, double a9);
 IplImage* simplePerspective(double k,IplImage *src);
 double bilinearInterp(IplImage *tex, double u, double v);
-inline CvPoint2D64f fromNormalizedCoords64f(CvSize area, CvPoint2D64f from);
 void findHomography(double* srcPts, double *dstPts, int noPts, double *homography);
 void masked_merge(IplImage *src1, IplImage *mask, IplImage *src2, IplImage *dst);
 IplImage* makeEvenUp(IplImage *src);

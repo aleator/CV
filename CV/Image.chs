@@ -1,90 +1,93 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
 #include "cvWrapLEO.h"
 module CV.Image (
--- * Basic types 
- Image(..) 
+-- * Basic types
+ Image(..)
 , create
 , empty 
 , emptyCopy 
 , cloneImage
-, withClone 
-, withCloneValue 
-, CreateImage 
+, withClone
+, withCloneValue
+, CreateImage
 
 -- * Colour spaces
-, ChannelOf 
+, ChannelOf
 , GrayScale
+, DFT
 , RGB
 , RGBA
-, RGB_Channel(..) 
+, RGB_Channel(..)
 , LAB
-, LAB_Channel(..) 
-, D32 
-, D64 
-, D8 
-, Tag 
-, lab 
-, rgba 
-, rgb 
-, composeMultichannelImage 
+, LAB_Channel(..)
+, D32
+, D64
+, D8
+, Tag
+, lab
+, rgba
+, rgb
+, composeMultichannelImage
 
 -- * IO operations
-, Loadable(..) 
-, saveImage 
-, loadColorImage 
-, loadImage 
+, Loadable(..)
+, saveImage
+, loadColorImage
+, loadImage
 
--- * Pixel level access 
+-- * Pixel level access
 , GetPixel(..)
-, getAllPixels 
-, getAllPixelsRowMajor 
-, setPixel 
-, setPixel8U 
-, mapImageInplace 
+, getAllPixels
+, getAllPixelsRowMajor
+, setPixel
+, setPixel8U
+, mapImageInplace
 
 -- * Image information
 , ImageDepth
 , Sized(..)
-, getArea 
+, getArea
 , getChannel
-, getImageChannels 
-, getImageDepth 
-, getImageInfo 
+, getImageChannels
+, getImageDepth
+, getImageInfo
 
 -- * ROI's, COI's and subregions
-, setCOI 
-, setROI 
-, resetROI 
-, getRegion 
-, withIOROI 
-, withROI 
+, setCOI
+, setROI
+, resetROI
+, getRegion
+, withIOROI
+, withROI
 
 -- * Blitting
-, blendBlit 
-, blit 
-, blitM 
-, subPixelBlit 
-, safeBlit 
-, montage 
-, tileImages 
+, blendBlit
+, blit
+, blitM
+, subPixelBlit
+, safeBlit
+, montage
+, tileImages
 
 -- * Conversions
 , rgbToGray 
 , grayToRGB
 , rgbToLab 
+, bgrToRgb
+, rgbToBgr
 , unsafeImageTo32F 
 , unsafeImageTo8Bit 
 
 -- * Low level access operations
 , BareImage(..)
-, creatingImage 
-, unImage 
-, unS 
-, withGenBareImage 
-, withBareImage 
+, creatingImage
+, unImage
+, unS
+, withGenBareImage
+, withBareImage
 , creatingBareImage
-, withGenImage 
-, withImage 
+, withGenImage
+, withImage
 , imageFPTR
 , ensure32F
 
@@ -120,6 +123,7 @@ import Control.Monad
 -- | Single channel grayscale image
 data GrayScale
 
+data DFT
 data RGB
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 
@@ -232,16 +236,16 @@ instance Loadable ((Image GrayScale D32)) where
 
 instance Loadable ((Image RGB D32)) where
     readFromFile fp = do
-        e <- loadColorImage fp
+        e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ unsafeImageTo32F $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image RGB D8)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image GrayScale D8)) where
@@ -268,9 +272,9 @@ loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage = unsafeloadUsing imageTo32F 0
 loadImage8 :: FilePath -> IO (Maybe (Image GrayScale D8))
 loadImage8 = unsafeloadUsing imageTo8Bit 0
-loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
+loadColorImage :: FilePath -> IO (Maybe (Image BGR D32))
 loadColorImage = unsafeloadUsing imageTo32F 1
-loadColorImage8 :: FilePath -> IO (Maybe (Image RGB D8))
+loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
 class Sized a where
@@ -296,8 +300,8 @@ cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 
 #c
 enum CvtFlags {
-    CvtFlip   = CV_CVTIMG_FLIP,  
-    CvtSwapRB = CV_CVTIMG_SWAP_RB 
+    CvtFlip   = CV_CVTIMG_FLIP,
+    CvtSwapRB = CV_CVTIMG_SWAP_RB
      };
 #endc
 
@@ -482,6 +486,19 @@ instance GetPixel (Image GrayScale D32) where
 getPixelOld (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
          withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
 
+instance GetPixel (Image DFT D32) where
+    type P (Image DFT D32) = (D32,D32)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
+                                         im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
+                                         return (re,im)
+
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
     type P (Image RGB D32) = (D32,D32,D32)
@@ -553,6 +570,8 @@ class CreateImage a where
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image DFT D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
 instance CreateImage (Image RGB D32) where
@@ -707,6 +726,13 @@ unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
 unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure8U #} image)
+
+--toD32 :: Image c d -> Image c D32
+--toD32 i =
+--  unsafePerformIO $
+--    withImage i $ \i_ptr ->
+--      creatingImage
+
 
 imageTo32F img = withGenBareImage img $ \image ->
                 creatingBareImage

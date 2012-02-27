@@ -1,14 +1,33 @@
 module CV.Operations
-( NormType(..)
+( clear
+, set
+, NormType(..)
 , normalize
+, unitNormalize
+, unitStretch
+, logNormalize
 ) where
 
-import CV.Bindings.Types
 import CV.Bindings.Core
+import CV.Bindings.Types
 import CV.Image
-import Foreign.Ptr (nullPtr)
+import CV.ImageMath as IM
+import CV.ImageMathOp
 import Foreign.Marshal.Utils (with)
+import Foreign.Ptr (nullPtr,castPtr)
 import System.IO.Unsafe
+
+clear :: Image c d -> Image c d
+clear i = unsafePerformIO $ do
+  withImage i $ \i_ptr ->
+    c'cvSetZero (castPtr i_ptr)
+  return i
+
+set :: Double -> Image c d -> Image c d
+set v i = unsafePerformIO $ do
+  withImage i $ \i_ptr ->
+    c'wrapSetAll (castPtr i_ptr) (realToFrac v) nullPtr
+  return i
 
 data NormType =
   NormC |
@@ -45,7 +64,17 @@ normalize :: Double -> Double -> NormType -> Image c d -> Image c d
 normalize a b t src =
   unsafePerformIO $ do
     withCloneValue src $ \clone ->
-      withGenImage src $ \si ->
-        withGenImage clone $ \ci -> do
-          c'cvNormalize si ci a b (cNormType t) nullPtr
+      withImage src $ \si ->
+        withImage clone $ \ci -> do
+          c'cvNormalize (castPtr si) (castPtr ci) (realToFrac a) (realToFrac b) (cNormType t) nullPtr
           return clone
+
+unitNormalize i
+  | minval >= 0 && minval <= 1 && maxval >= 0 && maxval <= 1 = i
+  | otherwise = normalize 0 1 NormMinMax i
+  where
+    m@(minval, maxval) = IM.imageMinMax i
+
+unitStretch i = normalize 0 1 NormMinMax i
+
+logNormalize = unitNormalize . IM.log . (1 |+)
