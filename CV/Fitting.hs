@@ -1,15 +1,19 @@
+{-#LANGUAGE TypeFamilies#-}
 module CV.Fitting where
 
 import CV.Bindings.Fittings
 import CV.Bindings.Types
-import Foreign.Marshal.Array
-import Foreign.Marshal.Alloc
-import Foreign.Marshal.Utils
-import Foreign.C.Types
-import Foreign.Storable
-import Foreign.Ptr
-import System.IO.Unsafe
 import CV.Matrix
+import CV.Image(getSize)
+import Control.Applicative
+import Foreign.C.Types
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
+import Foreign.Ptr
+import Foreign.Storable
+import System.IO.Unsafe
+import Utils.GeometryClass
 
 data Ellipse = Ellipse {center::(Float,Float)
                        ,width,height::Float
@@ -54,10 +58,32 @@ minAreaRect pts = unsafePerformIO $
            c'wrapMinAreaRect2 (castPtr cMat) nullPtr result
            peek result
 
+-- | Calculate the minimum axis-aligned bounding rectangle of given points.
 boundingRect :: Matrix (Float,Float) -> C'CvRect
 boundingRect pts = unsafePerformIO $ 
    withMatPtr pts $ \cMat ->
    with (C'CvRect 0 0 0 0) $ \result -> do
            c'wrapBoundingRect (castPtr cMat) 0 result
            peek result
+
+-- | Calculate the minimum enclosing circle of a point set.
+boundingCircle :: (ELP a ~ Double, Point2D a) => Matrix (Float,Float) -> (a, Double)
+boundingCircle pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with 0         $ \cRadius ->   
+   with (C'CvPoint2D32f 0 0 ) $ \result -> do
+           c'cvMinEnclosingCircle (castPtr cMat) result cRadius
+           (,) <$> (convertPt <$> peek result) <*> (realToFrac <$> peek cRadius)
+
+-- | Calculcate the clockwise convex hull of a point set
+convexHull :: Matrix (Float,Float) -> Matrix (Float,Float)
+convexHull pts =  
+ let res = create (getSize pts) :: Matrix (Float,Float)
+ in  unsafePerformIO $
+     withMatPtr pts $ \cMat ->
+     withMatPtr res $ \cRes ->
+     withNewMemory  $ \ptr_mem -> do
+     with (C'CvPoint2D32f 0 0 ) $ \result -> do
+             c'cvConvexHull2 (castPtr cMat) (castPtr cRes) c'CV_CLOCKWISE 1
+             return res
 

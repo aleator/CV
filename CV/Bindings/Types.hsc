@@ -200,6 +200,9 @@ withNewMemory fun = do
 #num CV_64FC3 
 #num CV_64FC4 
 
+#num CV_CLOCKWISE
+#num CV_COUNTER_CLOCKWISE
+
 
 #starttype CvSURFPoint
 #field pt, <CvPoint2D32f> 
