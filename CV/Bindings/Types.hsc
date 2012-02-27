@@ -203,6 +203,12 @@ withNewMemory fun = do
 #num CV_CLOCKWISE
 #num CV_COUNTER_CLOCKWISE
 
+#starttype CvConvexityDefect
+#field start      , Ptr <CvPoint  
+#field end        , Ptr <CvPoint>
+#field depth_point, Ptr <CvPoint>
+#field depth      , CFloat
+#stoptype
 
 #starttype CvSURFPoint
 #field pt, <CvPoint2D32f> 

@@ -87,3 +87,17 @@ convexHull pts =
              c'cvConvexHull2 (castPtr cMat) (castPtr cRes) c'CV_CLOCKWISE 1
              return res
 
+-- | Calculate convexity defects of a contour.
+convexityDefects :: Matrix (Int,Int) -> [(C'CvPoint, C'CvPoint, C'CvPoint,CFloat)]
+convexityDefects pts = unsafePerformIO $
+     withMatPtr pts $ \cMat ->
+     withNewMemory  $ \ptr_mem -> do
+      ptr_hull_seq <- c'cvConvexHull2 (castPtr cMat) (castPtr ptr_mem) c'CV_CLOCKWISE 0
+      ptr_seq <- c'cvConvexityDefects (castPtr cMat) (castPtr ptr_hull_seq) (castPtr ptr_mem)
+      pts <- cvSeqToList ptr_seq
+      sequence [(,,,) <$> peek (c'CvConvexityDefect'start x )
+                      <*> peek (c'CvConvexityDefect'end x )
+                      <*> peek (c'CvConvexityDefect'depth_point x )
+                      <*> return (c'CvConvexityDefect'depth x)
+               | x <- pts ]
+
