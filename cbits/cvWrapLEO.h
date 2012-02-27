@@ -312,6 +312,13 @@ int wrapMeanShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *crite
 {
 return cvMeanShift(prob_image, *window, *criteria, comp);
 };
+
+void wrapMinAreaRect2(const CvArr* points, CvMemStorage* storage, CvBox2D *r)
+{ *r = cvMinAreaRect2(points, storage); }
+
+void wrapBoundingRect(CvArr* points, int update, CvRect *r)
+{ *r = cvBoundingRect(points, update); }
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo

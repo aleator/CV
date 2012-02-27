@@ -149,8 +149,6 @@ mkImgScalarOp op scalar = ImgOp $ \a ->
               withGenImage a $ \ia -> do
                 op ia (realToFrac scalar) ia 
                 return ()
-           -- where s = realToFrac scalar 
-                -- I've heard this will lose information
 
 -- TODO: Relax the addition so it works on multiple image depths
 addSOp :: D32 -> ImageOperation GrayScale D32
@@ -174,7 +172,7 @@ cmpNE = 5
 
 -- TODO: For some reason the below was going through 8U images. Investigate
 mkCmpOp :: CInt -> D32 -> (Image GrayScale D32 -> Image GrayScale D8)
-mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
+mkCmpOp cmp = \scalar a -> unsafePerformIO $
           withGenImage a $ \ia -> do
                         new  <- create (getSize a) --8UC1
                         withGenImage new $ \cl -> do

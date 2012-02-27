@@ -4,6 +4,7 @@ import CV.Bindings.Fittings
 import CV.Bindings.Types
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
+import Foreign.Marshal.Utils
 import Foreign.C.Types
 import Foreign.Storable
 import Foreign.Ptr
@@ -27,7 +28,7 @@ fitEllipse pts = unsafePerformIO $
            C'CvBox2D (C'CvPoint2D32f x y)
                      (C'CvSize2D32f w h)
                      a <- peek result
-           return (Ellipse (x,y)
+           return (Ellipse (realToFrac x,realToFrac y)
                            (realToFrac w)
                            (realToFrac h)
                            (realToFrac a))
@@ -44,3 +45,19 @@ fitLine2D dist_type param reps aeps pts = unsafePerformIO $
             (toNum dist_type) param reps aeps result
            [x,y,dx,dy] <- peekArray 4 result
            return ((x,y),(dx,dy))
+
+-- | Fit a minimum area rectangle over a set of points
+minAreaRect :: Matrix (Float,Float) -> C'CvBox2D
+minAreaRect pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with (C'CvBox2D (C'CvPoint2D32f 0 0) (C'CvSize2D32f 0 0) 0) $ \result -> do
+           c'wrapMinAreaRect2 (castPtr cMat) nullPtr result
+           peek result
+
+boundingRect :: Matrix (Float,Float) -> C'CvRect
+boundingRect pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with (C'CvRect 0 0 0 0) $ \result -> do
+           c'wrapBoundingRect (castPtr cMat) 0 result
+           peek result
+

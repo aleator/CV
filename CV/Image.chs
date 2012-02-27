@@ -6,7 +6,6 @@ module CV.Image (
 , create
 , empty 
 , emptyCopy 
-, emptyCopy' 
 , cloneImage
 , withClone 
 , withCloneValue 
@@ -102,8 +101,6 @@ import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
 
--- import C2HSTools
-
 import Data.Maybe(catMaybes)
 import Data.List(genericLength)
 import Foreign.Marshal.Array
@@ -117,13 +114,20 @@ import Control.Monad
 
 
 -- Colorspaces
+
+-- | Single channel grayscale image
 data GrayScale
+
 data RGB
-data LAB
-data BGR
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
+
+data BGR
+
+data LAB
 data RGBA
 data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
+
+-- | Type family for expressing which channels a colorspace contains. This needs to be fixed wrt. the BGR color space.
 type family ChannelOf a :: *
 type instance ChannelOf RGB_Channel = RGB
 type instance ChannelOf LAB_Channel = LAB
@@ -133,8 +137,10 @@ type D8  = Word8
 type D32 = Float
 type D64 = Double
 
+-- | The type for Images
 newtype Image channels depth = S BareImage
 
+-- | Remove typing info from an image
 unS (S i) = i -- Unsafe and ugly
 
 imageFPTR :: Image c d -> ForeignPtr BareImage
@@ -397,7 +403,9 @@ convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
  where
     (fromIntegral -> w,fromIntegral -> h) = getSize img
 
+-- | Class for images that exist.
 class CreateImage a where
+    -- | Create an image from size
     create :: (Int,Int) -> IO a
 
 
@@ -430,14 +438,13 @@ instance CreateImage (Image RGBA D8) where
 
 
 
+-- | Allocate a new empty image
 empty :: (CreateImage (Image a b)) => (Int,Int) -> (Image a b)
 empty size = unsafePerformIO $ create size
 
-emptyCopy :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
-emptyCopy img = create (getSize img)
-
-emptyCopy' :: (CreateImage (Image a b)) => Image a b -> (Image a b)
-emptyCopy' img = unsafePerformIO $ create (getSize img)
+-- | Allocate a new image that of the same size and type as the exemplar image given.
+emptyCopy :: (CreateImage (Image a b)) => Image a b -> (Image a b)
+emptyCopy img = unsafePerformIO $ create (getSize img)
 
 -- | Save image. This will convert the image to 8 bit one before saving
 saveImage :: FilePath -> Image c d -> IO ()
@@ -521,10 +528,12 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
                                    ({#call alphaBlit#} i1 i1a i2 i2a x y)
 
 
+-- | Create a copy of an image
 cloneImage :: Image a b -> IO (Image a b)
 cloneImage img = withGenImage img $ \image ->
                     creatingImage ({#call cvCloneImage #} image)
 
+-- | Create a copy of a non-types image
 cloneBareImage :: BareImage -> IO BareImage
 cloneBareImage img = withGenBareImage img $ \image ->
                     creatingBareImage ({#call cvCloneImage #} image)

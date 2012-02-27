@@ -90,6 +90,8 @@ Library
                        Utils.Stream, Utils.Function, Utils.GeometryClass,
                        CV.Fitting, CV.Features, CV.Tracking, 
                        CV.Bindings.Types
+                       Utils.DrawingClass,
+                       CV.DrawableInstances
     Other-modules:     C2HSTools, C2HS,
                        CV.Bindings.Matrix,
                        CV.Bindings.Calibrate,
