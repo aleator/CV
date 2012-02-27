@@ -27,17 +27,19 @@ module CV.Calibration
     -- * Camera calibration
     ,calibrateCamera2) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
+
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Data.Bits
 
 import CV.Image 
 
-import C2HSTools
+import System.IO.Unsafe
 import Utils.Point
 import Control.Applicative
 

@@ -24,7 +24,7 @@ import CV.Image
 import CV.ImageOp
 import qualified CV.ImageMath as IM
 
-import C2HSTools
+import System.IO.Unsafe
 
 -- Morphological opening
 openOp :: StructuringElement -> ImageOperation GrayScale D32

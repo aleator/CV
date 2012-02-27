@@ -4,11 +4,7 @@ import Test.LazySmallCheck
 import Utils.Point
 import Control.DeepSeq
 
-data Rectangle a = Rectangle {-#UNPACK#-} !a
-                             {-#UNPACK#-} !a
-                             {-#UNPACK#-} !a
-                             {-#UNPACK#-} !a
-                             deriving (Eq,Show)
+data Rectangle a = Rectangle  !a !a !a !a deriving (Eq,Show)
 
 
 a `s` b = rnf a `seq` b

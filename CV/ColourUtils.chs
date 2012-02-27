@@ -21,7 +21,7 @@ import CV.ImageOp
 import qualified CV.ImageMath as IM
 import CV.ImageMathOp
 
-import C2HS
+import System.IO.Unsafe
 
 -- TODO: Rename this entire module to something else. Everything here  is grayscale :/
 

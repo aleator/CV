@@ -304,8 +304,8 @@ cvEllipseBox(img, *box, *color, thickness, lineType, shift);
 void extractCVSeq(const CvSeq* seq,void *dest);
 
 void printSeq(const CvSeq *seq) {
-printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %d",
-       seq->flags, seq->header_size, seq->total, seq->ptr);
+printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %p",
+       seq->flags, seq->header_size, seq->total, (void*)seq->ptr);
 }
 
 int wrapMeanShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp)

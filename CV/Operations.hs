@@ -6,7 +6,9 @@ module CV.Operations
 import CV.Bindings.Types
 import CV.Bindings.Core
 import CV.Image
-import C2HSTools
+import Foreign.Ptr (nullPtr)
+import Foreign.Marshal.Utils (with)
+import System.IO.Unsafe
 
 data NormType =
   NormC |

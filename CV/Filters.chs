@@ -9,16 +9,20 @@ module CV.Filters(gaussian,gaussianOp
               ,secondMomentAdaptiveBinarize,secondMomentAdaptiveBinarizeOp
               ,selectiveAvg,convolve2D,convolve2DI,haar,haarAt
               ,IntegralImage(),integralImage,verticalAverage) where
+
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
+import Foreign.Marshal.Array
 
 import CV.Image 
 import CV.ImageOp
 import Debug.Trace
 
-import C2HSTools
+import System.IO.Unsafe
+
+--import C2HSTools
 {#import CV.Image#}
 
 -- Low level wrapper for Susan filtering:

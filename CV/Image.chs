@@ -96,7 +96,7 @@ import System.Mem
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.Marshal.Utils
-import Foreign.ForeignPtr hiding (newForeignPtr)
+import Foreign.ForeignPtr hiding (newForeignPtr,unsafeForeignPtrToPtr)
 import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
@@ -107,6 +107,7 @@ import Data.List(genericLength)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
+import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
