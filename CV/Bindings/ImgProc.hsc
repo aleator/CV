@@ -12,11 +12,13 @@ import CV.Bindings.Core
 import CV.Image
 import System.IO.Unsafe
 
+import CV.Bindings.Matrix
 #strict_import
 
 #include <bindings.dsl.h>
 #include <opencv2/imgproc/imgproc_c.h>
 #include "cvWrapLEO.h"
+#include "wrapImgProc.h"
 
 -- CVAPI(void) cvCopyMakeBorder(
 --   const CvArr* src,
@@ -79,6 +81,7 @@ copyMakeBorder i t b l r border value =
 
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
 
+#ccall wrapFilter2, Ptr  <CvArr> -> Ptr <CvArr> -> Ptr <CvMat> -> Ptr <CvPoint> -> IO ()
 
 #ccall cvCalcArrBackProject, Ptr (Ptr <IplImage>) -> Ptr <CvArr> -> Ptr <CvHistogram> -> IO ()
 
