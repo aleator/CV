@@ -62,6 +62,7 @@ Library
                        cbits/cvIterators.h
     c-sources:         cbits/cvWrapLEO.c,
                        cbits/cvWrapCore.c,
+                       cbits/wrapImgProc.c,
                        cbits/cvIterators.c
     install-includes:  cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
