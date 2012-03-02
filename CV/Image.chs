@@ -110,7 +110,7 @@ import Data.List(genericLength)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
-import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word

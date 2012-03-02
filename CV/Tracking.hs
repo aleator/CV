@@ -1,4 +1,4 @@
-{-#LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies#-}
+{-#LANGUAGE FlexibleContexts, TypeFamilies#-}
 module CV.Tracking where
 import CV.Bindings.Tracking
 import CV.Bindings.Types
@@ -12,7 +12,7 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import System.IO.Unsafe
 
-meanShift :: (IntBounded a, ELBB a~Int) => Image GrayScale D32 -> a -> TermCriteria
+meanShift :: (BoundingBox a, Integral (ELBB a), ELBB a~Int) => Image GrayScale D32 -> a -> TermCriteria
                -> (Double,Rectangle Int)
 meanShift image window crit = unsafePerformIO $
    withGenImage image $ \c_img    ->
