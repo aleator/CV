@@ -20,7 +20,7 @@ import Utils.Pointer
 
 -- import Utils.List
 
-newtype (Num a) => HistogramData a = HGD [(a,a)]
+newtype HistogramData a = HGD [(a,a)]
 
 -- | Given a set of images, such as the color channels of color image, and
 --   a histogram with corresponding number of channels, replace the pixels of
