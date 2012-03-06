@@ -154,6 +154,7 @@ Library
                        CV.Bindings.ImgProc,
                        CV.Bindings.Tracking,
                        CV.Bindings.Drawing,
+                       CV.Bindings.Error,
                        CV.Bindings.Features,
                        CV.Bindings.Iterators
     Extensions: CPP

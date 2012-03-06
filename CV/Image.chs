@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable #-}
 #include "cvWrapLEO.h"
 module CV.Image (
 -- * Basic types
@@ -91,6 +91,9 @@ module CV.Image (
 , imageFPTR
 , ensure32F
 
+-- * Extended error handling
+, setCatch
+, CvException
 ) where
 
 import System.Posix.Files
@@ -104,6 +107,7 @@ import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
+import CV.Bindings.Error
 
 import Data.Maybe(catMaybes)
 import Data.List(genericLength)
@@ -115,6 +119,10 @@ import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
 import Control.Monad
+import Control.Exception
+import Data.Data
+import Data.Typeable
+
 
 
 
@@ -856,4 +864,20 @@ montage (u',v') space' imgs
                                | y <- [0..v-1] , x <- [0..u-1]
                                | i <- imgs ]
                     return r
+
+data CvException = CvException Int String String String Int
+     deriving (Show, Typeable)
+
+instance Exception CvException
+
+setCatch = do
+   let catch i cstr1 cstr2 cstr3 j = do
+         func <- peekCString cstr1
+         msg  <- peekCString cstr2
+         file <- peekCString cstr3
+         throw (CvException (fromIntegral i) func msg file (fromIntegral j)) 
+         return 0
+   cb <- mk'CvErrorCallback catch
+   c'cvRedirectError cb nullPtr nullPtr
+   c'cvSetErrMode c'CV_ErrModeSilent
 

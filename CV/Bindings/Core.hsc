@@ -228,3 +228,4 @@ import CV.Image(BareImage)
 -- Discrete Cosine Transform
 
 #ccall cvDCT , Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
+
