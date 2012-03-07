@@ -1,9 +1,10 @@
 -- | This module is an applicative wrapper for images. It introduces Pixelwise type that
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
-{-#LANGUAGE TypeFamilies#-}
+{-#LANGUAGE TypeFamilies, FlexibleContexts#-}
 module CV.Pixelwise (Pixelwise(..)
                     ,fromImage
+                    ,fromFunction
                     ,toImage
                     ,remap
                     ,mapPixels
@@ -72,7 +73,8 @@ imageFromFunction :: (Int,Int) -> ((Int,Int) -> D32) -> Image GrayScale D32
 imageFromFunction size = toImage . fromFunction size
 
 -- | Convert an image to pixelwise construct.
-toImage :: Pixelwise D32 -> Image GrayScale D32
+toImage :: (SetPixel (Image a b), CreateImage (Image a b))
+           => Pixelwise (SP (Image a b)) -> Image a b
 toImage (MkP (w,h) e) = unsafePerformIO $ do
         img <- create (w,h)
         sequence_ [setPixel (i,j) (e (i,j)) img

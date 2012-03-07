@@ -9,11 +9,11 @@ import CV.Operations
 
 import Foreign.Ptr (castPtr,nullPtr)
 import System.IO.Unsafe
+import Data.Complex
 
 type I32 = Image GrayScale D32
 type Idft32 = Image DFT D32
-data Icomplex32 = Icomplex32{ re :: I32, im :: I32 }
-data Ipolar32 = Ipolar32{ magnitude :: I32, phase :: I32 }
+data Ipolar32 = Ipolar32 (Complex D32)
 
 dft :: Image GrayScale d -> Image DFT D32
 dft i = unsafePerformIO $ do

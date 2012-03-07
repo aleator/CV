@@ -1,28 +1,34 @@
 module Main where
-import CV.Image
-import CV.Edges
-import qualified CV.ImageMath as IM
+
 import CV.ColourUtils
-import CV.Pixelwise
+import CV.DFT
+import CV.Edges
 import CV.Filters
-import qualified CV.Transforms as T
+import CV.Image
+import CV.Pixelwise
 import Control.Applicative hiding ((<**>))
+import qualified CV.ImageMath as IM
+import qualified CV.Transforms as T
 
 main = do
     Just x <- loadImage "smallLena.jpg"
-    let  y = fromImage $ T.flip T.Horizontal x
-         u = fromImage $ T.flip T.Vertical   y
-         z = fromImage $ T.flip T.Vertical   x
-    saveImage "PixelWise.png" $ montage (3,3) 5 
+    let  y, u, z :: Image GrayScale D32
+         y = T.flip T.Horizontal x
+         u = T.flip T.Vertical   y
+         z = T.flip T.Vertical   x
+         d :: Pixelwise (D32,D32)
+         d = fromImage $ dft x
+    saveImage "PixelWise.png" $ montage (2,5) 5
         [x,y
-        ,stretchHistogram . toImage $ (z + y)
-        ,stretchHistogram . toImage $ y + u + z
-        ,stretchHistogram . toImage $ fmap (sin . (*9)) $ y 
-        ,stretchHistogram . toImage $ fmap log $ x 
-        
-        ,stretchHistogram . gaussian (3,3) 
-                          . toImage $ atan2 <$$> (sobel (1,0) s5 x) 
-                                            <+>  (sobel (0,1) s5 x) 
-        ,toImage $ fmap (\x -> if x > 0.5 then 0 else 1) $ x
-        ,toImage $ fmap (\x -> if x > 0.5 && x < 0.6 then 0 else 1)  $ x
+        ,stretchHistogram . toImage $ (fromImage z + fromImage y)
+        ,stretchHistogram . toImage $ fromImage y + fromImage u + fromImage z
+        ,stretchHistogram . toImage $ fmap (sin . (*9)) $ fromImage y
+        ,stretchHistogram . toImage $ fmap log $ fromImage x
+
+        ,stretchHistogram . gaussian (3,3)
+                          . toImage $ atan2 <$$> (sobel (1,0) s5 x)
+                                            <+>  (sobel (0,1) s5 x)
+        ,toImage $ fmap (\x -> if x > 0.5 then 0 else 1) $ fromImage x
+        ,toImage $ fmap (\x -> if x > 0.5 && x < 0.6 then 0 else 1)  $ fromImage x
+        ,idft $ toImage $ d * (fromFunction (getSize d) (\(x,y) -> (exp(-(fromIntegral (91-x)^2+fromIntegral (91-y)^2)/(1600)):+0)))
         ]

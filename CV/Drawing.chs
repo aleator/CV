@@ -42,6 +42,7 @@ import Utils.Point
 import CV.ImageOp
 import Utils.GeometryClass
 import Utils.Rectangle
+import Data.Complex
 
 -- | Is the shape filled or just a boundary?
 data ShapeStyle = Filled | Stroked Int
@@ -88,81 +89,63 @@ rtf = realToFrac
 
 instance Drawable RGB D32 where
     type Color RGB D32 = (D32,D32,D32)
-    putTextOp (r,g,b) size text (x,y)  = ImgOp $ \img -> do
-                                   withGenImage img $ \cimg ->
-                                    withCString text $ \(ctext) ->
-                                    {#call wrapDrawText#} cimg ctext (realToFrac size) 
-                                        (fromIntegral x) (fromIntegral y) 
-                                        (realToFrac r) (realToFrac g) (realToFrac b) 
+    putTextOp    (r,g,b)  = primTextOp (r,g,b) 
+    lineOp       (r,g,b)  = primLineOp (r,g,b) 
+    circleOp     (r,g,b)  = primCircleOp (r,g,b)
+    ellipseBoxOp (r,g,b)  = primEllipseBox (r,g,b,0) 
+    rectOp       (r,g,b)  = primRectOp (r,g,b)
+    fillPolyOp   (r,g,b)   = primFillPolyOp (r,g,b)
 
-    lineOp (r,g,b) t (x,y) (x1,y1) = ImgOp $ \i -> do
-                         withGenImage i $ \img -> 
-                              {#call wrapDrawLine#} img (fromIntegral x) (fromIntegral y) 
-                                                        (fromIntegral x1) (fromIntegral y1) 
-                                                        (realToFrac r) (realToFrac g) 
-                                                        (realToFrac b) (fromIntegral t) 
-    
-    ellipseBoxOp (r,g,b) = primEllipseBox (r,g,b,0) 
-
-
-    circleOp (red,g,b) (x,y) r s = ImgOp $ \i -> do
-                        when (r>0) $ withGenImage i $ \img -> 
-                              ({#call wrapDrawCircle#} img (fromIntegral x) (fromIntegral y) 
-                                                           (fromIntegral r) (realToFrac red) 
-                                                           (realToFrac g) (realToFrac b)
-                                                           $ styleToCV s)
-
-    rectOp c = primRectOp c
-
-    fillPolyOp (r,g,b) pts = ImgOp $ \i -> do
-                             withImage i $ \img -> do
-                                  let (xs,ys) = unzip pts
-                                  xs' <- newArray $ map fromIntegral xs
-                                  ys' <- newArray $ map fromIntegral  ys
-                                  {#call wrapFillPolygon#} img 
-                                       (fromIntegral $ length xs) xs' ys' 
-                                   (realToFrac r) (realToFrac g) (realToFrac b) 
-                                  free xs'
-                                  free ys'
-
-
-instance Drawable GrayScale D32 where
-    type Color GrayScale D32 = D32
-
-    putTextOp color size text (x,y)  = ImgOp $ \img -> do
+primTextOp (c1,c2,c3) size text (x,y)  = ImgOp $ \img -> do
                                    withGenImage img $ \cimg ->
                                     withCString text $ \(ctext) ->
                                     {#call wrapDrawText#} cimg ctext (realToFrac size) 
                                         (fromIntegral x) (fromIntegral y)   
-                                        (realToFrac color) (realToFrac color) (realToFrac color) 
+                                        (realToFrac c1) (realToFrac c2) (realToFrac c3) 
 
-    lineOp c t (x,y) (x1,y1) = ImgOp $ \i -> do
+primLineOp (c1,c2,c3) t (x,y) (x1,y1) = ImgOp $ \i -> do
                          withGenImage i $ \img -> 
                               {#call wrapDrawLine#} img (fromIntegral x) (fromIntegral y) 
                                                         (fromIntegral x1) (fromIntegral y1) 
-                                                        (realToFrac c) (realToFrac c) 
-                                                        (realToFrac c) (fromIntegral t) 
+                                                        (realToFrac c1) (realToFrac c2) 
+                                                        (realToFrac c3) (fromIntegral t) 
 
-    circleOp c (x,y) r s = ImgOp $ \i -> do
+primCircleOp (c1,c2,c3) (x,y) r s = ImgOp $ \i -> do
                         when (r>0) $ withGenImage i $ \img -> 
                               ({#call wrapDrawCircle#} img (fromIntegral x) (fromIntegral y) 
                                                            (fromIntegral r) 
-                                                           (realToFrac c) (realToFrac c) (realToFrac c) 
+                                                           (realToFrac c1) (realToFrac c2) 
+                                                           (realToFrac c3) 
                                                            $ styleToCV s)
-    ellipseBoxOp c  = primEllipseBox (c,c,c,0) 
 
-    rectOp c = primRectOp (c,c,c)
-    fillPolyOp c pts = ImgOp $ \i -> do
+primFillPolyOp (c1,c2,c3) pts = ImgOp $ \i -> do
                              withImage i $ \img -> do
                                   let (xs,ys) = unzip pts
                                   xs' <- newArray $ map fromIntegral xs
                                   ys' <- newArray $ map fromIntegral  ys
                                   {#call wrapFillPolygon#} img 
                                        (fromIntegral $ length xs) xs' ys' 
-                                   (realToFrac c) (realToFrac c) (realToFrac c) 
+                                   (realToFrac c1) (realToFrac c2) (realToFrac c3) 
                                   free xs'
                                   free ys'
 
+instance Drawable DFT D32 where
+   type Color DFT D32 = Complex D32
+   putTextOp (r:+i)   = primTextOp (r,i,0) -- Boy does this feel silly :)
+   lineOp (r:+i)      = primLineOp (r,i,0) 
+   circleOp (r:+i)    = primCircleOp (r,i,0)
+   rectOp   (r:+i)    = primRectOp (r,i,0)
+   ellipseBoxOp (r:+i) = primEllipseBox (r,i,0,0) 
+   fillPolyOp (r:+i)   = primFillPolyOp (r,i,0)
+
+instance Drawable GrayScale D32 where
+    type Color GrayScale D32 = D32
+    putTextOp color = primTextOp (color,color,color) 
+    lineOp c = primLineOp (c,c,c) 
+    circleOp c = primCircleOp (c,c,c)
+    ellipseBoxOp c  = primEllipseBox (c,c,c,0) 
+    rectOp c = primRectOp (c,c,c)
+    fillPolyOp c = primFillPolyOp (c,c,c)
 
 -- | Flood fill a region of the image
 fillOp :: (Int,Int) -> D32 -> D32 -> D32 -> Bool -> ImageOperation GrayScale D32
