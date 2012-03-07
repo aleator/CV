@@ -59,24 +59,10 @@ withPixels x = toImage . x . fromImage
 remap :: (((Int,Int) -> b) -> ((Int,Int) -> x)) -> Pixelwise b -> Pixelwise x
 remap f (MkP s e) = MkP s (f e)
 
-toImage :: (P (Image a b) ~ SP (Image a b), GetPixel (Image a b) SetPixel (Image a b), CreateImage (Image a b)) =>
-           (((Int,Int) -> b)->((Int,Int) -> b)) -> (Image a b) -> (Image a b)
-remapImage f i = toImage . remap f $ fromImage i
-
-mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
-mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
-
 -- | Convert a pixelwise construct into an image.
 fromImage :: (GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
 fromImage i = MkP (getSize i) (flip getPixel $ i)
-
--- | Convert a function into construct into a Pixelwise construct
-fromFunction :: (Int, Int) -> ((Int, Int) -> x) -> Pixelwise x
-fromFunction size f = MkP size f
-
-imageFromFunction :: (Int,Int) -> ((Int,Int) -> D32) -> Image GrayScale D32
-imageFromFunction size = toImage . fromFunction size
-
+--
 -- | Convert an image to pixelwise construct.
 toImage :: (SetPixel (Image a b), CreateImage (Image a b))
            => Pixelwise (SP (Image a b)) -> Image a b
@@ -87,6 +73,23 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
                   , j <- [0..h-1]
                   ]
         return img
+
+remapImage f i = toImage . remap f $ fromImage i
+-- toImage . remap f . fromImage . toImage . remap f . fromImage
+{-# RULES "fromImage/" forall f. (SP f) ~ (P f) => fromImage (toImage f) = f #-}
+
+mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
+mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
+
+
+
+-- | Convert a function into construct into a Pixelwise construct
+fromFunction :: (Int, Int) -> ((Int, Int) -> x) -> Pixelwise x
+fromFunction size f = MkP size f
+
+imageFromFunction :: (Int,Int) -> ((Int,Int) -> D32) -> Image GrayScale D32
+imageFromFunction size = toImage . fromFunction size
+
 
 -- toImageP :: Pixelwise D32 -> Image GrayScale D32
 -- toImageP (MkP (w,h) e) = unsafePerformIO $ do
