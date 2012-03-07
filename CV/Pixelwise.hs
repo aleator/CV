@@ -7,6 +7,7 @@ module CV.Pixelwise (Pixelwise(..)
                     ,fromFunction
                     ,toImage
                     ,remap
+                    ,remapImage
                     ,mapPixels
                     ,imageFromFunction
                     ,(<$$>)
@@ -57,6 +58,10 @@ withPixels x = toImage . x . fromImage
 -- | Re-arrange pixel positions and values
 remap :: (((Int,Int) -> b) -> ((Int,Int) -> x)) -> Pixelwise b -> Pixelwise x
 remap f (MkP s e) = MkP s (f e)
+
+toImage :: (P (Image a b) ~ SP (Image a b), GetPixel (Image a b) SetPixel (Image a b), CreateImage (Image a b)) =>
+           (((Int,Int) -> b)->((Int,Int) -> b)) -> (Image a b) -> (Image a b)
+remapImage f i = toImage . remap f $ fromImage i
 
 mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
 mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
