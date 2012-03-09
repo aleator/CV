@@ -1,13 +1,14 @@
 -- | This module is an applicative wrapper for images. It introduces Pixelwise type that
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
-{-#LANGUAGE TypeFamilies, FlexibleContexts#-}
+{-#LANGUAGE TypeFamilies, FlexibleContexts, RankNTypes#-}
 module CV.Pixelwise (Pixelwise(..)
                     ,fromImage
                     ,fromFunction
                     ,toImage
                     ,remap
                     ,remapImage
+                    ,mapImage
                     ,mapPixels
                     ,imageFromFunction
                     ,(<$$>)
@@ -74,12 +75,24 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
                   ]
         return img
 
+remapImage ::
+     (CreateImage (Image a b),
+      SetPixel (Image a b),
+      GetPixel (Image a b)) =>
+     (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
+
 remapImage f i = toImage . remap f $ fromImage i
 -- toImage . remap f . fromImage . toImage . remap f . fromImage
-{-# RULES "fromImage/" forall f. (SP f) ~ (P f) => fromImage (toImage f) = f #-}
 
 mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
 mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
+
+mapImage ::
+     (CreateImage (Image a b),
+      SetPixel (Image a b),
+      GetPixel (Image a b)) =>
+     (P (Image a b) -> SP (Image a b)) -> Image a b -> Image a b
+mapImage f = toImage . mapPixels f . fromImage
 
 
 
@@ -87,7 +100,8 @@ mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
 fromFunction :: (Int, Int) -> ((Int, Int) -> x) -> Pixelwise x
 fromFunction size f = MkP size f
 
-imageFromFunction :: (Int,Int) -> ((Int,Int) -> D32) -> Image GrayScale D32
+imageFromFunction :: (SetPixel (Image a b), CreateImage (Image a b)) =>
+                     (Int,Int) -> ((Int,Int) -> (SP (Image a b))) -> Image a b
 imageFromFunction size = toImage . fromFunction size
 
 
