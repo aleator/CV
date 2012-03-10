@@ -9,9 +9,13 @@
 #endif
 
 #include <stdio.h>
-#include <opencv/cv.h>
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/video/tracking.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/legacy/compat.hpp>
 #include <complex.h>
 
 IplImage* wrapCreateImage32F(const int width, const int height, const int channels);
