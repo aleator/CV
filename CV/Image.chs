@@ -95,8 +95,8 @@ module CV.Image (
 , CvException
 ) where
 
-import System.Posix.Files
 import System.Mem
+import System.Directory
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -259,7 +259,7 @@ instance Loadable ((Image GrayScale D8)) where
 --   polymorphic enough to cause run time errors if the declared and actual types of the
 --   images do not match. Use with care.
 unsafeloadUsing x p n = do
-              exists <- fileExist n
+              exists <- doesFileExist n
               if not exists then return Nothing
                             else do
                               i <- withCString n $ \name ->

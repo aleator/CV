@@ -87,8 +87,8 @@ Library
 
     Build-Depends:     base >= 4 && < 6,
                        parallel > 3.1,
-                       unix > 2.3,
                        array >= 0.2.0.0,
+                       directory >= 1 && < 2,
                        mtl >= 1.1.0,
                        random >= 1.0.0,
                        carray >= 0.1.5,
