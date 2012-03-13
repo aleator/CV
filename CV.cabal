@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.5
+Version:             0.3.5.2
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -51,7 +51,7 @@ Flag opencv23
 
 
 Library
-    Build-Tools:       c2hs >= 0.16.0
+    Build-Tools:       c2hs >= 0.16.3
     Include-dirs:      cbits/
     Includes:          opencv/cv.h,
                        opencv/cxcore.h,
