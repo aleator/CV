@@ -11,6 +11,7 @@ module CV.Pixelwise (Pixelwise(..)
                     ,mapImage
                     ,mapPixels
                     ,imageFromFunction
+                    ,imageToFunction
                     ,(<$$>)
                     ,(<+>)) where
 import Control.Applicative
@@ -63,7 +64,15 @@ remap f (MkP s e) = MkP s (f e)
 -- | Convert a pixelwise construct into an image.
 fromImage :: (GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
 fromImage i = MkP (getSize i) (flip getPixel $ i)
---
+
+-- | Convert image to a function, which returns pixel values in the domain of
+-- the image and zero elsewhere
+imageToFunction :: (GetPixel (Image a b), Num (P (Image a b)))
+                  => Image a b -> ((Int,Int) -> P (Image a b))
+imageToFunction img (x,y) | (x>= 0 && y>= 0 && x < w && y < h) = getPixel (x,y) img
+                          | otherwise = 0
+   where (w,h) = getSize img
+
 -- | Convert an image to pixelwise construct.
 toImage :: (SetPixel (Image a b), CreateImage (Image a b))
            => Pixelwise (SP (Image a b)) -> Image a b
