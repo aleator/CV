@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable, UndecidableInstances #-}
 #include "cvWrapLEO.h"
 module CV.Image (
 -- * Basic types
@@ -27,6 +27,7 @@ module CV.Image (
 , lab
 , rgba
 , rgb
+, compose
 , composeMultichannelImage
 
 -- * IO operations
@@ -201,10 +202,30 @@ rgb = undefined :: Tag RGB
 rgba = undefined :: Tag RGBA
 lab = undefined :: Tag LAB
 
+class Composes a where
+   type Source a :: *
+   compose :: Source a -> a
 
+instance (CreateImage (Image RGBA a)) => Composes (Image RGBA a) where
+   type Source (Image RGBA a) = (Image GrayScale a, Image GrayScale a
+                               ,Image GrayScale a, Image GrayScale a)
+   compose (r,g,b,a) = composeMultichannelImage (Just b) (Just g) (Just r) (Just a) rgba
+
+instance (CreateImage (Image RGB a)) => Composes (Image RGB a) where
+   type Source (Image RGB a) = (Image GrayScale a, Image GrayScale a, Image GrayScale a)
+   compose (r,g,b) = composeMultichannelImage (Just b) (Just g) (Just r) Nothing rgb
+
+instance (CreateImage (Image LAB a)) => Composes (Image LAB a) where
+   type Source (Image LAB a) = (Image GrayScale a, Image GrayScale a, Image GrayScale a)
+   compose (l,a,b) = composeMultichannelImage (Just l) (Just a) (Just b) Nothing lab
+
+{-# DEPRECATED composeMultichannelImage "This is unsafe. Use compose instead" #-}
 composeMultichannelImage :: (CreateImage (Image tp a)) => Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Tag tp -> Image tp a
-composeMultichannelImage (c1)
-                         (c2)
+composeMultichannelImage = composeMultichannel
+
+composeMultichannel :: (CreateImage (Image tp a)) => Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Tag tp -> Image tp a
+composeMultichannel (c2)
+                         (c1)
                          (c3)
                          (c4)
                          totag
