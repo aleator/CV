@@ -202,6 +202,8 @@ rgb = undefined :: Tag RGB
 rgba = undefined :: Tag RGBA
 lab = undefined :: Tag LAB
 
+-- | Typeclass for elements that are build from component elements. For example,
+--   RGB images can be constructed from three grayscale images.
 class Composes a where
    type Source a :: *
    compose :: Source a -> a
@@ -243,6 +245,7 @@ composeMultichannel (c2)
         size = getSize . head . catMaybes $ [c1,c2,c3,c4]
 
 
+-- | Typeclass for CV items that can be read from file. Mainly images at this point.
 class Loadable a where
     readFromFile :: FilePath -> IO a
 
@@ -297,6 +300,7 @@ loadColorImage = unsafeloadUsing imageTo32F 1
 loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
+-- | Typeclass for elements with a size, such as images and matrices.
 class Sized a where
     type Size a :: *
     getSize :: a -> Size a
