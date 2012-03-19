@@ -1,7 +1,7 @@
 #ifndef __CVITERATORS__
 #define __CVITERATORS__
 
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
 
 /*
 Image Iterators.

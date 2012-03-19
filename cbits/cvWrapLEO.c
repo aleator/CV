@@ -1247,7 +1247,7 @@ for(i=0;i<size.width;++i)
  spatial smoothing. `w` and `h` determine window size.
 */
 
-inline double calcSusanSmooth(IplImage* src, int x, int y
+double calcSusanSmooth(IplImage* src, int x, int y
                       ,double t,double sigma,int w, int h)
 {
 
@@ -1780,7 +1780,7 @@ void localVerticalBinaryPattern(IplImage *src, int *LBP)
 //@-node:aleator.20051207074905:LBP
 //@+node:aleator.20051109102750:Selective Average
 // Assuming grayscale image calculate local selective average of point x y
-inline double calcSelectiveAvg(IplImage *img,double t
+double calcSelectiveAvg(IplImage *img,double t
                                    ,int x, int y
                                    ,int wwidth, int wheight)
 {

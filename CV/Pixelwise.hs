@@ -1,16 +1,26 @@
 -- | This module is an applicative wrapper for images. It introduces Pixelwise type that
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
-{-#LANGUAGE TypeFamilies#-}
-module CV.Pixelwise (Pixelwise(..), fromImage, toImage, remap, (<$$>),(<+>)) where
-import Control.Applicative 
+{-#LANGUAGE TypeFamilies, FlexibleContexts, RankNTypes#-}
+module CV.Pixelwise (Pixelwise(..)
+                    ,fromImage
+                    ,fromFunction
+                    ,toImage
+                    ,remap
+                    ,remapImage
+                    ,mapImage
+                    ,mapPixels
+                    ,imageFromFunction
+                    ,(<$$>)
+                    ,(<+>)) where
+import Control.Applicative
 import CV.Image
 import System.IO.Unsafe
 import Control.Parallel.Strategies
 
 -- | A wrapper for allowing functor and applicative instances for non-polymorphic image types.
 data Pixelwise x = MkP {sizeOf :: (Int,Int)
-                       ,eltOf :: (Int,Int) -> x}
+                       ,eltOf  :: (Int,Int) -> x}
 
 instance GetPixel (Pixelwise x) where
     type P (Pixelwise x) = x
@@ -18,7 +28,7 @@ instance GetPixel (Pixelwise x) where
 
 instance Sized (Pixelwise a) where
     type Size (Pixelwise a) = (Int,Int)
-    getSize (MkP s _) = s 
+    getSize (MkP s _) = s
 
 instance Functor Pixelwise where
     fmap f (MkP s e) = MkP s (fmap f e)
@@ -28,19 +38,19 @@ instance Applicative Pixelwise where
   MkP i f <*> MkP j g  = MkP (min i j) (f <*> g)
 
 instance (Eq a) => Eq (Pixelwise a) where
-    (MkP (s1@(w1,h1)) e1)  == (MkP s2 e2) 
-        = s1==s2 && and [e1 (i,j) == e2 (i,j) | i <- [0..w1-1] , j <- [0..h1-1]] 
+    (MkP (s1@(w1,h1)) e1)  == (MkP s2 e2)
+        = s1==s2 && and [e1 (i,j) == e2 (i,j) | i <- [0..w1-1] , j <- [0..h1-1]]
 
 instance Show (Pixelwise a) where
-    show (MkP s1 e1)  
-        = "MkP "++show (s1)++" <image-data>" 
+    show (MkP s1 e1)
+        = "MkP "++show (s1)++" <image-data>"
 
 instance (Num a) => Num (Pixelwise a) where
-  a + b = (+) <$> a <*> b 
-  a * b = (*) <$> a <*> b 
-  a - b = (-) <$> a <*> b 
+  a + b = (+) <$> a <*> b
+  a * b = (*) <$> a <*> b
+  a - b = (-) <$> a <*> b
   negate = fmap negate
-  abs    = fmap abs 
+  abs    = fmap abs
   signum = error "Signum is undefined for images"
   fromInteger i = MkP{sizeOf = (1,1),eltOf=const (fromIntegral i)}
 
@@ -53,9 +63,10 @@ remap f (MkP s e) = MkP s (f e)
 -- | Convert a pixelwise construct into an image.
 fromImage :: (GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
 fromImage i = MkP (getSize i) (flip getPixel $ i)
-
+--
 -- | Convert an image to pixelwise construct.
-toImage :: Pixelwise D32 -> Image GrayScale D32
+toImage :: (SetPixel (Image a b), CreateImage (Image a b))
+           => Pixelwise (SP (Image a b)) -> Image a b
 toImage (MkP (w,h) e) = unsafePerformIO $ do
         img <- create (w,h)
         sequence_ [setPixel (i,j) (e (i,j)) img
@@ -64,14 +75,44 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
                   ]
         return img
 
-toImageP :: Pixelwise D32 -> Image GrayScale D32
-toImageP (MkP (w,h) e) = unsafePerformIO $ do
-        img <- create (w,h)
-        let rs = parMap rdeepseq (\j -> unsafePerformIO (
-                                          sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
-                                          >> return True))
-                                 [0..h-1]
-        all (==True) rs `seq` return img
+remapImage ::
+     (CreateImage (Image a b),
+      SetPixel (Image a b),
+      GetPixel (Image a b)) =>
+     (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
+
+remapImage f i = toImage . remap f $ fromImage i
+-- toImage . remap f . fromImage . toImage . remap f . fromImage
+
+mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
+mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
+
+mapImage ::
+     (CreateImage (Image a b),
+      SetPixel (Image a b),
+      GetPixel (Image a b)) =>
+     (P (Image a b) -> SP (Image a b)) -> Image a b -> Image a b
+mapImage f = toImage . mapPixels f . fromImage
+
+
+
+-- | Convert a function into construct into a Pixelwise construct
+fromFunction :: (Int, Int) -> ((Int, Int) -> x) -> Pixelwise x
+fromFunction size f = MkP size f
+
+imageFromFunction :: (SetPixel (Image a b), CreateImage (Image a b)) =>
+                     (Int,Int) -> ((Int,Int) -> (SP (Image a b))) -> Image a b
+imageFromFunction size = toImage . fromFunction size
+
+
+-- toImageP :: Pixelwise D32 -> Image GrayScale D32
+-- toImageP (MkP (w,h) e) = unsafePerformIO $ do
+--         img <- create (w,h)
+--         let rs = parMap rdeepseq (\j -> unsafePerformIO (
+--                                           sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
+--                                           >> return True))
+--                                  [0..h-1]
+--         all (==True) rs `seq` return img
 
 -- | Shorthand for `a <$> fromImage b`
 (<$$>) :: (Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => (P b1 -> b) -> b1 -> Pixelwise b
