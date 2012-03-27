@@ -61,17 +61,20 @@ withPixels x = toImage . x . fromImage
 remap :: (((Int,Int) -> b) -> ((Int,Int) -> x)) -> Pixelwise b -> Pixelwise x
 remap f (MkP s e) = MkP s (f e)
 
--- | Convert a pixelwise construct into an image.
-fromImage :: (GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
-fromImage i = MkP (getSize i) (flip getPixel $ i)
-
 -- | Convert image to a function, which returns pixel values in the domain of
 -- the image and zero elsewhere
 imageToFunction :: (GetPixel (Image a b), Num (P (Image a b)))
                   => Image a b -> ((Int,Int) -> P (Image a b))
-imageToFunction img (x,y) | (x>= 0 && y>= 0 && x < w && y < h) = getPixel (x,y) img
+imageToFunction img (x,y) | x>= 0 && y>= 0 && x < w && y < h = getPixel (x,y) img
                           | otherwise = 0
    where (w,h) = getSize img
+
+fromImage :: (Num (P b), GetPixel b, Sized b, Size b ~ Size (Pixelwise (P b))) => b -> Pixelwise (P b)
+fromImage i = MkP size getP
+    where
+        size@(w,h) = getSize i
+        getP (x,y) | x>=0 && x<w && y>=0 && y<h = getPixel (x,y) i
+                   | otherwise = 0
 
 -- | Convert an image to pixelwise construct.
 toImage :: (SetPixel (Image a b), CreateImage (Image a b))
@@ -87,6 +90,7 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
 remapImage ::
      (CreateImage (Image a b),
       SetPixel (Image a b),
+      Num (P (Image  a b)),
       GetPixel (Image a b)) =>
      (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
 
@@ -99,6 +103,7 @@ mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
 mapImage ::
      (CreateImage (Image a b),
       SetPixel (Image a b),
+      Num (P (Image a b)),
       GetPixel (Image a b)) =>
      (P (Image a b) -> SP (Image a b)) -> Image a b -> Image a b
 mapImage f = toImage . mapPixels f . fromImage
@@ -124,9 +129,9 @@ imageFromFunction size = toImage . fromFunction size
 --         all (==True) rs `seq` return img
 
 -- | Shorthand for `a <$> fromImage b`
-(<$$>) :: (Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => (P b1 -> b) -> b1 -> Pixelwise b
+(<$$>) :: (Num (P b1), Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => (P b1 -> b) -> b1 -> Pixelwise b
 a <$$> b = a <$> fromImage b
 
 -- | Shorthand for `a <*> fromImage b`
-(<+>) :: (Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => Pixelwise (P b1 -> b) -> b1 -> Pixelwise b
+(<+>) :: (Num (P b1),Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => Pixelwise (P b1 -> b) -> b1 -> Pixelwise b
 a <+> b = a <*> fromImage b
