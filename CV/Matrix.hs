@@ -10,7 +10,6 @@ module CV.Matrix
 
 {-#OPTIONS_GHC -fwarn-unused-imports#-}
 
-import System.Posix.Files
 import System.Mem
 
 import Foreign.C.Types
