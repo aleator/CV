@@ -506,6 +506,15 @@ instance GetPixel (Image GrayScale D32) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Float))):: Ptr Float)
 
+instance GetPixel (Image GrayScale D8) where
+    type P (Image GrayScale D8) = D8
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Word8))):: Ptr Word8)
+
 instance GetPixel (Image DFT D32) where
     type P (Image DFT D32) = Complex D32
     {-#INLINE getPixel#-}
