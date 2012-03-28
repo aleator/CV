@@ -23,13 +23,13 @@ module CV.ConnectedComponents
 where
 #include "cvWrapLEO.h"
 
-import Foreign.Ptr
-import Foreign.C.Types
-import System.IO.Unsafe
-import Foreign.ForeignPtr
 import Control.Monad ((>=>))
-
-import C2HSTools hiding (unsafePerformIO)
+import Foreign.C.Types
+import Foreign.ForeignPtr
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
+import Foreign.Ptr
+import System.IO.Unsafe
 
 {#import CV.Image#}
 

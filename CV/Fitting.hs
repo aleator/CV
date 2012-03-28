@@ -1,14 +1,19 @@
+{-#LANGUAGE TypeFamilies#-}
 module CV.Fitting where
 
 import CV.Bindings.Fittings
 import CV.Bindings.Types
-import Foreign.Marshal.Array
-import Foreign.Marshal.Alloc
-import Foreign.C.Types
-import Foreign.Storable
-import Foreign.Ptr
-import System.IO.Unsafe
 import CV.Matrix
+import CV.Image(getSize)
+import Control.Applicative
+import Foreign.C.Types
+import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
+import Foreign.Ptr
+import Foreign.Storable
+import System.IO.Unsafe
+import Utils.GeometryClass
 
 data Ellipse = Ellipse {center::(Float,Float)
                        ,width,height::Float
@@ -27,7 +32,7 @@ fitEllipse pts = unsafePerformIO $
            C'CvBox2D (C'CvPoint2D32f x y)
                      (C'CvSize2D32f w h)
                      a <- peek result
-           return (Ellipse (x,y)
+           return (Ellipse (realToFrac x,realToFrac y)
                            (realToFrac w)
                            (realToFrac h)
                            (realToFrac a))
@@ -44,3 +49,55 @@ fitLine2D dist_type param reps aeps pts = unsafePerformIO $
             (toNum dist_type) param reps aeps result
            [x,y,dx,dy] <- peekArray 4 result
            return ((x,y),(dx,dy))
+
+-- | Fit a minimum area rectangle over a set of points
+minAreaRect :: Matrix (Float,Float) -> C'CvBox2D
+minAreaRect pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with (C'CvBox2D (C'CvPoint2D32f 0 0) (C'CvSize2D32f 0 0) 0) $ \result -> do
+           c'wrapMinAreaRect2 (castPtr cMat) nullPtr result
+           peek result
+
+-- | Calculate the minimum axis-aligned bounding rectangle of given points.
+boundingRect :: Matrix (Float,Float) -> C'CvRect
+boundingRect pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with (C'CvRect 0 0 0 0) $ \result -> do
+           c'wrapBoundingRect (castPtr cMat) 0 result
+           peek result
+
+-- | Calculate the minimum enclosing circle of a point set.
+boundingCircle :: (ELP a ~ Double, Point2D a) => Matrix (Float,Float) -> (a, Double)
+boundingCircle pts = unsafePerformIO $ 
+   withMatPtr pts $ \cMat ->
+   with 0         $ \cRadius ->   
+   with (C'CvPoint2D32f 0 0 ) $ \result -> do
+           c'cvMinEnclosingCircle (castPtr cMat) result cRadius
+           (,) <$> (convertPt <$> peek result) <*> (realToFrac <$> peek cRadius)
+
+-- | Calculcate the clockwise convex hull of a point set
+convexHull :: Matrix (Float,Float) -> Matrix (Float,Float)
+convexHull pts =  
+ let res = create (getSize pts) :: Matrix (Float,Float)
+ in  unsafePerformIO $
+     withMatPtr pts $ \cMat ->
+     withMatPtr res $ \cRes ->
+     withNewMemory  $ \ptr_mem -> do
+     with (C'CvPoint2D32f 0 0 ) $ \result -> do
+             c'cvConvexHull2 (castPtr cMat) (castPtr cRes) c'CV_CLOCKWISE 1
+             return res
+
+-- | Calculate convexity defects of a contour.
+convexityDefects :: Matrix (Int,Int) -> [(C'CvPoint, C'CvPoint, C'CvPoint,CFloat)]
+convexityDefects pts = unsafePerformIO $
+     withMatPtr pts $ \cMat ->
+     withNewMemory  $ \ptr_mem -> do
+      ptr_hull_seq <- c'cvConvexHull2 (castPtr cMat) (castPtr ptr_mem) c'CV_CLOCKWISE 0
+      ptr_seq <- c'cvConvexityDefects (castPtr cMat) (castPtr ptr_hull_seq) (castPtr ptr_mem)
+      pts <- cvSeqToList ptr_seq
+      sequence [(,,,) <$> peek (c'CvConvexityDefect'start x )
+                      <*> peek (c'CvConvexityDefect'end x )
+                      <*> peek (c'CvConvexityDefect'depth_point x )
+                      <*> return (c'CvConvexityDefect'depth x)
+               | x <- pts ]
+

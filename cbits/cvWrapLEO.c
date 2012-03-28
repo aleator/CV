@@ -18,6 +18,31 @@
 
 size_t images;
 
+inline double eucNorm(CvPoint2D64f p) {return (p.x*p.x+p.y*p.y);}
+inline CvPoint2D64f toNormalizedCoords(CvSize area, CvPoint from)
+{
+    CvPoint2D64f res;
+    res.x = (from.x-area.width/2.0)/area.width;
+    res.y = (from.y-area.height/2.0)/area.height;
+    return res;
+}
+
+inline CvPoint fromNormalizedCoords(CvSize area, CvPoint2D64f from)
+{
+    CvPoint res;
+    res.x = (from.x+0.5)*area.width;
+    res.y = (from.y+0.5)*area.height;
+    return res;
+}
+
+inline CvPoint2D64f fromNormalizedCoords64f(CvSize area, CvPoint2D64f from)
+{
+    CvPoint2D64f res;
+    res.x = (from.x+0.5)*area.width;
+    res.y = (from.y+0.5)*area.height;
+    return res;
+}
+
 void incrImageC(void)
 {
  images++;
@@ -106,6 +131,26 @@ IplImage* wrapCreateImage8U(const int width
  return r;
 }
 
+IplImage *wrapCopyMakeBorder(IplImage* src
+                            ,const int top
+                            ,const int bottom
+                            ,const int left
+                            ,const int right
+                            ,const int borderType
+                            ,const float value)
+{
+ CvSize s = cvGetSize(src);
+ s.width += left + right;
+ s.height += top + bottom;
+ IplImage *r;
+ CvPoint p;
+ p.x = left;
+ p.y = top;
+ r = cvCreateImage(s, src->depth, src->nChannels);
+ cvCopyMakeBorder(src,r,p,borderType,cvScalarAll((double)value));
+ return r;
+}
+
 IplImage* composeMultiChannel(IplImage* img0
                              ,IplImage* img1
                              ,IplImage* img2
@@ -140,9 +185,9 @@ void wrapAbsDiffS(const CvArr *src, double s, CvArr *dst)
  cvAbsDiffS(src,dst,cvScalarAll(s));
 }
 
-double wrapAvg(const CvArr *src)
+double wrapAvg(const CvArr *src, const CvArr *mask)
 {
- CvScalar avg = cvAvg(src,0);
+ CvScalar avg = cvAvg(src,mask);
  return avg.val[0];
 }
 
@@ -158,7 +203,7 @@ double wrapStdDevMask(const CvArr *src,const CvArr *mask)
  CvScalar dev;
  IplImage *mask8 = ensure8U(mask);
  cvAvgSdv(src,0,&dev,mask8);
- cvReleaseImage(&mask8); 
+ cvReleaseImage(&mask8);
  return dev.val[0];
 }
 double wrapMeanMask(const CvArr *src,const CvArr *mask)
@@ -166,7 +211,7 @@ double wrapMeanMask(const CvArr *src,const CvArr *mask)
  CvScalar mean;
  IplImage *mask8 = ensure8U(mask);
  cvAvgSdv(src,&mean,0,mask8);
- cvReleaseImage(&mask8); 
+ cvReleaseImage(&mask8);
  return mean.val[0];
 }
 
@@ -193,11 +238,11 @@ void wrapMinMax(const CvArr *src,const CvArr *mask
    {
    pixel = cvGetReal2D(src,j,i);
    maskP = mask != 0 ? cvGetReal2D(mask,j,i) : 1;
-   // TODO: Fix below.. 
-   min   = (maskP >0.5 ) && (pixel < min) ? pixel : min; 
-   max   = (maskP >0.5 ) && (pixel > max) ? pixel : max; 
+   // TODO: Fix below..
+   min   = (maskP >0.5 ) && (pixel < min) ? pixel : min;
+   max   = (maskP >0.5 ) && (pixel > max) ? pixel : max;
    }
- (*minVal) = min; (*maxVal) = max; 
+ (*minVal) = min; (*maxVal) = max;
 }
 
 void wrapSetImageROI(IplImage *i,int x, int y, int w, int h)
@@ -207,7 +252,7 @@ void wrapSetImageROI(IplImage *i,int x, int y, int w, int h)
 }
 
 
-// Return image that is IPL_DEPTH_8U version of 
+// Return image that is IPL_DEPTH_8U version of
 // given src
 IplImage* ensure8U(const IplImage *src)
 {
@@ -229,11 +274,11 @@ IplImage* ensure8U(const IplImage *src)
   default:
    printf("Cannot convert to floating image");
    abort();
-   
+
  }
 }
 
-// Return image that is IPL_DEPTH_32F version of 
+// Return image that is IPL_DEPTH_32F version of
 // given src
 IplImage* ensure32F(const IplImage *src)
 {
@@ -262,32 +307,32 @@ IplImage* ensure32F(const IplImage *src)
   default:
    printf("Cannot convert to floating image");
    abort();
-   
+
  }
 }
 
 void wrapSet32F2D(CvArr *arr, int x, int y, double value)
-{ 
- cvSet2D(arr,x,y,cvRealScalar(value)); 
+{
+ cvSet2D(arr,x,y,cvRealScalar(value));
 }
 
 
 double wrapGet32F2D(CvArr *arr, int x, int y)
-{ 
+{
  CvScalar r;
- r = cvGet2D(arr,x,y); 
+ r = cvGet2D(arr,x,y);
  return r.val[0];
 }
 
 double wrapGet32F2DC(CvArr *arr, int x, int y,int c)
-{ 
+{
  CvScalar r;
- r = cvGet2D(arr,x,y); 
+ r = cvGet2D(arr,x,y);
  return r.val[c];
 }
 
 uint8_t wrapGet8U2DC(IplImage *arr, int x, int y,int c)
-{ 
+{
  return UGETC(arr,c,y,x);
 }
 
@@ -304,7 +349,7 @@ cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, s, s, 0, 2, 8);
 cvPutText(img, text, cvPoint(x,y), &font, CV_RGB(r,g,b));
 }
 
-void wrapDrawRectangle(CvArr *img, int x1, int y1, 
+void wrapDrawRectangle(CvArr *img, int x1, int y1,
                        int x2, int y2, float r, float g, float b,
                        int thickness)
 {
@@ -318,13 +363,13 @@ void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double r, double g, 
 }
 
 void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, float b)
-{ 
+{
  int i=0;
  int pSizes[] = {pc};
  CvPoint *pts = (CvPoint*)malloc(pc*sizeof(CvPoint));
  for (i=0; i<pc; ++i)
-    {pts[i].x = xs[i]; 
-     pts[i].y = ys[i]; 
+    {pts[i].x = xs[i];
+     pts[i].y = ys[i];
      }
  cvFillPoly(img, &pts, pSizes, 1, CV_RGB(r,g,b), 8, 0 );
  free(pts);
@@ -346,11 +391,11 @@ IplImage* getSubImage(IplImage *img, int sx,int sy,int w,int h)
  CvRect r;
  CvSize s;
  IplImage *newImage;
- 
+
  r.x = sx; r.y = sy;
  r.width = w; r.height = h;
  s.width = w; s.height = h;
- 
+
  cvSetImageROI(img,r);
  newImage = cvCreateImage(s,img->depth,img->nChannels);
  cvCopy(img, newImage,0);
@@ -414,7 +459,7 @@ IplImage* makeEvenDown(IplImage *src)
  CvSize size = cvGetSize(src);
  int w = size.width-(size.width % 2);
  int h = size.height-(size.height % 2);
- IplImage *result = wrapCreateImage32F(w,h,1);    
+ IplImage *result = wrapCreateImage32F(w,h,1);
  CvRect pos = cvRect(0
                     ,0
                     ,size.width
@@ -432,7 +477,7 @@ IplImage* makeEvenUp(IplImage *src)
  int w = size.width+(size.width % 2);
  int h = size.height+(size.height % 2);
  int j;
- IplImage *result = wrapCreateImage32F(w,h,1);    
+ IplImage *result = wrapCreateImage32F(w,h,1);
  CvRect pos = cvRect(0
                     ,0
                     ,size.width
@@ -456,7 +501,7 @@ IplImage* padUp(IplImage *src,int right, int bottom)
  int w = size.width + (right  ? 1 : 0);
  int h = size.height+ (bottom ? 1 : 0);
  int j;
- IplImage *result = wrapCreateImage32F(w,h,1);    
+ IplImage *result = wrapCreateImage32F(w,h,1);
  CvRect pos = cvRect(0
                     ,0
                     ,size.width
@@ -473,7 +518,7 @@ IplImage* padUp(IplImage *src,int right, int bottom)
       {for (j=0; j<=size.width; j++) {
 
           FGET(result,j,(size.height)) = 2*FGET(result,j,(size.height-1))
-                                          -FGET(result,j,(size.height-2)); 
+                                          -FGET(result,j,(size.height-2));
                                           } }
  return result;
 }
@@ -484,7 +529,7 @@ void masked_merge(IplImage *src1, IplImage *mask, IplImage *src2, IplImage *dst)
  CvSize size = cvGetSize(dst);
  for (i=0; i<size.width; i++)
     for (j=0; j<size.height; j++) {
-       FGET(dst,i,j) =  FGET(src1,i,j)*FGET(mask,i,j) 
+       FGET(dst,i,j) =  FGET(src1,i,j)*FGET(mask,i,j)
                         +FGET(src2,i,j)*(1-FGET(mask,i,j));
      }
 }
@@ -506,7 +551,7 @@ void vertical_average(IplImage *src, IplImage *dst)
 IplImage* fadedEdges(int w, int h, int edgeW) {
     IplImage *result;
     int i,j;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
            float dx = i < (h/2.0) ? i : h-i ;
@@ -521,7 +566,7 @@ IplImage* fadedEdges(int w, int h, int edgeW) {
 IplImage* rectangularDistance(int w, int h) {
     IplImage *result;
     int i,j;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
            float dx = i < (h/2.0) ? i/(h*1.0) : (h-i)/(h*1.0) ;
@@ -537,7 +582,7 @@ IplImage* vignettingModelCos4(int w, int h) {
     double r;
     const double x0 = w/2.0;
     const double y0 = h/2.0;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
             nx = (y0-i)/h;
@@ -554,7 +599,7 @@ IplImage* vignettingModelCos4XCyl(int w, int h) {
     double r;
     const double x0 = w/2.0;
     const double y0 = h/2.0;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
             r = fabs((i-y0)/y0) ;
@@ -567,20 +612,19 @@ IplImage* vignettingModelX2Cyl(int w, int h,double m, double s, double c) {
     IplImage *result;
     int i,j;
     double r;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
             FGET(result,j,i) = -((i-c)*s)*((i-c)*s)-m;
            }
     return result;
 }
-inline double eucNorm(CvPoint2D64f p) {return (p.x*p.x+p.y*p.y);}
 
 IplImage* vignettingModelB3(int w, int h,double b1, double b2, double b3) {
     IplImage *result;
     int i,j;
     double r;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
             CvPoint2D64f nor = toNormalizedCoords(cvSize(w,h),cvPoint(j,i));
@@ -595,7 +639,7 @@ IplImage* vignettingModelP(int w, int h,double scalex, double scaley, double max
     double r;
     double mx = w/2.0;
     double my = w/2.0;
-    result = wrapCreateImage32F(w,h,1);    
+    result = wrapCreateImage32F(w,h,1);
     for (i=0; i<h; i++)
        for (j=0; j<w; j++) {
             FGET(result,j,i) =-((i-my)*scaley)*((i-my)*scaley)*((j-mx)*scalex)*((j-mx)*scalex)-max ;
@@ -607,7 +651,7 @@ IplImage* simplePerspective(double k,IplImage *src) {
     IplImage *result;
     int i,j;
     double r;
-    result = cvCloneImage(src);    
+    result = cvCloneImage(src);
     int h = cvGetSize(src).height;
     int w = cvGetSize(src).width;
     CvPoint2D32f srcPts[4] = {{0,0},{w-1,0},{w-1,h-1},{0,h-1}};
@@ -645,29 +689,6 @@ for (i=0;i<3*3;++i)
 cvReleaseMat(&hmg);
 }
 
-inline CvPoint2D64f toNormalizedCoords(CvSize area, CvPoint from)
-{
-    CvPoint2D64f res;
-    res.x = (from.x-area.width/2.0)/area.width;
-    res.y = (from.y-area.height/2.0)/area.height;   
-    return res;
-}
-
-inline CvPoint fromNormalizedCoords(CvSize area, CvPoint2D64f from)
-{
-    CvPoint res;
-    res.x = (from.x+0.5)*area.width;
-    res.y = (from.y+0.5)*area.height;   
-    return res;
-}
-
-inline CvPoint2D64f fromNormalizedCoords64f(CvSize area, CvPoint2D64f from)
-{
-    CvPoint2D64f res;
-    res.x = (from.x+0.5)*area.width;
-    res.y = (from.y+0.5)*area.height;   
-    return res;
-}
 
 void alphaBlit(IplImage *a, IplImage *aAlpha, IplImage *b, IplImage *bAlpha, int offset_y, int offset_x)
 {
@@ -702,9 +723,9 @@ void plainBlit(IplImage *a, IplImage *b, int offset_y, int offset_x)
  for (i=0; i<bSize.height; i++) {
     for (j=0; j<bSize.width; j++) {
        if (j+offset_x<0 || j+offset_x>=aSize.width || i+offset_y<0 || i+offset_y>=aSize.height ) continue;
-       if (a->nChannels == 1) 
+       if (a->nChannels == 1)
             {FGET(a,j+offset_x,i+offset_y) =FGET(b,j,i);}
-        else if (a->nChannels ==3) 
+        else if (a->nChannels ==3)
             {
              int dx = j+offset_x; int dy = i+offset_y;
              ((float *)(a->imageData + dy*a->widthStep))[dx*a->nChannels + 0] =
@@ -781,13 +802,13 @@ double getHistValue(CvHistogram *h,int bin)
 }
 
 // Convolutions
-IplImage* wrapFilter2D(IplImage *src, int ax,int ay, 
+IplImage* wrapFilter2D(IplImage *src, int ax,int ay,
                     int w, int h, double *kernel){
 int i,j;
 IplImage *target = cvCloneImage(src);
 CvMat *kernelMat = cvCreateMat(w,h,CV_32FC1);
 for(i=0;i<w*h;i++)
-  cvSetReal2D(kernelMat,i%w,i/w,kernel[i]); 
+  cvSetReal2D(kernelMat,i%w,i/w,kernel[i]);
 cvFilter2D(src,target,kernelMat,cvPoint(ay,ax));
 cvReleaseMat(&kernelMat);
 return target;
@@ -803,7 +824,7 @@ CvSize size = cvGetSize(mask);
 CvMat *kernelMat = cvCreateMat(size.width,size.height,CV_32FC1);
 for(i=0;i<size.width;i++)
  for(j=0;j<size.height;j++)
-  cvSetReal2D(kernelMat,i,j,cvGetReal2D(mask,j,i)); 
+  cvSetReal2D(kernelMat,i,j,cvGetReal2D(mask,j,i));
 cvFilter2D(src,target,kernelMat,cvPoint(ay,ax));
 cvReleaseMat(&kernelMat);
 return target;
@@ -818,7 +839,7 @@ void wrapFloodFill(IplImage *i, int x, int y, double c
  cvFloodFill(i,cvPoint(x,y),cvRealScalar(c),cvRealScalar(low)
             ,cvRealScalar(high),NULL,flag,NULL);
 }
-                  
+
 // hough-lines
 
 void wrapProbHoughLines(IplImage *img, double rho, double theta
@@ -831,8 +852,8 @@ void wrapProbHoughLines(IplImage *img, double rho, double theta
  IplImage *tmp;
  CvSeq *lines = 0;
  int i;
- CvMemStorage *storage = cvCreateMemStorage(0); 
- 
+ CvMemStorage *storage = cvCreateMemStorage(0);
+
  tmp = ensure8U(img);
 
  lines = cvHoughLines2(tmp,storage,CV_HOUGH_PROBABILISTIC
@@ -841,15 +862,15 @@ void wrapProbHoughLines(IplImage *img, double rho, double theta
         {
             CvPoint* line = (CvPoint*)cvGetSeqElem(lines,i);
             xs[i] = line[0].x; xs1[i] = line[1].x;
-            ys[i] = line[0].y; ys1[i] = line[1].y; 
+            ys[i] = line[0].y; ys1[i] = line[1].y;
         }
  *maxLines = MIN(lines->total,*maxLines);
 
  cvReleaseImage(&tmp);
  cvReleaseMemStorage(&storage);
- 
+
 }
-                       
+
 
 
 //@-node:aleator.20050908100314.2:Wrappers
@@ -908,7 +929,7 @@ inline double blurGet2D(IplImage *img,int x, int y)
 // Simple routines for calculating pixelwise
 // haar responses
 
-void haarFilter(IplImage *intImg, 
+void haarFilter(IplImage *intImg,
                 int x1, int y1, int x2, int y2,
                 IplImage *target)
 {
@@ -918,12 +939,12 @@ void haarFilter(IplImage *intImg,
   double desArea = (x2-x1)*(y1-y2);
   double area = 0;
   int rx1,rx2,ry1,ry2;
-  CvSize imageSize = cvGetSize(target);  
+  CvSize imageSize = cvGetSize(target);
   for(i=0; i<imageSize.width; ++i)
     for(j=0; j<imageSize.height; ++j) {
-         rx1 = imax(0,imin(i+x1,imageSize.width-1));  
+         rx1 = imax(0,imin(i+x1,imageSize.width-1));
          ry1 = imax(0,imin(j+y1,imageSize.height-1));
-         rx2 = imax(0,imin(i+x2,imageSize.width-1)); 
+         rx2 = imax(0,imin(i+x2,imageSize.width-1));
          ry2 = imax(0,imin(j+y2,imageSize.height-1));
          area = (float)((rx2-rx1)*(ry2-ry1));
         // if (area > 0) ratio = fabs(desArea/area);
@@ -937,7 +958,7 @@ void haarFilter(IplImage *intImg,
     }
 }
 
-double haar_at(IplImage *intImg, 
+double haar_at(IplImage *intImg,
                 int x1, int y1, int w, int h)
 {
   int i,j;
@@ -948,7 +969,7 @@ double haar_at(IplImage *intImg,
      +blurGet2D(intImg,x1+w,y1+h);
   return s;
 }
-                
+
 //@nonl
 //@-node:aleator.20070827150608:Haar Filters
 //@+node:aleator.20070130144337:Statistics along a line
@@ -978,10 +999,10 @@ double average_of_line(int x0, int y0
      if (y0 < y1) {ystep = 1;} else {ystep = -1;}
      for (x=x0; x<x1; ++x) {
          if (steep) {sum+=blurGet2D(src,y,x);
-                     ++len;} 
-                    // _plot(y,x);} 
+                     ++len;}
+                    // _plot(y,x);}
          else       {sum+=blurGet2D(src,x,y);
-                     ++len; } 
+                     ++len; }
                     //_plot(x,y);}
          error = error + deltay;
          if (2*error >= deltax) {
@@ -1037,7 +1058,7 @@ int j=0;
 double m1 = calculateMoment(1,arr, l);
 double result = 0;
 for(j=0; j<l; j++)
- {  
+ {
     result += pow(((j*1.0)/HISTOGRAMSIZE)-m1,i)*arr[j];
 
  }
@@ -1056,7 +1077,7 @@ int x = 0;
 int y = 0;
 int i = 0;
 int j = 0;
-double histogram[HISTOGRAMSIZE]; 
+double histogram[HISTOGRAMSIZE];
 for (x=0; x<ih; x++)
  for (y=0; y<iw; y++)
  {
@@ -1072,7 +1093,7 @@ for (i=0; i<w; i++)
     }
 
 
-result = calculateCentralMoment(n,histogram,HISTOGRAMSIZE); 
+result = calculateCentralMoment(n,histogram,HISTOGRAMSIZE);
 cvSet2D(target,x,y,cvScalarAll(result));
  }
 
@@ -1090,7 +1111,7 @@ int x = 0;
 int y = 0;
 int i = 0;
 int j = 0;
-double histogram[HISTOGRAMSIZE]; 
+double histogram[HISTOGRAMSIZE];
 for (x=0; x<ih; x++)
  for (y=0; y<iw; y++)
  {
@@ -1106,7 +1127,7 @@ for (i=0; i<w; i++)
     }
 
 
-result = calculateAbsCentralMoment(n,histogram,HISTOGRAMSIZE); 
+result = calculateAbsCentralMoment(n,histogram,HISTOGRAMSIZE);
 cvSet2D(target,x,y,cvScalarAll(result));
  }
 
@@ -1124,7 +1145,7 @@ int x = 0;
 int y = 0;
 int i = 0;
 int j = 0;
-double histogram[HISTOGRAMSIZE]; 
+double histogram[HISTOGRAMSIZE];
 for (x=0; x<ih; x++)
  for (y=0; y<iw; y++)
  {
@@ -1139,7 +1160,7 @@ for (i=0; i<w; i++)
      histogram[slot] += 1.0/(w*h*1.0);
     }
 
-result = calculateMoment(n,histogram,HISTOGRAMSIZE); 
+result = calculateMoment(n,histogram,HISTOGRAMSIZE);
 cvSet2D(target,x,y,cvScalarAll(result));
  }
 
@@ -1148,7 +1169,7 @@ return target;
 
 //@-node:aleator.20050930104348.1:Central Moments
 //@+node:aleator.20051103110155:SMAB
-   
+
 // Perform second moment adaptive binarization for a single pixel `x`
 // using given histogram.
 double max(double x,double y) {if (x<y) return y; else return x;}
@@ -1213,14 +1234,14 @@ for(i=0;i<size.width;++i)
 //@-node:aleator.20051108093248:Skewness
 //@-node:aleator.20050930104348:Histogram Features
 //@+node:aleator.20050926095227:Susan
-/* 
- Susan (Smallest Univalue Segmenting Nucleus) is 
+/*
+ Susan (Smallest Univalue Segmenting Nucleus) is
  family of image processing methods, including
  edge preserving noise reduction.
 */
 //@+node:aleator.20050926095227.1:Susan Smoothing Function
 
-/* 
+/*
  Calculate susan smoothing for `src` around `x`,`y` coordinates.
  `t` determines brightness treshold and sigma controls scale of
  spatial smoothing. `w` and `h` determine window size.
@@ -1240,7 +1261,7 @@ for (i = 0; i<w; i++)
     {
     if (i==w/2 && j==h/2) continue;
     double r2 = i*i+j*j;
-    double expFrac = (cvGet2D(src,x+i,y+j).val[0] 
+    double expFrac = (cvGet2D(src,x+i,y+j).val[0]
                      - cvGet2D(src,x,y).val[0]);
     expFrac *= expFrac;
 
@@ -1278,7 +1299,7 @@ return target;
 }
 //@-node:aleator.20050926100856:Susan Smoothing
 //@+node:aleator.20050927083244:Susan Edge
-/* 
+/*
  Susan Edge Detector.
 */
 
@@ -1330,13 +1351,13 @@ return target;
 //@-node:aleator.20050927083244:Susan Edge
 //@-node:aleator.20050926095227:Susan
 //@+node:aleator.20050908112008:Gabors
-/* 
+/*
  Gabor functions are modulated gaussians which bear some resemblance
  to human visual cortex neurons. */
 //@+node:aleator.20050908104238:gabor function in C
 /* This function calculates value of simple gabor function
   at given x,y coordinates. Parameters for the gabor are:
-  
+
   stdX  - standard deviation in oscillation direction
   stdY  - standard deviation tangential to stdX
   theta - angle (in radians) of the gabor
@@ -1354,7 +1375,7 @@ double calcGabor(double x, double y
  double oscillationPart = cos(2*M_PI*xth/cycles+phase);
  double gaussianPart    = exp((-0.5*xth*xth)/(stdX*stdX))
                          *exp((-0.5*yth*yth)/(stdY*stdY));
- 
+
  return gaussianPart * oscillationPart;
 }
 
@@ -1366,7 +1387,7 @@ double calc1DGabor(double x
  double oscillationPart = cos(2*M_PI*(x-center)/cycles+phase);
  double gaussianPart    = exp((-0.5*(x-center)*(x-center))
                               /(sigma*sigma));
- 
+
  return gaussianPart * oscillationPart;
 }
 
@@ -1438,7 +1459,7 @@ void wrapMinMaxLoc(const IplImage* target, int* minx, int* miny, int* maxx, int*
     *maxy = maxPoint.y ;
     *minx = minPoint.x ;
     *miny = minPoint.y ;
-} 
+}
 
 void simpleMatchTemplate(const IplImage* target, const IplImage* template, int* x, int* y, double *val,int type)
 {
@@ -1457,7 +1478,7 @@ void simpleMatchTemplate(const IplImage* target, const IplImage* template, int* 
 	*y = maxPoint.y;+rh/2;
 	*val = max;
 	cvReleaseImage(&result);
-	} 
+	}
 
 IplImage* templateImage(const IplImage* target, const IplImage* template)
 {
@@ -1466,7 +1487,7 @@ IplImage* templateImage(const IplImage* target, const IplImage* template)
 	IplImage* result = wrapCreateImage32F(rw,rh,1);
 	cvMatchTemplate(target,template,result,CV_TM_CCORR);
 	return result;
-	} 
+	}
 
 
 //@-node:aleator.20050908112116:rendering gabors to arrays
@@ -1520,19 +1541,19 @@ int i,j;
 int width  = size.width;
 int height = size.height;
 double result=0;
-double tij=0,wij=0,testij=0,rij=0; 
+double tij=0,wij=0,testij=0,rij=0;
 for (i=0; i<width; i++)
  for (j=0; j<height; j++)
- { 
+ {
    tij = cvGetReal2D(target,j,i);
    wij = cvGetReal2D(weigths,j,i);
    testij = cvGetReal2D(test,j,i);
    rij=wij;
-   if (((tij < 0.2) && (testij < 0.2)) || ((tij > 0.8) && (testij > 0.8))) 
-    {rij=0;} 
+   if (((tij < 0.2) && (testij < 0.2)) || ((tij > 0.8) && (testij > 0.8)))
+    {rij=0;}
    result += rij;
  }
- 
+
 return result;
 }
 //@-node:aleator.20070511142414.1:Fitness
@@ -1550,24 +1571,24 @@ CvSize size = cvGetSize(target);
 int i,j;
 int width  = size.width;
 int height = size.height;
-double tij=0,wij=0,testij=0,rij=0; 
+double tij=0,wij=0,testij=0,rij=0;
 IplImage *result = wrapCreateImage32F(width,height,1);
 for (i=0; i<width; i++)
  for (j=0; j<height; j++)
- { 
+ {
    tij = cvGetReal2D(target,j,i);
    wij = cvGetReal2D(weigths,j,i);
    testij = cvGetReal2D(test,j,i);
    if ( (tij>0.2) && (tij<0.8) ) continue;
-   if (((tij < 0.2) && (testij < 0.2)) 
-      || ((tij > 0.8) && (testij > 0.8))) 
+   if (((tij < 0.2) && (testij < 0.2))
+      || ((tij > 0.8) && (testij > 0.8)))
     {rij = wij*exp(-at);
      cvSetReal2D(result,j,i,rij); }
-   else 
+   else
     {rij = wij*exp(at);
      cvSetReal2D(result,j,i,rij); }
  }
- 
+
 return result;
 }
 
@@ -1575,13 +1596,13 @@ return result;
 //@-node:aleator.20070511142414:Adaboost Learning
 //@+node:aleator.20051207074905:LBP
 
-void get_weighted_histogram(IplImage *src, IplImage *weights, 
-                       double start, double end, 
+void get_weighted_histogram(IplImage *src, IplImage *weights,
+                       double start, double end,
                        int bins, double *histo)
 {
   int i,j,index;
   double value,weight;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=0;i<bins;++i) histo[i]=0;
   for(i=0; i<imageSize.width-1; ++i)
     for(j=0; j<imageSize.height-1; ++j)
@@ -1593,10 +1614,10 @@ void get_weighted_histogram(IplImage *src, IplImage *weights,
          if (index<0 || index>=bins) continue;
          histo[index] += weight;
         }
-  
+
 }
 
-// Calculate local binary pattern for image. 
+// Calculate local binary pattern for image.
 // LBP is outgoing array
 // of (preallocated) 256 bytes that are assumed to be 0.
 void localBinaryPattern(IplImage *src, int *LBP)
@@ -1604,7 +1625,7 @@ void localBinaryPattern(IplImage *src, int *LBP)
   int i,j;
   int pattern = 0;
   double center = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=1; i<imageSize.width-1; ++i)
     for(j=1; j<imageSize.height-1; ++j)
         {
@@ -1613,10 +1634,10 @@ void localBinaryPattern(IplImage *src, int *LBP)
          pattern += (blurGet2D(src,i-1,j-1) > center) *1;
          pattern += (blurGet2D(src,i,j-1)   > center) *2;
          pattern += (blurGet2D(src,i+1,j-1) > center) *4;
-         
+
          pattern += (blurGet2D(src,i-1,j)   > center) *8;
          pattern += (blurGet2D(src,i+1,j)   > center) *16;
-         
+
          pattern += (blurGet2D(src,i-1,j+1) > center) *32;
          pattern += (blurGet2D(src,i,j+1)   > center) *64;
          pattern += (blurGet2D(src,i+1,j+1) > center) *128;
@@ -1631,7 +1652,7 @@ void localBinaryPattern3(IplImage *src, int *LBP)
   int i,j;
   int pattern = 0;
   double center = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=1; i<imageSize.width-1; ++i)
     for(j=1; j<imageSize.height-1; ++j)
         {
@@ -1640,10 +1661,10 @@ void localBinaryPattern3(IplImage *src, int *LBP)
          pattern += (blurGet2D(src,i-2,j-2) > center) *1;
          pattern += (blurGet2D(src,i,j-3)   > center) *2;
          pattern += (blurGet2D(src,i+2,j-2) > center) *4;
-         
+
          pattern += (blurGet2D(src,i-3,j)   > center) *8;
          pattern += (blurGet2D(src,i+3,j)   > center) *16;
-         
+
          pattern += (blurGet2D(src,i-2,j+2) > center) *32;
          pattern += (blurGet2D(src,i,j+3)   > center) *64;
          pattern += (blurGet2D(src,i+2,j+2) > center) *128;
@@ -1656,7 +1677,7 @@ void localBinaryPattern5(IplImage *src, int *LBP)
   int i,j;
   int pattern = 0;
   double center = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=1; i<imageSize.width-1; ++i)
     for(j=1; j<imageSize.height-1; ++j)
         {
@@ -1665,10 +1686,10 @@ void localBinaryPattern5(IplImage *src, int *LBP)
          pattern += (blurGet2D(src,i-4,j-4) > center) *1;
          pattern += (blurGet2D(src,i,j-5)   > center) *2;
          pattern += (blurGet2D(src,i+4,j-4) > center) *4;
-         
+
          pattern += (blurGet2D(src,i-5,j)   > center) *8;
          pattern += (blurGet2D(src,i+5,j)   > center) *16;
-         
+
          pattern += (blurGet2D(src,i-4,j+4) > center) *32;
          pattern += (blurGet2D(src,i,j+5)   > center) *64;
          pattern += (blurGet2D(src,i+4,j+4) > center) *128;
@@ -1684,7 +1705,7 @@ void weighted_localBinaryPattern(IplImage *src,int offsetX,int offsetXY
   int pattern = 0;
   double center = 0;
   double weight = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=1; i<imageSize.width-1; ++i)
     for(j=1; j<imageSize.height-1; ++j)
         {
@@ -1694,10 +1715,10 @@ void weighted_localBinaryPattern(IplImage *src,int offsetX,int offsetXY
          pattern += (blurGet2D(src,i-offsetXY,j-offsetXY) > center) *1;
          pattern += (blurGet2D(src,i,j-offsetX)   > center) *2;
          pattern += (blurGet2D(src,i+offsetXY,j-offsetXY) > center) *4;
-         
+
          pattern += (blurGet2D(src,i-offsetX,j)   > center) *8;
          pattern += (blurGet2D(src,i+offsetX,j)   > center) *16;
-         
+
          pattern += (blurGet2D(src,i-offsetXY,j+offsetXY) > center) *32;
          pattern += (blurGet2D(src,i,j+offsetX)   > center) *64;
          pattern += (blurGet2D(src,i+offsetXY,j+offsetXY) > center) *128;
@@ -1712,7 +1733,7 @@ void localHorizontalBinaryPattern(IplImage *src, int *LBP)
   int i,j;
   int pattern = 0;
   double center = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=0; i<imageSize.width-1; ++i)
     for(j=0; j<imageSize.height-1; ++j)
         {
@@ -1736,7 +1757,7 @@ void localVerticalBinaryPattern(IplImage *src, int *LBP)
   int i,j;
   int pattern = 0;
   double center = 0;
-  CvSize imageSize = cvGetSize(src);  
+  CvSize imageSize = cvGetSize(src);
   for(i=0; i<imageSize.width-1; ++i)
     for(j=0; j<imageSize.height-1; ++j)
         {
@@ -1758,13 +1779,13 @@ void localVerticalBinaryPattern(IplImage *src, int *LBP)
 
 //@-node:aleator.20051207074905:LBP
 //@+node:aleator.20051109102750:Selective Average
-// Assuming grayscale image calculate local selective average of point x y 
+// Assuming grayscale image calculate local selective average of point x y
 inline double calcSelectiveAvg(IplImage *img,double t
                                    ,int x, int y
                                    ,int wwidth, int wheight)
 {
 int i,j;
-double accum=0; 
+double accum=0;
 double count=0;
 double centerValue; double processed=0;
 CvSize size = cvGetSize(img);
@@ -1772,11 +1793,11 @@ centerValue = blurGet2D(img,x,y);
 
 for (i=-wwidth; i<wwidth;++i)
  for (j=-wheight; j<wheight;++j)
-  { 
+  {
    if (  x+i<0 || x+i>=size.width
       || y+j<0 || y+j>=size.height)
       continue;
-      
+
    processed = blurGet2D(img,x+i,y+j);
    if (fabs(processed-centerValue)<t)
         {accum+=processed;++count;}
@@ -1801,7 +1822,7 @@ for (i=0; i<width; i++)
   result = calcSelectiveAvg(src,t,i,j,wwidth,wheight);
   cvSetReal2D(target,j,i,result);
  }
- 
+
 return target;
 }
 
@@ -1815,9 +1836,9 @@ IplImage *acquireImageSlow(int w, int h, double *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_32F,1);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
+   for (j=0; j<w; j++) {
          //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
-         FGET(img,j,i) = d[j*h+i]; 
+         FGET(img,j,i) = d[j*h+i];
          }
     }
  return img;
@@ -1829,9 +1850,9 @@ IplImage *acquireImageSlowF(int w, int h, float *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_32F,1);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
+   for (j=0; j<w; j++) {
          //printf("(%d,%d) => %d is %f\n",j,i,(i+j*h),d[i+j*h]);
-         FGET(img,j,i) = d[j*h+i]; 
+         FGET(img,j,i) = d[j*h+i];
          }
     }
  return img;
@@ -1848,8 +1869,8 @@ IplImage *acquireImageSlow8U(int w, int h, uint8_t *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,1);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
-         UGETC(img,0,j,i) = *d; d++; 
+   for (j=0; j<w; j++) {
+         UGETC(img,0,j,i) = *d; d++;
          }
     }
  return img;
@@ -1861,10 +1882,10 @@ IplImage *acquireImageSlow8URGB(int w, int h, uint8_t *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,3);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
-         UGETC(img,0,j,i) = *d; d++; 
-         UGETC(img,1,j,i) = *d; d++; 
-         UGETC(img,2,j,i) = *d; d++; 
+   for (j=0; j<w; j++) {
+         UGETC(img,0,j,i) = *d; d++;
+         UGETC(img,1,j,i) = *d; d++;
+         UGETC(img,2,j,i) = *d; d++;
          }
     }
  return img;
@@ -1876,10 +1897,10 @@ IplImage *acquireImageSlow8UBGR(int w, int h, uint8_t *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U,3);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
-         UGETC(img,2,j,i) = *d; d++; 
-         UGETC(img,1,j,i) = *d; d++; 
-         UGETC(img,0,j,i) = *d; d++; 
+   for (j=0; j<w; j++) {
+         UGETC(img,2,j,i) = *d; d++;
+         UGETC(img,1,j,i) = *d; d++;
+         UGETC(img,0,j,i) = *d; d++;
          }
     }
  return img;
@@ -1891,8 +1912,8 @@ IplImage *acquireImageSlowComplex(int w, int h, complex double *d)
  int i,j;
  img = cvCreateImage(cvSize(w,h), IPL_DEPTH_32F,1);
  for (i=0; i<h; i++) {
-   for (j=0; j<w; j++) { 
-         FGET(img,j,i) = (float)(creal(d[j*h+i])); 
+   for (j=0; j<w; j++) {
+         FGET(img,j,i) = (float)(creal(d[j*h+i]));
          }
     }
  return img;
@@ -1903,8 +1924,8 @@ void exportImageSlowComplex(IplImage *img, complex double *d)
  int i,j;
  CvSize s= cvGetSize(img);
  for (i=0; i<s.height; i++) {
-   for (j=0; j<s.width; j++) { 
-         d[j*s.height+i] = (complex float)(FGET(img,j,i) + 0*I); 
+   for (j=0; j<s.width; j++) {
+         d[j*s.height+i] = (complex float)(FGET(img,j,i) + 0*I);
          }
     }
 }
@@ -1914,8 +1935,8 @@ void exportImageSlow(IplImage *img, double *d)
  int i,j;
  CvSize s= cvGetSize(img);
  for (i=0; i<s.height; i++) {
-   for (j=0; j<s.width; j++) { 
-         d[j*s.height+i] = FGET(img,j,i); 
+   for (j=0; j<s.width; j++) {
+         d[j*s.height+i] = FGET(img,j,i);
          }
     }
 }
@@ -1924,8 +1945,8 @@ void exportImageSlowF(IplImage *img, float *d)
  int i,j;
  CvSize s= cvGetSize(img);
  for (i=0; i<s.height; i++) {
-   for (j=0; j<s.width; j++) { 
-         d[j*s.height+i] = FGET(img,j,i); 
+   for (j=0; j<s.width; j++) {
+         d[j*s.height+i] = FGET(img,j,i);
          }
     }
 }
@@ -1939,45 +1960,45 @@ void free_found_contours(FoundContours *f)
 {
  cvReleaseMemStorage(&(f->storage));
  free(f);
- 
+
 }
 
 int reset_contour(FoundContours *f)
-{ 
+{
  f->contour = f->start;
 }
 
 int cur_contour_size(FoundContours *f)
-{ 
+{
  return f->contour->total;
 }
 
 double contour_area(FoundContours *f)
-{ 
+{
  return cvContourArea(f->contour,CV_WHOLE_SEQ,0);
 }
 
 CvMoments* contour_moments(FoundContours *f)
-{ 
+{
  CvMoments* moments = (CvMoments*) malloc(sizeof(CvMoments));
  cvMoments(f->contour,moments,0);
  return moments;
 }
 
 double contour_perimeter(FoundContours *f)
-{ 
+{
  return cvContourPerimeter(f->contour);
 }
 
 int more_contours(FoundContours *f)
-{ 
+{
  if (f->contour != 0)
   {return 1;}
   {return 0;} // no more contours
 }
 
 int next_contour(FoundContours *f)
-{ 
+{
  if (f->contour != 0)
   {f->contour = f->contour->h_next; return 1;}
   {return 0;} // no more contours
@@ -1986,25 +2007,25 @@ int next_contour(FoundContours *f)
 void contour_points(FoundContours *f, int *xs, int *ys)
 {
  if (f->contour==0) {printf("unavailable contour\n"); exit(1);}
- 
+
  CvPoint *pt=0;
  int total,i=0;
  total = f->contour->total;
- for (i=0; i<total;i++) 
+ for (i=0; i<total;i++)
   {
    pt = (CvPoint*)cvGetSeqElem(f->contour,i);
    if (pt==0) {printf("point out of contour\n"); exit(1);}
    xs[i] = pt->x;
    ys[i] = pt->y;
-  } 
-    
+  }
+
 }
 
 void print_contour(FoundContours *fc)
 {
   int i=0;
   CvPoint *pt=0;
-   for (i=0; i<fc->contour->total;++i) 
+   for (i=0; i<fc->contour->total;++i)
     {
      pt = (CvPoint*)cvGetSeqElem(fc->contour,i);
      printf("PT=%d,%d\n",pt->x,pt->y);
@@ -2027,21 +2048,21 @@ FoundContours* get_contours(IplImage *src1)
  //size = cvGetSize(src1);
  //src = cvCreateImage(size,dstDepth,1);
  //cvCopy(src1,src,NULL);
- 
- 
+
+
  CvPoint* pt=0;
  int i=0;
- 
+
  CvMemStorage *storage=0;
  CvSeq *contour=0;
  FoundContours* result = (FoundContours*)malloc(sizeof(FoundContours));
  storage = cvCreateMemStorage(0);
-       
+
  cvFindContours( src,storage
                , &contour
-               , sizeof(CvContour) 
-               ,CV_RETR_EXTERNAL 
-            //,CV_RETR_CCOMP 
+               , sizeof(CvContour)
+               ,CV_RETR_EXTERNAL
+            //,CV_RETR_CCOMP
                ,CV_CHAIN_APPROX_NONE
                ,cvPoint(0,0) );
 
@@ -2054,7 +2075,7 @@ FoundContours* get_contours(IplImage *src1)
 
  cvReleaseImage(&src);
  return result;
-    
+
  }
 //@-node:aleator.20071016114634:Contours
 //@+node:aleator.20070814123008:moments
@@ -2081,7 +2102,7 @@ void getHuMoments(CvMoments *src,double *hu)
  *hu = hu_moments->hu4; ++hu;
  *hu = hu_moments->hu5; ++hu;
  *hu = hu_moments->hu6; ++hu;
- *hu = hu_moments->hu7; 
+ *hu = hu_moments->hu7;
  return;
 }
 
@@ -2140,7 +2161,7 @@ IplImage* rotateImage(IplImage* src,double scale,double angle)
   CvPoint2D32f center = cvPoint2D32f(w/2.0,h/2.0);
   CvMat *N = cv2DRotationMatrix(center,angle,scale,M);
   cvWarpAffine( src, dst, N, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS
-              , cvScalarAll(0)); 
+              , cvScalarAll(0));
   return dst;
   cvReleaseMat(&M);
 }
@@ -2170,7 +2191,7 @@ double bilinearInterp(IplImage *tex, double u, double v) {
    double u_opposite = 1 - u_ratio;
    double v_opposite = 1 - v_ratio;
    double result = ((x+1 >= s.width) || (y+1 >= s.height)) ? FGET(tex,x,y) :
-                   (FGET(tex,x,y)   * u_opposite  + FGET(tex,x+1,y)   * u_ratio) * v_opposite + 
+                   (FGET(tex,x,y)   * u_opposite  + FGET(tex,x+1,y)   * u_ratio) * v_opposite +
                    (FGET(tex,x,y+1) * u_opposite  + FGET(tex,x+1,y+1) * u_ratio) * v_ratio;
    return result;
  }
@@ -2193,25 +2214,25 @@ double bicubicInterp(IplImage *tex, double u, double v) {
 	double a03 = -p[1][0] + p[1][1] - p[1][2] + p[1][3];
 	double a10 = -p[0][1] + p[2][1];
 	double a11 = p[0][0] - p[0][2] - p[2][0] + p[2][2];
-	double a12 = -2*p[0][0] + 2*p[0][1] - p[0][2] + p[0][3] + 2*p[2][0] - 2*p[2][1] 
+	double a12 = -2*p[0][0] + 2*p[0][1] - p[0][2] + p[0][3] + 2*p[2][0] - 2*p[2][1]
                  + p[2][2] - p[2][3];
 	double a13 = p[0][0] - p[0][1] + p[0][2] - p[0][3] - p[2][0] + p[2][1] - p[2][2] + p[2][3];
 	double a20 = 2*p[0][1] - 2*p[1][1] + p[2][1] - p[3][1];
-	double a21 = -2*p[0][0] + 2*p[0][2] + 2*p[1][0] - 2*p[1][2] - p[2][0] + p[2][2] 
+	double a21 = -2*p[0][0] + 2*p[0][2] + 2*p[1][0] - 2*p[1][2] - p[2][0] + p[2][2]
                  + p[3][0] - p[3][2];
-	double a22 = 4*p[0][0] - 4*p[0][1] + 2*p[0][2] - 2*p[0][3] - 4*p[1][0] + 4*p[1][1] 
-                 - 2*p[1][2] + 2*p[1][3] + 2*p[2][0] - 2*p[2][1] + p[2][2] - p[2][3] 
+	double a22 = 4*p[0][0] - 4*p[0][1] + 2*p[0][2] - 2*p[0][3] - 4*p[1][0] + 4*p[1][1]
+                 - 2*p[1][2] + 2*p[1][3] + 2*p[2][0] - 2*p[2][1] + p[2][2] - p[2][3]
                  - 2*p[3][0] + 2*p[3][1] - p[3][2] + p[3][3];
-	double a23 = -2*p[0][0] + 2*p[0][1] - 2*p[0][2] + 2*p[0][3] + 2*p[1][0] - 2*p[1][1] 
-                 + 2*p[1][2] - 2*p[1][3] - p[2][0] + p[2][1] - p[2][2] + p[2][3] + p[3][0] 
+	double a23 = -2*p[0][0] + 2*p[0][1] - 2*p[0][2] + 2*p[0][3] + 2*p[1][0] - 2*p[1][1]
+                 + 2*p[1][2] - 2*p[1][3] - p[2][0] + p[2][1] - p[2][2] + p[2][3] + p[3][0]
                  - p[3][1] + p[3][2] - p[3][3];
 	double a30 = -p[0][1] + p[1][1] - p[2][1] + p[3][1];
 	double a31 = p[0][0] - p[0][2] - p[1][0] + p[1][2] + p[2][0] - p[2][2] - p[3][0] + p[3][2];
-	double a32 = -2*p[0][0] + 2*p[0][1] - p[0][2] + p[0][3] + 2*p[1][0] - 2*p[1][1] 
-                 + p[1][2] - p[1][3] - 2*p[2][0] + 2*p[2][1] - p[2][2] + p[2][3] + 2*p[3][0] 
+	double a32 = -2*p[0][0] + 2*p[0][1] - p[0][2] + p[0][3] + 2*p[1][0] - 2*p[1][1]
+                 + p[1][2] - p[1][3] - 2*p[2][0] + 2*p[2][1] - p[2][2] + p[2][3] + 2*p[3][0]
                  - 2*p[3][1] + p[3][2] - p[3][3];
-	double a33 = p[0][0] - p[0][1] + p[0][2] - p[0][3] - p[1][0] + p[1][1] - p[1][2] 
-                 + p[1][3] + p[2][0] - p[2][1] + p[2][2] - p[2][3] - p[3][0] + p[3][1] 
+	double a33 = p[0][0] - p[0][1] + p[0][2] - p[0][3] - p[1][0] + p[1][1] - p[1][2]
+                 + p[1][3] + p[2][0] - p[2][1] + p[2][2] - p[2][3] - p[3][0] + p[3][1]
                  - p[3][2] + p[3][3];
 
 	double x2 = u_ratio * u_ratio;
@@ -2241,8 +2262,8 @@ void radialRemap(IplImage *source, IplImage *dest, double k)
            ny = ny*(1+k*r2);
            x = (nx+0.5)*s.width;
            y = (ny+0.5)*s.height;
-           if (x<0 || x>=s.width || y<0 || y>=s.height) 
-            { FGET(dest,j,i) = 0; 
+           if (x<0 || x>=s.width || y<0 || y>=s.height)
+            { FGET(dest,j,i) = 0;
              continue;}
            FGET(dest,j,i) = bilinearInterp(source,x,y);
            }
@@ -2306,7 +2327,7 @@ double juliaF(double a, double b,double x, double y) {
 
 CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
                                      double fps,int w, int h,
-                                     int color) 
+                                     int color)
  {
    CvVideoWriter *res = cvCreateVideoWriter(fn,CV_FOURCC('M','P','G','4'),fps,cvSize(w,h), color);
    return res;

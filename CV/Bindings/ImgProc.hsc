@@ -9,11 +9,49 @@ import Foreign.ForeignPtr hiding (newForeignPtr)
 import Foreign.Concurrent
 import CV.Bindings.Types
 import CV.Bindings.Core
+import CV.Image
+import System.IO.Unsafe
 
+import CV.Bindings.Matrix
 #strict_import
 
 #include <bindings.dsl.h>
-#include <opencv/cv.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include "cvWrapLEO.h"
+#include "wrapImgProc.h"
+
+-- CVAPI(void) cvCopyMakeBorder(
+--   const CvArr* src,
+--   CvArr* dst,
+--   CvPoint offset,
+--   int bordertype,
+--   CvScalar value CV_DEFAULT(cvScalarAll(0))
+-- );
+
+-- Copies source 2D array inside of the larger destination array and
+-- makes a border of the specified type (IPL_BORDER_*) around the copied area.
+
+#ccall wrapCopyMakeBorder , Ptr <CvArr> -> CInt -> CInt -> CInt -> CInt -> CInt -> CFloat -> IO (Ptr BareImage)
+
+data BorderType = BorderConstant | BorderReplicate | BorderReflect | BorderWrap
+
+cBorderType t = case t of
+  BorderConstant -> c'IPL_BORDER_CONSTANT
+  BorderReplicate -> c'IPL_BORDER_REPLICATE
+  BorderReflect -> c'IPL_BORDER_REFLECT
+  BorderWrap -> c'IPL_BORDER_WRAP
+
+copyMakeBorder :: Image d c -> Int -> Int -> Int -> Int -> BorderType -> Float -> IO (Image d c)
+copyMakeBorder i t b l r border value =
+  withGenImage i $ \iptr ->
+      creatingImage $
+        c'wrapCopyMakeBorder iptr
+            (fromIntegral t)
+            (fromIntegral b)
+            (fromIntegral l)
+            (fromIntegral r)
+            (cBorderType border)
+            (realToFrac value)
 
 -- CVAPI(void) cvCornerHarris(
 --   const CvArr* image,
@@ -25,31 +63,29 @@ import CV.Bindings.Core
 
 #ccall cvCornerHarris , Ptr <CvArr> -> Ptr <CvArr> -> Int -> Int -> Double -> IO ()
 
--- CVAPI(CvSeq*)  cvHoughLines2( CvArr* image, void* line_storage, int method,
---                               double rho, double theta, int threshold,
---                               double param1 CV_DEFAULT(0), double param2 CV_DEFA
--- ULT(0));
+-- CVAPI(CvSeq*) cvHoughLines2(
+--   CvArr* image,
+--   void* line_storage,
+--   int method,
+--   double rho,
+--   double theta,
+--   int threshold,
+--   double param1 CV_DEFAULT(0),
+--   double param2 CV_DEFAULT(0)
+-- );
 
 #num CV_HOUGH_STANDARD
 #num CV_HOUGH_PROBABILISTIC
 #num CV_HOUGH_MULTI_SCALE
 #num CV_HOUGH_GRADIENT
 
-
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
 
-#starttype CvConnectedComp
-#field area, Double
-#field value, <CvScalar>
-#field rect,  <CvRect>
-#field contour, Ptr <CvSeq>
-#stoptype
-
-#ccall wrapCamShift, Ptr <CvArr> -> Ptr <CvRect> -> Ptr <CvTermCriteria>-> Ptr <CvConnectedComp> -> Ptr <CvBox2D> -> IO ()
+#ccall wrapFilter2, Ptr  <CvArr> -> Ptr <CvArr> -> Ptr <CvMat> -> Ptr <CvPoint> -> IO ()
 
 #ccall cvCalcArrBackProject, Ptr (Ptr <IplImage>) -> Ptr <CvArr> -> Ptr <CvHistogram> -> IO ()
 
-#num CV_HIST_ARRAY 
+#num CV_HIST_ARRAY
 
 #ccall cvCreateHist, Int -> Ptr Int -> Int -> Ptr (Ptr Float) -> Int -> IO (Ptr <CvHistogram>)
 #ccall cvReleaseHist, Ptr (Ptr <CvHistogram>) -> IO ()
@@ -62,6 +98,6 @@ creatingHistogram fun = do
     return . Histogram $ fptr
 
 
-emptyUniformHistogramND dims = 
-    withArray dims $ \c_sizes -> 
+emptyUniformHistogramND dims =
+    withArray dims $ \c_sizes ->
     c'cvCreateHist 1 c_sizes c'CV_HIST_ARRAY nullPtr 1

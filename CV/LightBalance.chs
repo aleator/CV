@@ -5,8 +5,9 @@ module CV.LightBalance where
 import Foreign.C.Types
 import Foreign.Ptr
 
-import C2HSTools
+import System.IO.Unsafe
 {#import CV.Image#}
+
 f::Int -> CInt
 f = fromIntegral
 x2cylinder (f->w,f->h) m s c = unsafePerformIO $ creatingImage ({#call vignettingModelX2Cyl#} w h 

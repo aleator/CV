@@ -1,90 +1,93 @@
 {-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
 #include "cvWrapLEO.h"
 module CV.Image (
--- * Basic types 
- Image(..) 
+-- * Basic types
+ Image(..)
 , create
 , empty 
 , emptyCopy 
-, emptyCopy' 
 , cloneImage
-, withClone 
-, withCloneValue 
-, CreateImage 
+, withClone
+, withCloneValue
+, CreateImage
 
 -- * Colour spaces
-, ChannelOf 
+, ChannelOf
 , GrayScale
+, DFT
 , RGB
 , RGBA
-, RGB_Channel(..) 
+, RGB_Channel(..)
 , LAB
-, LAB_Channel(..) 
-, D32 
-, D64 
-, D8 
-, Tag 
-, lab 
-, rgba 
-, rgb 
-, composeMultichannelImage 
+, LAB_Channel(..)
+, D32
+, D64
+, D8
+, Tag
+, lab
+, rgba
+, rgb
+, composeMultichannelImage
 
 -- * IO operations
-, Loadable(..) 
-, saveImage 
-, loadColorImage 
-, loadImage 
+, Loadable(..)
+, saveImage
+, loadColorImage
+, loadImage
 
--- * Pixel level access 
+-- * Pixel level access
 , GetPixel(..)
-, getAllPixels 
-, getAllPixelsRowMajor 
-, setPixel 
-, setPixel8U 
-, mapImageInplace 
+, getAllPixels
+, getAllPixelsRowMajor
+, setPixel
+, setPixel8U
+, mapImageInplace
 
 -- * Image information
 , ImageDepth
 , Sized(..)
-, getArea 
+, getArea
 , getChannel
-, getImageChannels 
-, getImageDepth 
-, getImageInfo 
+, getImageChannels
+, getImageDepth
+, getImageInfo
 
 -- * ROI's, COI's and subregions
-, setCOI 
-, setROI 
-, resetROI 
-, getRegion 
-, withIOROI 
-, withROI 
+, setCOI
+, setROI
+, resetROI
+, getRegion
+, withIOROI
+, withROI
 
 -- * Blitting
-, blendBlit 
-, blit 
-, blitM 
-, subPixelBlit 
-, safeBlit 
-, montage 
-, tileImages 
+, blendBlit
+, blit
+, blitM
+, subPixelBlit
+, safeBlit
+, montage
+, tileImages
 
 -- * Conversions
 , rgbToGray 
+, grayToRGB
 , rgbToLab 
+, bgrToRgb
+, rgbToBgr
 , unsafeImageTo32F 
 , unsafeImageTo8Bit 
 
 -- * Low level access operations
 , BareImage(..)
-, creatingImage 
-, unImage 
-, unS 
-, withGenBareImage 
-, withBareImage 
+, creatingImage
+, unImage
+, unS
+, withGenBareImage
+, withBareImage
 , creatingBareImage
-, withGenImage 
-, withImage 
+, withGenImage
+, withImage
 , imageFPTR
 , ensure32F
 
@@ -96,19 +99,18 @@ import System.Mem
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.Marshal.Utils
-import Foreign.ForeignPtr hiding (newForeignPtr)
+import Foreign.ForeignPtr hiding (newForeignPtr,unsafeForeignPtrToPtr)
 import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
-
--- import C2HSTools
 
 import Data.Maybe(catMaybes)
 import Data.List(genericLength)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
+import Foreign.ForeignPtr (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
@@ -117,13 +119,21 @@ import Control.Monad
 
 
 -- Colorspaces
+
+-- | Single channel grayscale image
 data GrayScale
+
+data DFT
 data RGB
-data LAB
-data BGR
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
+
+data BGR
+
+data LAB
 data RGBA
 data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
+
+-- | Type family for expressing which channels a colorspace contains. This needs to be fixed wrt. the BGR color space.
 type family ChannelOf a :: *
 type instance ChannelOf RGB_Channel = RGB
 type instance ChannelOf LAB_Channel = LAB
@@ -133,8 +143,10 @@ type D8  = Word8
 type D32 = Float
 type D64 = Double
 
+-- | The type for Images
 newtype Image channels depth = S BareImage
 
+-- | Remove typing info from an image
 unS (S i) = i -- Unsafe and ugly
 
 imageFPTR :: Image c d -> ForeignPtr BareImage
@@ -200,16 +212,6 @@ composeMultichannelImage (c1)
         withMaybe (Nothing) op = op nullPtr
         size = getSize . head . catMaybes $ [c1,c2,c3,c4]
 
--- Load Image as grayscale image.
-
---loadImage n = do
---              exists <- fileExist n
---              if not exists then return Nothing
---                            else do
---                              i <- withCString n $ \name ->
---                                     creatingImage ({#call cvLoadImage #} name (0))
---                              bw <- imageTo32F i
---                              return $ Just bw
 
 class Loadable a where
     readFromFile :: FilePath -> IO a
@@ -224,16 +226,16 @@ instance Loadable ((Image GrayScale D32)) where
 
 instance Loadable ((Image RGB D32)) where
     readFromFile fp = do
-        e <- loadColorImage fp
+        e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ unsafeImageTo32F $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image RGB D8)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
-         Just i -> return i
+         Just i -> return $ bgrToRgb i
          Nothing -> fail $ "Could not load "++fp
 
 instance Loadable ((Image GrayScale D8)) where
@@ -260,9 +262,9 @@ loadImage :: FilePath -> IO (Maybe (Image GrayScale D32))
 loadImage = unsafeloadUsing imageTo32F 0
 loadImage8 :: FilePath -> IO (Maybe (Image GrayScale D8))
 loadImage8 = unsafeloadUsing imageTo8Bit 0
-loadColorImage :: FilePath -> IO (Maybe (Image RGB D32))
+loadColorImage :: FilePath -> IO (Maybe (Image BGR D32))
 loadColorImage = unsafeloadUsing imageTo32F 1
-loadColorImage8 :: FilePath -> IO (Maybe (Image RGB D8))
+loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
 class Sized a where
@@ -285,12 +287,148 @@ instance Sized (Image c d) where
 cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
 cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
 
+
 #c
 enum CvtFlags {
-    CvtFlip   = CV_CVTIMG_FLIP,  
-    CvtSwapRB = CV_CVTIMG_SWAP_RB 
+    CvtFlip   = CV_CVTIMG_FLIP,
+    CvtSwapRB = CV_CVTIMG_SWAP_RB
      };
 #endc
+
+#c
+enum CvtCodes {
+    CV_BGR2BGRA    =0,
+    CV_RGB2RGBA    =CV_BGR2BGRA,
+
+    CV_BGRA2BGR    =1,
+    CV_RGBA2RGB    =CV_BGRA2BGR,
+
+    CV_BGR2RGBA    =2,
+    CV_RGB2BGRA    =CV_BGR2RGBA,
+
+    CV_RGBA2BGR    =3,
+    CV_BGRA2RGB    =CV_RGBA2BGR,
+
+    CV_BGR2RGB     =4,
+    CV_RGB2BGR     =CV_BGR2RGB,
+
+    CV_BGRA2RGBA   =5,
+    CV_RGBA2BGRA   =CV_BGRA2RGBA,
+
+    CV_BGR2GRAY    =6,
+    CV_RGB2GRAY    =7,
+    CV_GRAY2BGR    =8,
+    CV_GRAY2RGB    =CV_GRAY2BGR,
+    CV_GRAY2BGRA   =9,
+    CV_GRAY2RGBA   =CV_GRAY2BGRA,
+    CV_BGRA2GRAY   =10,
+    CV_RGBA2GRAY   =11,
+
+    CV_BGR2BGR565  =12,
+    CV_RGB2BGR565  =13,
+    CV_BGR5652BGR  =14,
+    CV_BGR5652RGB  =15,
+    CV_BGRA2BGR565 =16,
+    CV_RGBA2BGR565 =17,
+    CV_BGR5652BGRA =18,
+    CV_BGR5652RGBA =19,
+
+    CV_GRAY2BGR565 =20,
+    CV_BGR5652GRAY =21,
+
+    CV_BGR2BGR555  =22,
+    CV_RGB2BGR555  =23,
+    CV_BGR5552BGR  =24,
+    CV_BGR5552RGB  =25,
+    CV_BGRA2BGR555 =26,
+    CV_RGBA2BGR555 =27,
+    CV_BGR5552BGRA =28,
+    CV_BGR5552RGBA =29,
+
+    CV_GRAY2BGR555 =30,
+    CV_BGR5552GRAY =31,
+
+    CV_BGR2XYZ     =32,
+    CV_RGB2XYZ     =33,
+    CV_XYZ2BGR     =34,
+    CV_XYZ2RGB     =35,
+
+    CV_BGR2YCrCb   =36,
+    CV_RGB2YCrCb   =37,
+    CV_YCrCb2BGR   =38,
+    CV_YCrCb2RGB   =39,
+
+    CV_BGR2HSV     =40,
+    CV_RGB2HSV     =41,
+
+    CV_BGR2Lab     =44,
+    CV_RGB2Lab     =45,
+
+    CV_BayerBG2BGR =46,
+    CV_BayerGB2BGR =47,
+    CV_BayerRG2BGR =48,
+    CV_BayerGR2BGR =49,
+
+    CV_BayerBG2RGB =CV_BayerRG2BGR,
+    CV_BayerGB2RGB =CV_BayerGR2BGR,
+    CV_BayerRG2RGB =CV_BayerBG2BGR,
+    CV_BayerGR2RGB =CV_BayerGB2BGR,
+
+    CV_BGR2Luv     =50,
+    CV_RGB2Luv     =51,
+    CV_BGR2HLS     =52,
+    CV_RGB2HLS     =53,
+
+    CV_HSV2BGR     =54,
+    CV_HSV2RGB     =55,
+
+    CV_Lab2BGR     =56,
+    CV_Lab2RGB     =57,
+    CV_Luv2BGR     =58,
+    CV_Luv2RGB     =59,
+    CV_HLS2BGR     =60,
+    CV_HLS2RGB     =61,
+
+    CV_BayerBG2BGR_VNG =62,
+    CV_BayerGB2BGR_VNG =63,
+    CV_BayerRG2BGR_VNG =64,
+    CV_BayerGR2BGR_VNG =65,
+    
+    CV_BayerBG2RGB_VNG =CV_BayerRG2BGR_VNG,
+    CV_BayerGB2RGB_VNG =CV_BayerGR2BGR_VNG,
+    CV_BayerRG2RGB_VNG =CV_BayerBG2BGR_VNG,
+    CV_BayerGR2RGB_VNG =CV_BayerGB2BGR_VNG,
+    
+    CV_BGR2HSV_FULL = 66,
+    CV_RGB2HSV_FULL = 67,
+    CV_BGR2HLS_FULL = 68,
+    CV_RGB2HLS_FULL = 69,
+    
+    CV_HSV2BGR_FULL = 70,
+    CV_HSV2RGB_FULL = 71,
+    CV_HLS2BGR_FULL = 72,
+    CV_HLS2RGB_FULL = 73,
+    
+    CV_LBGR2Lab     = 74,
+    CV_LRGB2Lab     = 75,
+    CV_LBGR2Luv     = 76,
+    CV_LRGB2Luv     = 77,
+    
+    CV_Lab2LBGR     = 78,
+    CV_Lab2LRGB     = 79,
+    CV_Luv2LBGR     = 80,
+    CV_Luv2LRGB     = 81,
+    
+    CV_BGR2YUV      = 82,
+    CV_RGB2YUV      = 83,
+    CV_YUV2BGR      = 84,
+    CV_YUV2RGB      = 85,
+    
+    CV_COLORCVT_MAX  =100
+};
+#endc
+
+{#enum CvtCodes {}#}
 
 {#enum CvtFlags {}#}
 
@@ -300,6 +438,10 @@ rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
 
 rgbToGray :: Image RGB D32 -> Image GrayScale D32
 rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
+
+grayToRGB :: Image GrayScale D32 -> Image RGB D32
+grayToRGB = S . convertTo (fromIntegral . fromEnum $ CV_GRAY2BGR) 3 . unS
+
 
 bgrToRgb :: Image BGR depth -> Image RGB depth
 bgrToRgb = S . swapRB . unS
@@ -333,6 +475,19 @@ instance GetPixel (Image GrayScale D32) where
 {-#INLINE getPixelOld#-}
 getPixelOld (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
          withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
+
+instance GetPixel (Image DFT D32) where
+    type P (Image DFT D32) = (D32,D32)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
+                                         im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
+                                         return (re,im)
 
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
@@ -397,12 +552,16 @@ convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
  where
     (fromIntegral -> w,fromIntegral -> h) = getSize img
 
+-- | Class for images that exist.
 class CreateImage a where
+    -- | Create an image from size
     create :: (Int,Int) -> IO a
 
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
+instance CreateImage (Image DFT D32) where
+    create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
 instance CreateImage (Image RGB D32) where
@@ -430,14 +589,13 @@ instance CreateImage (Image RGBA D8) where
 
 
 
+-- | Allocate a new empty image
 empty :: (CreateImage (Image a b)) => (Int,Int) -> (Image a b)
 empty size = unsafePerformIO $ create size
 
-emptyCopy :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
-emptyCopy img = create (getSize img)
-
-emptyCopy' :: (CreateImage (Image a b)) => Image a b -> (Image a b)
-emptyCopy' img = unsafePerformIO $ create (getSize img)
+-- | Allocate a new image that of the same size and type as the exemplar image given.
+emptyCopy :: (CreateImage (Image a b)) => Image a b -> (Image a b)
+emptyCopy img = unsafePerformIO $ create (getSize img)
 
 -- | Save image. This will convert the image to 8 bit one before saving
 saveImage :: FilePath -> Image c d -> IO ()
@@ -521,10 +679,12 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
                                    ({#call alphaBlit#} i1 i1a i2 i2a x y)
 
 
+-- | Create a copy of an image
 cloneImage :: Image a b -> IO (Image a b)
 cloneImage img = withGenImage img $ \image ->
                     creatingImage ({#call cvCloneImage #} image)
 
+-- | Create a copy of a non-types image
 cloneBareImage :: BareImage -> IO BareImage
 cloneBareImage img = withGenBareImage img $ \image ->
                     creatingBareImage ({#call cvCloneImage #} image)
@@ -556,6 +716,13 @@ unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
 unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure8U #} image)
+
+--toD32 :: Image c d -> Image c D32
+--toD32 i =
+--  unsafePerformIO $
+--    withImage i $ \i_ptr ->
+--      creatingImage
+
 
 imageTo32F img = withGenBareImage img $ \image ->
                 creatingBareImage

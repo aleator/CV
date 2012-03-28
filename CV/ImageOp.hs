@@ -1,6 +1,6 @@
 module CV.ImageOp where
 
-import Foreign
+import System.IO.Unsafe (unsafePerformIO)
 import CV.Image
 import Control.Monad ((>=>))
 import Data.Monoid
@@ -14,16 +14,16 @@ newtype ImageOperation c d = ImgOp (Image c d-> IO ())
 (#>) :: ImageOperation c d-> ImageOperation c d -> ImageOperation c d
 (#>) (ImgOp a) (ImgOp b) = ImgOp (\img -> (a img >> b img))
 
--- |An unit operation for compose 
+-- |An unit operation for compose
 nonOp = ImgOp (\i -> return ())
 
 -- |Apply image operation to a Copy of an image
 img <# op = unsafeOperate op img
 
 -- motivating example:
--- >>> hop i = stretchHistogram $ i #- gaussian (5,5) 
+-- >>> hop i = stretchHistogram $ i #- gaussian (5,5)
 -- allocates two extra images
--- >>> hop = (gaussian (5,5) &#& id) #> subtract #> stretchHistogram 
+-- >>> hop = (gaussian (5,5) &#& id) #> subtract #> stretchHistogram
 -- could be implemented in a way that allocates just one extra
 fromImageOp (ImgOp f) = IOP $ \i -> (f i >> return i)
 
@@ -35,7 +35,7 @@ instance Category IOP where
 
 (&#&) :: IOP (Image c d) e -> IOP (Image c d) f -> IOP (Image c d) (Image c d,Image c d)
 (IOP f) &#& (IOP g) = IOP $ op
-    where 
+    where
         op i = withCloneValue i $ \cl -> (f i >> g cl >> return (i,cl))
 
 unsafeOperate op img = unsafePerformIO $ operate op img
@@ -49,16 +49,16 @@ img <## op = unsafeOperate (foldl1 (#>) op) img
 
 
 operate ::ImageOperation c d -> Image c d -> IO (Image c d)
-operate (ImgOp op) img = withCloneValue img $ \clone -> 
+operate (ImgOp op) img = withCloneValue img $ \clone ->
                                     op clone >> return clone
 
 operateOn = flip operate
 
 -- |Iterate an operation N times
-times n op = foldl (#>) nonOp (replicate n op) 
+times n op = foldl (#>) nonOp (replicate n op)
 
 directOp i (ImgOp op)  = op i
-operateInPlace (ImgOp op) img = op img 
+operateInPlace (ImgOp op) img = op img
 
 unsafeOperateOn img op = unsafePerformIO $ operate op img
 

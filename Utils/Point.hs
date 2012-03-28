@@ -1,16 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, TypeFamilies #-}
 module Utils.Point where
-import Utils.GeometryClass
 
-instance Point2D (Int,Int) where
-   type ELP (Int,Int) = Int
-   pt = id
-   toPt = id
 
-instance Point2D (Double,Double) where
-   type ELP (Double,Double) = Double
-   pt = id
-   toPt = id
 
 type Pt a = (a,a)
 

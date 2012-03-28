@@ -6,26 +6,27 @@ import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
-import CV.Image 
+import CV.Bindings.Types
+import CV.Bindings.Core
+import CV.Image
 import CV.ImageOp
 
 -- import C2HSTools
 {#import CV.Image#}
 import Foreign.Marshal
+import Foreign.Storable
 import Foreign.Ptr
 import System.IO.Unsafe
 import Control.Applicative ((<$>))
 
-import C2HS hiding (unsafePerformIO)
-
-mkBinaryImageOpIO f = \a -> \b -> 
-          withGenImage a $ \ia -> 
+mkBinaryImageOpIO f = \a -> \b ->
+          withGenImage a $ \ia ->
           withGenImage b $ \ib ->
           withCloneValue a    $ \clone ->
           withGenImage clone $ \cl -> do
-            f ia ib cl 
+            f ia ib cl
             return clone
- 
+
 mkBinaryImageOp
   :: (Ptr () -> Ptr () -> Ptr () -> IO a)
      -> CV.Image.Image c1 d1
@@ -33,11 +34,11 @@ mkBinaryImageOp
      -> CV.Image.Image c1 d1
 
 mkBinaryImageOp f = \a -> \b -> unsafePerformIO $
-          withGenImage a $ \ia -> 
+          withGenImage a $ \ia ->
           withGenImage b $ \ib ->
           withCloneValue a    $ \clone ->
           withGenImage clone $ \cl -> do
-            f ia ib cl 
+            f ia ib cl
             return clone
 
 
@@ -45,14 +46,14 @@ mkBinaryImageOp f = \a -> \b -> unsafePerformIO $
    -- Friday Evening
 abcNullPtr f = \a b c -> f a b c nullPtr
 addOp imageToBeAdded = ImgOp $ \target ->
-              withGenImage target $ \ctarget -> 
+              withGenImage target $ \ctarget ->
               withGenImage imageToBeAdded $ \cadd ->
                {#call cvAdd#} ctarget cadd ctarget nullPtr
 
 add = mkBinaryImageOp $ abcNullPtr {#call cvAdd#}
 sub = mkBinaryImageOp $ abcNullPtr {#call cvSub#}
 subFrom what = ImgOp $ \from ->
-          withGenImage from $ \ifrom -> 
+          withGenImage from $ \ifrom ->
           withGenImage what $ \iwhat ->
            {#call cvSub#} ifrom iwhat ifrom nullPtr
 
@@ -64,16 +65,16 @@ sqrtOp  = ImgOp $ \i -> withGenImage i (\img -> {#call sqrtImage#}  img img)
 sqrt = unsafeOperate sqrtOp
 
 limitToOp what = ImgOp $ \from ->
-          withGenImage from $ \ifrom -> 
+          withGenImage from $ \ifrom ->
           withGenImage what $ \iwhat ->
            {#call cvMin#} ifrom iwhat ifrom
 
-limitTo x y = unsafeOperate (limitToOp x) y 
+limitTo x y = unsafeOperate (limitToOp x) y
 
-mul = mkBinaryImageOp 
+mul = mkBinaryImageOp
     (\a b c -> {#call cvMul#} a b c 1)
 
-div = mkBinaryImageOp 
+div = mkBinaryImageOp
     (\a b c -> {#call cvDiv#} a b c 1)
 
 min = mkBinaryImageOp {#call cvMin#}
@@ -85,32 +86,32 @@ absDiff = mkBinaryImageOp {#call cvAbsDiff#}
 atan :: Image GrayScale D32 -> Image GrayScale D32
 atan i = unsafePerformIO $ do
                     let (w,h) = getSize i
-                    res <- create (w,h) 
-                    withImage i $ \s -> 
+                    res <- create (w,h)
+                    withImage i $ \s ->
                      withImage res $ \r -> do
                       {#call calculateAtan#} s r
                       return res
 
 atan2 a b = unsafePerformIO $ do
                     res <- create (getSize a)
-                    withImage a $ \c_a -> 
-                     withImage b $ \c_b -> 
+                    withImage a $ \c_a ->
+                     withImage b $ \c_b ->
                       withImage res $ \c_res -> do
-                       {#call calculateAtan2#} c_a c_b c_res 
+                       {#call calculateAtan2#} c_a c_b c_res
                        return res
-          
+
 
 -- Operation that subtracts image mean from image
 subtractMeanAbsOp = ImgOp $ \image -> do
                       av <- average' image
-                      withGenImage image $ \i -> 
+                      withGenImage image $ \i ->
                         {#call wrapAbsDiffS#} i (realToFrac av) i -- TODO: check C datatype sizes
 
 -- Logical inversion of image (Ie. invert, but stay on [0..1] range)
 invert i = addS 1 $ mulS (-1) i
 
 absOp = ImgOp $ \image -> do
-                      withGenImage image $ \i -> 
+                      withGenImage image $ \i ->
                         {#call wrapAbsDiffS#} i 0 i
 
 abs = unsafeOperate absOp
@@ -123,41 +124,39 @@ subtractMeanOp = ImgOp $ \image -> do
                       subop image
 
 subRSOp :: D32 -> ImageOperation GrayScale D32
-subRSOp scalar =  ImgOp $ \a ->  
+subRSOp scalar =  ImgOp $ \a ->
           withGenImage a $ \ia -> do
-            {#call wrapSubRS#} ia (realToFrac scalar) ia 
+            {#call wrapSubRS#} ia (realToFrac scalar) ia
 
 subRS s a= unsafeOperate (subRSOp s) a
 
-subSOp scalar =  ImgOp $ \a -> 
+subSOp scalar =  ImgOp $ \a ->
           withGenImage a $ \ia -> do
-            {#call wrapSubS#} ia (realToFrac scalar) ia 
+            {#call wrapSubS#} ia (realToFrac scalar) ia
 
 subS a s = unsafeOperate (subSOp s) a
 
--- Multiply the image with scalar 
+-- Multiply the image with scalar
 mulSOp :: D32 -> ImageOperation GrayScale D32
-mulSOp scalar = ImgOp $ \a ->   
+mulSOp scalar = ImgOp $ \a ->
           withGenImage a $ \ia -> do
-            {#call cvConvertScale#} ia ia s 0 
+            {#call cvConvertScale#} ia ia s 0
             return ()
-        where s = realToFrac scalar 
+        where s = realToFrac scalar
                 -- I've heard this will lose information
 mulS s = unsafeOperate $ mulSOp s
 
-mkImgScalarOp op scalar = ImgOp $ \a ->   
+mkImgScalarOp op scalar = ImgOp $ \a ->
               withGenImage a $ \ia -> do
-                op ia (realToFrac scalar) ia 
+                op ia (realToFrac scalar) ia
                 return ()
-           -- where s = realToFrac scalar 
-                -- I've heard this will lose information
 
 -- TODO: Relax the addition so it works on multiple image depths
 addSOp :: D32 -> ImageOperation GrayScale D32
 addSOp = mkImgScalarOp $ {#call wrapAddS#}
 addS s = unsafeOperate $ addSOp s
 
-minSOp = mkImgScalarOp $ {#call cvMinS#} 
+minSOp = mkImgScalarOp $ {#call cvMinS#}
 minS s = unsafeOperate $ minSOp s
 
 maxSOp = mkImgScalarOp $ {#call cvMaxS#}
@@ -174,7 +173,7 @@ cmpNE = 5
 
 -- TODO: For some reason the below was going through 8U images. Investigate
 mkCmpOp :: CInt -> D32 -> (Image GrayScale D32 -> Image GrayScale D8)
-mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
+mkCmpOp cmp = \scalar a -> unsafePerformIO $
           withGenImage a $ \ia -> do
                         new  <- create (getSize a) --8UC1
                         withGenImage new $ \cl -> do
@@ -183,7 +182,7 @@ mkCmpOp cmp = \scalar a -> unsafePerformIO $ do
                             return new
 
 -- TODO: For some reason the below was going through 8U images. Investigate
-mkCmp2Op :: (CreateImage (Image GrayScale d)) => 
+mkCmp2Op :: (CreateImage (Image GrayScale d)) =>
            CInt -> (Image GrayScale d -> Image GrayScale d -> Image GrayScale D8)
 mkCmp2Op cmp = \imgA imgB -> unsafePerformIO $ do
           withGenImage imgA $ \ia -> do
@@ -200,16 +199,22 @@ lessThan, moreThan ::  D32 -> Image GrayScale D32 ->Image GrayScale D8
 lessThan = mkCmpOp cmpLT
 moreThan = mkCmpOp cmpGT
 
-less2Than,lessEq2Than,more2Than :: (CreateImage (Image GrayScale d)) => Image GrayScale d 
-                                    -> Image GrayScale d -> Image GrayScale D8 
+less2Than,lessEq2Than,more2Than :: (CreateImage (Image GrayScale d)) => Image GrayScale d
+                                    -> Image GrayScale d -> Image GrayScale D8
 less2Than = mkCmp2Op cmpLT
 lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
 
 -- Statistics
-average' :: Image GrayScale a -> IO D32
-average' img = withGenImage img $ \image -> -- TODO: Check c datatype size
-                {#call wrapAvg#} image >>= return . realToFrac 
+averageMask :: Image GrayScale D32 -> Image GrayScale D8 -> D32
+averageMask img mask = unsafePerformIO $
+                       withGenImage img $ \c_image -> 
+                       withGenImage mask $ \c_mask -> 
+                        {#call wrapAvg#} c_image c_mask >>= return . realToFrac
+
+average' :: Image GrayScale D32 -> IO D32
+average' img = withGenImage img $ \image -> 
+                {#call wrapAvg#} image nullPtr >>= return . realToFrac
 
 average :: Image GrayScale D32 -> D32
 average = realToFrac.unsafePerformIO.average'
@@ -225,29 +230,29 @@ averageImages is = ( (1/(fromIntegral $ length is)) `mulS`) (foldl1 add is)
 -- sum img = unsafePerformIO $ withGenImage img $ \image ->
 --                    {#call wrapSum#} image
 
-stdDeviation' img = withGenImage img {#call wrapStdDev#} 
+stdDeviation' img = withGenImage img {#call wrapStdDev#}
 stdDeviation :: Image GrayScale D32 -> D32
-stdDeviation = realToFrac . unsafePerformIO . stdDeviation' 
+stdDeviation = realToFrac . unsafePerformIO . stdDeviation'
 
-stdDeviationMask img mask = unsafePerformIO $ 
-                                 withGenImage img $ \i ->
-                                  withGenImage mask $ \m ->
-                                   {#call wrapStdDevMask#} i m
-
-averageMask img mask = unsafePerformIO $ 
+stdDeviationMask img mask = unsafePerformIO $
                                  withGenImage img $ \i ->
                                   withGenImage mask $ \m ->
                                    {#call wrapStdDevMask#} i m
 
 
-{#fun wrapMinMax as findMinMax' 
+
+peekFloatConv :: (Storable a, RealFloat a, RealFloat b) => Ptr a -> IO b
+peekFloatConv a = fmap realToFrac (peek a)
+
+
+{#fun wrapMinMax as findMinMax'
     { withGenBareImage* `BareImage'
     , withGenBareImage* `BareImage'
     , alloca-  `D32' peekFloatConv*
     , alloca-  `D32' peekFloatConv*} -- TODO: Check datatype sizes used in C!
     -> `()'#}
 
-findMinMaxLoc img = unsafePerformIO $ 
+findMinMaxLoc img = unsafePerformIO $
 	     alloca $ \(ptrintmaxx :: Ptr CInt)->
 	      alloca $ \(ptrintmaxy :: Ptr CInt)->
            alloca $ \(ptrintminx :: Ptr CInt)->
@@ -264,12 +269,39 @@ findMinMaxLoc img = unsafePerformIO $
 		         minval <- realToFrac <$> peek ptrintmin;
                  return (((minx,miny),minval),((maxx,maxy),maxval));}
 
+imageMinMax i = unsafePerformIO $ do
+  withImage i $ \i_ptr -> do
+    let
+      minval :: CDouble
+      minval = 0
+      maxval :: CDouble
+      maxval = 0
+    with minval $ \cminval ->
+      with maxval $ \cmaxval -> do
+        c'cvMinMaxLoc (castPtr i_ptr) cminval cmaxval nullPtr nullPtr nullPtr
+        imin <- peek cminval
+        imax <- peek cmaxval
+        return ((realToFrac imin), (realToFrac imax))
+
+imageAvgSdv i = unsafePerformIO $ do
+  withImage i $ \i_ptr -> do
+    let
+      avg = (C'CvScalar 0 0 0 0)
+      sdv = (C'CvScalar 0 0 0 0)
+    with avg $ \avg_ptr ->
+      with sdv $ \sdv_ptr -> do
+        c'cvAvgSdv (castPtr i_ptr) avg_ptr sdv_ptr nullPtr
+        (C'CvScalar a1 a2 a3 a4) <- peek avg_ptr
+        (C'CvScalar s1 s2 s3 s4) <- peek sdv_ptr
+        return ((realToFrac a1, realToFrac a2, realToFrac a3, realToFrac a4),
+                (realToFrac s1, realToFrac s2, realToFrac s3, realToFrac s4))
+
 findMinMax i = unsafePerformIO $ do
                nullp <- newForeignPtr_ nullPtr
-               (findMinMax' (unS i) (BareImage nullp)) 
+               (findMinMax' (unS i) (BareImage nullp))
 
 -- |Find minimum and maximum value of image i in area specified by the mask.
-findMinMaxMask i mask  = unsafePerformIO (findMinMax' i mask) 
+findMinMaxMask i mask  = unsafePerformIO (findMinMax' i mask)
 -- let a = getAllPixels i in (minimum a,maximum a)
 
 maxValue,minValue :: Image GrayScale D32 -> D32
@@ -308,12 +340,12 @@ maskedMerge mask img img2 = unsafePerformIO $ do
 -- | Given a distance map and a circle, return the biggest circle with radius less
 --   than given in the distance map that fully covers the previous one
 
-maximalCoveringCircle distMap (x,y,r)  
-  = unsafePerformIO $ 
+maximalCoveringCircle distMap (x,y,r)
+  = unsafePerformIO $
      withImage distMap $ \c_distmap ->
        alloca $ \(ptr_int_max_x :: Ptr CInt) ->
         alloca $ \(ptr_int_max_y :: Ptr CInt) ->
-         alloca $ \(ptr_double_max_r :: Ptr CDouble) -> 
+         alloca $ \(ptr_double_max_r :: Ptr CDouble) ->
           do
            {#call maximal_covering_circle#} x y r c_distmap ptr_int_max_x ptr_int_max_y ptr_double_max_r
            max_x <- fromIntegral <$> peek ptr_int_max_x
@@ -321,6 +353,6 @@ maximalCoveringCircle distMap (x,y,r)
            max_r <- realToFrac   <$> peek ptr_double_max_r
            return (max_x,max_y,max_r)
 
-          
 
-          
+
+

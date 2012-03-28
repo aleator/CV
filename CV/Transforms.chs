@@ -46,7 +46,7 @@ data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 -- |Mirror an image over a cardinal axis
 flip :: CreateImage (Image c d) => MirrorAxis -> Image c d -> Image c d
 flip axis img = unsafePerformIO $ do
-                 cl <- emptyCopy img
+                 let cl = emptyCopy img
                  withGenImage img $ \cimg -> 
                   withGenImage cl $ \ccl -> do
                     {#call cvFlip#} cimg ccl (if axis == Vertical then 0 else 1)
@@ -66,7 +66,7 @@ data Interpolation = NearestNeighbour | Linear
 -- |Simulate a radial distortion over an image
 radialDistort :: Image GrayScale D32 -> Double -> Image GrayScale D32
 radialDistort img k = unsafePerformIO $ do
-                       target <- emptyCopy img 
+                       let target = emptyCopy img 
                        withImage img $ \cimg ->
                         withImage target $ \ctarget ->
                          {#call radialRemap#} cimg ctarget (realToFrac k)

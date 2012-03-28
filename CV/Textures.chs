@@ -11,15 +11,20 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Marshal.Array
 
+import System.IO.Unsafe
+
 import CV.Image 
 import CV.ImageOp
 
 import Data.List
-import C2HSTools
+--import C2HSTools
 import qualified Data.Vector as V
 import Data.Vector (Vector)
 import Data.Maybe (fromMaybe)
+import Data.Word
+import Data.Bits (rotateL)
 {#import CV.Image#}
+
 
 
 -- * Rotation invariance

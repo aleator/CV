@@ -23,7 +23,7 @@ import CV.ImageOp
 import CV.Image 
 {#import CV.Image#}
 
-import C2HSTools
+import System.IO.Unsafe
 
 -- | Perform Sobel filtering on image. First argument gives order of horizontal and vertical
 --   derivative estimates and second one is the aperture. This function can also calculate

@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.4.1
+Version:             0.3.5
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -18,6 +18,8 @@ Description:         This is a machine vision package that wraps some functional
                       <http://aleator.github.com/CV/>
                      .
                      Changelog.
+                     0.3.5 - Many new wrappers, clean ups and other fixes.
+                     .
                      0.3.4 - Pixelwise operations, bug fixes and additional documentation
                      .
                      0.3.3.0 - Improvements, including compatablity with opencv 2.3.1 and removal of
@@ -51,56 +53,110 @@ Flag opencv23
 Library
     Build-Tools:       c2hs >= 0.16.0
     Include-dirs:      cbits/
-    Includes:          opencv/cv.h, opencv/cxcore.h, opencv/highgui.h, cbits/cvWrapLEO.h, cbits/cvIterators.h
-    c-sources:         cbits/cvWrapLEO.c, cbits/cvIterators.c
-    install-includes:  cbits/cvWrapLEO.h, cbits/cvIterators.h
+    Includes:          opencv/cv.h,
+                       opencv/cxcore.h,
+                       opencv/highgui.h,
+                       cbits/cvWrapLEO.h,
+                       cbits/cvWrapCore.h,
+                       cbits/wrapImgProc.h,
+                       cbits/cvIterators.h
+    c-sources:         cbits/cvWrapLEO.c,
+                       cbits/cvWrapCore.c,
+                       cbits/wrapImgProc.c,
+                       cbits/cvIterators.c
+    install-includes:  cbits/cvWrapLEO.h,
+                       cbits/cvWrapCore.h,
+                       cbits/wrapImgProc.h,
+                       cbits/cvIterators.h
     if flag(opencv23)
-         cpp-options: -DOpenCV23
-         cc-options: -DOpenCV23
+        cpp-options: -DOpenCV23
+        cc-options: -DOpenCV23
     cc-options:        --std=c99 -U__BLOCKS__
-    extra-libraries:   opencv_calib3d
-                        ,opencv_contrib
-                        ,opencv_core
-                        ,opencv_features2d
-                        ,opencv_flann
-                        ,opencv_gpu
-                        ,opencv_highgui
-                        ,opencv_imgproc
-                        ,opencv_legacy
-                        ,opencv_ml
-                        ,opencv_objdetect
-                        ,opencv_video
+    extra-libraries:   opencv_calib3d,
+                       opencv_contrib,
+                       opencv_core,
+                       opencv_features2d,
+                       opencv_flann,
+                       opencv_gpu,
+                       opencv_highgui,
+                       opencv_imgproc,
+                       opencv_legacy,
+                       opencv_ml,
+                       opencv_objdetect,
+                       opencv_video
 
-    Build-Depends:     base >= 4 && < 6, parallel > 3.1, unix > 2.3, array >= 0.2.0.0,
-                       mtl >= 1.1.0, random >= 1.0.0, carray >= 0.1.5, QuickCheck >= 2.1,
+    Build-Depends:     base >= 4 && < 6,
+                       parallel > 3.1,
+                       unix > 2.3,
+                       array >= 0.2.0.0,
+                       mtl >= 1.1.0,
+                       random >= 1.0.0,
+                       carray >= 0.1.5,
+                       QuickCheck >= 2.1,
                        containers >= 0.2,
-                       storable-complex, binary >= 0.5, deepseq >= 1.1,
-                       bindings-DSL >= 1.0.14 && < 1.1, vector >= 0.7.0.1 && < 1.1,
+                       storable-complex,
+                       binary >= 0.5,
+                       deepseq >= 1.1,
+                       bindings-DSL >= 1.0.14 && < 1.1,
+                       vector >= 0.7.0.1 && < 1.1,
                        lazysmallcheck >= 0.5 && < 1,
                        storable-tuple >= 0.0.2 && <= 1
-    Exposed-modules:   CV.Image, CV.ImageOp, CV.ImageMath CV.Sampling, CV.Edges, CV.Filters,
-                       CV.Morphology, CV.ColourUtils, CV.ImageMathOp, CV.Video,
-                       CV.Textures,CV.Drawing, CV.Thresholding, CV.Histogram,  CV.LightBalance,
-                       CV.TemplateMatching, CV.Transforms, CV.Conversions,
-                       CV.Binary, CV.Marking, CV.FunnyStatistics,
-                       CV.MultiresolutionSpline, CV.Gabor, CV.Corners, CV.Operations,
-                       CV.ConnectedComponents, CV.HighGUI, CV.Calibration, CV.Iterators,
-                       CV.Pixelwise, CV.Matrix, CV.Arbitrary, CV.HoughTransform,
-                       Utils.List, Utils.Point, Utils.Rectangle, Utils.Pointer
-                       Utils.Stream, Utils.Function, Utils.GeometryClass,
-                       CV.Fitting, CV.Features,
-                       CV.Bindings.Types
-    Other-modules:     C2HSTools, C2HS,
-                       CV.Bindings.Matrix,
+    Exposed-modules:   CV.Image                               
+                       ,CV.Arbitrary                          
+                       ,CV.Binary                             
+                       ,CV.Bindings.Types                     
+                       ,CV.Calibration                        
+                       ,CV.ColourUtils                        
+                       ,CV.ConnectedComponents                
+                       ,CV.Conversions                        
+                       ,CV.DFT
+                       ,CV.Corners                            
+                       ,CV.DrawableInstances                  
+                       ,CV.Drawing                            
+                       ,CV.Edges                              
+                       ,CV.Features                           
+                       ,CV.Filters                            
+                       ,CV.Fitting                            
+                       ,CV.FunnyStatistics                    
+                       ,CV.Gabor                              
+                       ,CV.HighGUI                            
+                       ,CV.Histogram                          
+                       ,CV.HoughTransform                     
+                       ,CV.ImageMath CV.Sampling              
+                       ,CV.ImageMathOp                        
+                       ,CV.ImageOp                            
+                       ,CV.Iterators                          
+                       ,CV.LightBalance                       
+                       ,CV.Marking                            
+                       ,CV.Matrix                             
+                       ,CV.Morphology                         
+                       ,CV.MultiresolutionSpline              
+                       ,CV.Operations                         
+                       ,CV.Pixelwise                          
+                       ,CV.TemplateMatching                   
+                       ,CV.Textures                           
+                       ,CV.Thresholding                       
+                       ,CV.Tracking                           
+                       ,CV.Transforms                         
+                       ,CV.Video                              
+                       ,Utils.DrawingClass                    
+                       ,Utils.Function                        
+                       ,Utils.GeometryClass                   
+                       ,Utils.List                            
+                       ,Utils.Point                           
+                       ,Utils.Pointer                         
+                       ,Utils.Rectangle
+                       ,Utils.Stream
+    Other-modules:     CV.Bindings.Matrix,
                        CV.Bindings.Calibrate,
                        CV.Bindings.Fittings,
                        CV.Bindings.Core,
                        CV.Bindings.ImgProc,
+                       CV.Bindings.Tracking,
                        CV.Bindings.Drawing,
                        CV.Bindings.Features,
                        CV.Bindings.Iterators
     Extensions: CPP
-
 
 source-repository head
   type:     git
