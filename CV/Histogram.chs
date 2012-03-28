@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface#-}
+{-#LANGUAGE ForeignFunctionInterface,DatatypeContexts#-}
 #include "cvWrapLEO.h"
 module CV.Histogram where
 

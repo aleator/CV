@@ -1,4 +1,4 @@
-{-#LANGUAGE TypeFamilies,FlexibleInstances, ConstraintKinds #-}
+{-#LANGUAGE TypeFamilies,FlexibleInstances#-}
 module Utils.GeometryClass where
 
 import Utils.Rectangle
@@ -41,7 +41,7 @@ instance FromBounds (Rectangle a) where
 convertBounds :: (BoundingBox a, FromBounds b, ELBB a ~ ELFB b) => a -> b
 convertBounds = fromBounds . bounds
 
-type IntBounded a = (BoundingBox a,Integral (ELBB a))
+-- type IntBounded a = (BoundingBox a,Integral (ELBB a))
 
 class Line2D a where
    type ELL a :: *

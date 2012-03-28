@@ -1,5 +1,5 @@
 {-#LANGUAGE ForeignFunctionInterface, TypeFamilies, MultiParamTypeClasses, TypeSynonymInstances, 
-            ViewPatterns, FlexibleContexts, ConstraintKinds#-}
+            ViewPatterns, FlexibleContexts #-}
 #include "cvWrapLEO.h"
 -- | Module for exposing opencv drawing functions. These are meant for quick and dirty marking
 --   and not for anything presentable. For any real drawing
@@ -63,7 +63,7 @@ class Drawable a b where
     -- | Draw a Circle
     circleOp :: (Color a b) -> (Int,Int) -> Int -> ShapeStyle -> ImageOperation a b
     -- | Draw a Rectangle by supplying two corners
-    rectOp   :: (IntBounded bb) => (Color a b) -> Int -> bb -> ImageOperation a b
+    rectOp   :: (BoundingBox bb, Integral (ELBB bb)) => (Color a b) -> Int -> bb -> ImageOperation a b
     -- | Draw a filled polygon
     fillPolyOp :: (Color a b) -> [(Int,Int)] -> ImageOperation a b
     ellipseBoxOp :: (Color a b) -> C'CvBox2D -> Int -> Int -> ImageOperation a b
