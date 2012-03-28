@@ -36,6 +36,27 @@ import GHC.Float
 
 #opaque_t CvHistogram
 
+#starttype CvContour
+#field flags, CInt
+#field header_size, CInt
+#field h_prev, Ptr <CvSeq>
+#field h_next, Ptr <CvSeq>
+#field v_prev, Ptr <CvSeq>
+#field v_next, Ptr <CvSeq>
+#field total,  CInt
+#field elem_size, CInt
+#field block_max, Ptr Char
+#field ptr, Ptr Char
+#field delta_elems, CInt
+#field free_blocks, Ptr <CvSeqBlock>
+#field first, Ptr <CvSeqBlock>
+#field rect, <CvRect>
+#field color, CInt
+#field reserved[0], CInt
+#field reserved[1], CInt
+#field reserved[2], CInt
+#stoptype
+
 #starttype CvSeq
 #field flags, CInt
 #field header_size, CInt
