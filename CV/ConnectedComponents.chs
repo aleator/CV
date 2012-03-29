@@ -9,7 +9,9 @@ module CV.ConnectedComponents
        -- * Working with Image moments
        -- |Note that these functions should probably go to a different module, since
        --  they deal with entire moments of entire images.
+       ,spatialMoments
        ,centralMoments
+       ,normalizedCentralMoments
        ,huMoments
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
@@ -23,14 +25,17 @@ module CV.ConnectedComponents
 where
 #include "cvWrapLEO.h"
 
+import CV.Bindings.ImgProc
+import CV.Bindings.Types
 import Control.Monad ((>=>))
 import Foreign.C.Types
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
+import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
+import Foreign.Storable
 import System.IO.Unsafe
-
 {#import CV.Image#}
 
 import CV.ImageOp
@@ -51,24 +56,59 @@ selectSizedComponents minSize maxSize image = unsafePerformIO $ do
 
 -- * Working with Image moments. 
 
+-- Utility function for getting the moments
+getMoments :: (Ptr C'CvMoments -> CInt -> CInt -> IO (CDouble)) -> Image GrayScale D32 -> Bool -> [Double]
+getMoments f image binary = unsafePerformIO $ do
+  withImage image $ \pimage -> do
+    let
+      moments :: C'CvMoments
+      moments = C'CvMoments 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    with moments $ \pmoments -> do
+      c'cvMoments (castPtr pimage) pmoments (if binary then 1 else 0)
+      ms <- sequence [ f pmoments i j
+                       | i <- [0..3], j <- [0..3], i+j <= 3 ]
+      return (map realToFrac ms)
 
--- |Extract central moments of the image. These are useful for describing the object shape
---  for a classifier system.
-centralMoments :: Image GrayScale D32 -> Bool -> [Double]
+-- | Extract raw spatial moments of the image.
+spatialMoments = getMoments c'cvGetSpatialMoment
+
+-- | Extract central moments of the image. These are useful for describing the
+--   object shape for a classifier system.
+centralMoments = getMoments c'cvGetCentralMoment
+
+-- | Extract normalized central moments of the image.
+normalizedCentralMoments = getMoments c'cvGetNormalizedCentralMoment
+
+{-
 centralMoments image binary = unsafePerformIO $ do
    moments <- withImage image $ \i -> {#call getMoments#} i (if binary then 1 else 0)
    ms <- sequence [{#call cvGetCentralMoment#} moments i j
                   | i <- [0..3], j<-[0..3], i+j <= 3]
    {#call freeCvMoments#} moments
    return (map realToFrac ms)
+-}
 
 -- |Extract Hu-moments of the image. These features are rotation invariant.
 huMoments :: Image GrayScale D32 -> Bool -> [Double]
+huMoments image binary = unsafePerformIO $ do
+  withImage image $ \pimage -> do
+    let
+      moments = C'CvMoments 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+      hu = C'CvHuMoments 0 0 0 0 0 0 0
+    with moments $ \pmoments -> do
+      with hu $ \phu -> do
+        c'cvMoments (castPtr pimage) pmoments (if binary then 1 else 0)
+        c'cvGetHuMoments pmoments phu
+        (C'CvHuMoments hu1 hu2 hu3 hu4 hu5 hu6 hu7) <- peek phu
+        return (map realToFrac [hu1,hu2,hu3,hu4,hu5,hu6,hu7])
+
+{-
 huMoments image binary = unsafePerformIO $ do
    moments <- withImage image $ \i -> {#call getMoments#} i (if binary then 1 else 0)
    hu <- readHu moments
    {#call freeCvMoments#} moments
    return (map realToFrac hu)
+-}
 
 -- read stuff out of hu-moments structure.. This could be done way better.
 readHu m = do

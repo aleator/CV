@@ -53,6 +53,52 @@ copyMakeBorder i t b l r border value =
             (cBorderType border)
             (realToFrac value)
 
+-- moments
+
+-- | Calculates all spatial and central moments up to the 3rd order
+--   @
+--   CVAPI(void) cvMoments(
+--     const CvArr* arr,
+--     CvMoments* moments,
+--     int binary CV_DEFAULT(0));@
+
+#ccall cvMoments , Ptr <CvArr> -> Ptr <CvMoments> -> CInt -> IO ()
+
+-- | Retrieve particular spatial moment (m_xy)
+--   @
+--   CVAPI(double) cvGetSpatialMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetSpatialMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Retrieve particular central moment (mu_xy)
+--   @
+--   CVAPI(double) cvGetCentralMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetCentralMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Retrieve particular normalized central moment (eta_xy)
+--   @
+--   CVAPI(double) cvGetNormalizedCentralMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetNormalizedCentralMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Calculates 7 Hu's invariants from precalculated spatial and central moments
+--   @
+--   CVAPI(void) cvGetHuMoments(
+--     CvMoments* moments,
+--     CvHuMoments* hu_moments );@
+
+#ccall cvGetHuMoments , Ptr <CvMoments> -> Ptr <CvHuMoments> -> IO ()
+
 -- CVAPI(void) cvCornerHarris(
 --   const CvArr* image,
 --   CvArr* harris_responce,
