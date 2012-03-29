@@ -24,6 +24,9 @@ vertices r = [topLeft r, topRight r, bottomLeft r, bottomRight r]
 rSize (Rectangle x y w h) = (w,h)
 rArea r = let (w,h) = rSize r in (w*h)
 
+center (Rectangle x y w h) = (x+w/2,y+h/2)
+centerI (Rectangle x y w h) = (x+w`div`2,y+h`div`2)
+
 -- TODO: Add documentation #Cleanup
 
 instance (Num a, Ord a , Serial a) => Serial (Rectangle a) where

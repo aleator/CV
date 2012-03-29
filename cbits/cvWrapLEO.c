@@ -447,11 +447,11 @@ void blitImg(IplImage *a, IplImage *b,int offset_x, int offset_y)
                     ,bSize.height);
 
  // Blit the images b into a using cvCopy
- printf("Doing a blit\n"); fflush(stdout);
+// printf("Doing a blit\n"); fflush(stdout);
  cvSetImageROI(a,pos);
  cvCopy(b,a,NULL);
  cvResetImageROI(a);
- printf("Done!\n"); fflush(stdout);
+// printf("Done!\n"); fflush(stdout);
 }
 
 IplImage* makeEvenDown(IplImage *src)

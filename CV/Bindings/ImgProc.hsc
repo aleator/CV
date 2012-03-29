@@ -102,4 +102,4 @@ emptyUniformHistogramND dims =
     withArray dims $ \c_sizes ->
     c'cvCreateHist 1 c_sizes c'CV_HIST_ARRAY nullPtr 1
 
-#ccall cvFindContours, Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr (Ptr <CvSeq>) -> Cint -> CInt -> CInt-> Ptr <CvPoint>
+-- #ccall cvFindContours, Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr (Ptr <CvSeq>) -> Cint -> CInt -> CInt-> Ptr <CvPoint>
