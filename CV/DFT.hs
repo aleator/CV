@@ -9,14 +9,17 @@ import CV.Operations
 
 import Foreign.Ptr (castPtr,nullPtr)
 import System.IO.Unsafe
+import Data.Complex
 
 type I32 = Image GrayScale D32
 type Idft32 = Image DFT D32
-data Icomplex32 = Icomplex32{ re :: I32, im :: I32 }
-data Ipolar32 = Ipolar32{ magnitude :: I32, phase :: I32 }
+data Ipolar32 = Ipolar32 (Complex D32)
 
-dft :: Image GrayScale d -> Image DFT D32
-dft i = unsafePerformIO $ do
+data Swap = SwapQuadrants | DontSwapQuadrants deriving (Eq,Show)
+
+dft = dft' SwapQuadrants
+dft' :: Swap -> Image GrayScale d -> Image DFT D32
+dft' swap i = unsafePerformIO $ do
   --n::(Image GrayScale D32) <- create (w', h')
   --n <- copyMakeBorder i 0 (h'-h) 0 (w'-w) BorderReplicate 0
   z::(Image GrayScale D32) <- create (w, h)
@@ -26,26 +29,37 @@ dft i = unsafePerformIO $ do
       withImage d $ \d_ptr -> do
         c'cvMerge (castPtr i_ptr) (castPtr z_ptr) nullPtr nullPtr (castPtr d_ptr)
         c'cvDFT (castPtr d_ptr) (castPtr d_ptr) c'CV_DXT_FORWARD (fromIntegral 0)
-        c'swapQuadrants (castPtr d_ptr)
+        case swap of
+         SwapQuadrants -> c'swapQuadrants (castPtr d_ptr)
+         DontSwapQuadrants -> return ()
         return d
   where
     (w,h) = getSize i
     --w' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral w)
     --h' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral h)
 
-idft :: Image DFT D32 -> Image GrayScale D32
-idft d = unsafePerformIO $ do
+idft = idft' SwapQuadrants
+idft' :: Swap -> Image DFT D32 -> Image GrayScale D32
+idft' swap d = unsafePerformIO $ do
   n::(Image GrayScale D32) <- create s
   --z::(Image GrayScale D32) <- create s
   withImage d $ \d_ptr ->
     withImage n $ \n_ptr -> do
       --withImage z $ \z_ptr -> do
-        c'swapQuadrants (castPtr d_ptr)
+        case swap of
+         SwapQuadrants -> c'swapQuadrants (castPtr d_ptr)
+         DontSwapQuadrants -> return ()
+        --c'swapQuadrants (castPtr d_ptr)
         c'cvDFT (castPtr d_ptr) (castPtr n_ptr) c'CV_DXT_INV_SCALE (fromIntegral 0)
         --c'cvSplit (castPtr d_ptr) (castPtr n_ptr) (castPtr z_ptr) nullPtr nullPtr
         return n
   where
     s = getSize d
+
+swapQuadrants img = unsafePerformIO $ do
+            e <- cloneImage img
+            withImage e (c'swapQuadrants . castPtr)
+            return e
 
 dftSplit :: Image DFT D32 -> (Image GrayScale D32, Image GrayScale D32)
 dftSplit d = unsafePerformIO $ do

@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable, UndecidableInstances #-}
 #include "cvWrapLEO.h"
 module CV.Image (
 -- * Basic types
@@ -27,6 +27,7 @@ module CV.Image (
 , lab
 , rgba
 , rgb
+, compose
 , composeMultichannelImage
 
 -- * IO operations
@@ -37,10 +38,9 @@ module CV.Image (
 
 -- * Pixel level access
 , GetPixel(..)
+, SetPixel(..)
 , getAllPixels
 , getAllPixelsRowMajor
-, setPixel
-, setPixel8U
 , mapImageInplace
 
 -- * Image information
@@ -91,10 +91,13 @@ module CV.Image (
 , imageFPTR
 , ensure32F
 
+-- * Extended error handling
+, setCatch
+, CvException
 ) where
 
-import System.Posix.Files
 import System.Mem
+import System.Directory
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -104,6 +107,7 @@ import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
+import CV.Bindings.Error
 
 import Data.Maybe(catMaybes)
 import Data.List(genericLength)
@@ -114,7 +118,13 @@ import Foreign.ForeignPtr (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
+import Data.Complex
+import Data.Complex
 import Control.Monad
+import Control.Exception
+import Data.Data
+import Data.Typeable
+
 
 
 
@@ -192,10 +202,32 @@ rgb = undefined :: Tag RGB
 rgba = undefined :: Tag RGBA
 lab = undefined :: Tag LAB
 
+-- | Typeclass for elements that are build from component elements. For example,
+--   RGB images can be constructed from three grayscale images.
+class Composes a where
+   type Source a :: *
+   compose :: Source a -> a
 
+instance (CreateImage (Image RGBA a)) => Composes (Image RGBA a) where
+   type Source (Image RGBA a) = (Image GrayScale a, Image GrayScale a
+                               ,Image GrayScale a, Image GrayScale a)
+   compose (r,g,b,a) = composeMultichannelImage (Just b) (Just g) (Just r) (Just a) rgba
+
+instance (CreateImage (Image RGB a)) => Composes (Image RGB a) where
+   type Source (Image RGB a) = (Image GrayScale a, Image GrayScale a, Image GrayScale a)
+   compose (r,g,b) = composeMultichannelImage (Just b) (Just g) (Just r) Nothing rgb
+
+instance (CreateImage (Image LAB a)) => Composes (Image LAB a) where
+   type Source (Image LAB a) = (Image GrayScale a, Image GrayScale a, Image GrayScale a)
+   compose (l,a,b) = composeMultichannelImage (Just l) (Just a) (Just b) Nothing lab
+
+{-# DEPRECATED composeMultichannelImage "This is unsafe. Use compose instead" #-}
 composeMultichannelImage :: (CreateImage (Image tp a)) => Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Tag tp -> Image tp a
-composeMultichannelImage (c1)
-                         (c2)
+composeMultichannelImage = composeMultichannel
+
+composeMultichannel :: (CreateImage (Image tp a)) => Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Maybe (Image GrayScale a) -> Tag tp -> Image tp a
+composeMultichannel (c2)
+                         (c1)
                          (c3)
                          (c4)
                          totag
@@ -213,6 +245,7 @@ composeMultichannelImage (c1)
         size = getSize . head . catMaybes $ [c1,c2,c3,c4]
 
 
+-- | Typeclass for CV items that can be read from file. Mainly images at this point.
 class Loadable a where
     readFromFile :: FilePath -> IO a
 
@@ -250,7 +283,7 @@ instance Loadable ((Image GrayScale D8)) where
 --   polymorphic enough to cause run time errors if the declared and actual types of the
 --   images do not match. Use with care.
 unsafeloadUsing x p n = do
-              exists <- fileExist n
+              exists <- doesFileExist n
               if not exists then return Nothing
                             else do
                               i <- withCString n $ \name ->
@@ -267,6 +300,7 @@ loadColorImage = unsafeloadUsing imageTo32F 1
 loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
+-- | Typeclass for elements with a size, such as images and matrices.
 class Sized a where
     type Size a :: *
     getSize :: a -> Size a
@@ -472,12 +506,17 @@ instance GetPixel (Image GrayScale D32) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Float))):: Ptr Float)
 
-{-#INLINE getPixelOld#-}
-getPixelOld (fromIntegral -> x, fromIntegral -> y) image = realToFrac $ unsafePerformIO $
-         withGenImage image $ \img -> {#call wrapGet32F2D#} img y x
+instance GetPixel (Image GrayScale D8) where
+    type P (Image GrayScale D8) = D8
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Word8))):: Ptr Word8)
 
 instance GetPixel (Image DFT D32) where
-    type P (Image DFT D32) = (D32,D32)
+    type P (Image DFT D32) = Complex D32
     {-#INLINE getPixel#-}
     getPixel (x,y) i = unsafePerformIO $
                         withGenImage i $ \c_i -> do
@@ -487,7 +526,7 @@ instance GetPixel (Image DFT D32) where
                                              fs = sizeOf (undefined :: Float)
                                          re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
                                          im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
-                                         return (re,im)
+                                         return (re:+im)
 
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
@@ -797,31 +836,41 @@ withROI pos size image op = unsafePerformIO $ do
                         resetROI image
                         return x
 
+class SetPixel a where
+   type SP a :: *
+   setPixel :: (Int,Int) -> SP a -> a -> IO ()
 
--- | Manipulate image pixels. This is slow, ugly and should be avoided
---setPixel :: (CInt,CInt) -> CDouble -> Image c d -> IO ()
-{-#INLINE setPixelOld#-}
-setPixelOld :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
-setPixelOld (x,y) v image = withGenImage image $ \img ->
-                          {#call wrapSet32F2D#} img (fromIntegral y) (fromIntegral x) (realToFrac v)
+instance SetPixel (Image GrayScale D32) where
+   type SP (Image GrayScale D32) = D32
+   {-#INLINE setPixel#-}
+   setPixel (x,y) v image = withGenImage image $ \c_i -> do
+                                  d <- {#get IplImage->imageData#} c_i
+                                  s <- {#get IplImage->widthStep#} c_i
+                                  poke (castPtr (d`plusPtr` (y*(fromIntegral s)
+                                       + x*sizeOf (0::Float))):: Ptr Float)
+                                       v
 
-{-#INLINE setPixel#-}
-setPixel :: (Int,Int) -> D32 -> Image GrayScale D32 -> IO ()
-setPixel (x,y) v image = withGenImage image $ \c_i -> do
-                                         d <- {#get IplImage->imageData#} c_i
-                                         s <- {#get IplImage->widthStep#} c_i
-                                         poke (castPtr (d`plusPtr` (y*(fromIntegral s)
-                                              + x*sizeOf (0::Float))):: Ptr Float)
-                                              v
+instance SetPixel (Image GrayScale D8) where
+   type SP (Image GrayScale D8) = D8
+   {-#INLINE setPixel#-}
+   setPixel (x,y) v image = withGenImage image $ \c_i -> do
+                             d <- {#get IplImage->imageData#} c_i
+                             s <- {#get IplImage->widthStep#} c_i
+                             poke (castPtr (d`plusPtr` (y*(fromIntegral s)
+                                  + x*sizeOf (0::Word8))):: Ptr Word8)
+                                  v
 
-{-#INLINE setPixel8U#-}
-setPixel8U :: (Int,Int) -> Word8 -> Image GrayScale D8 -> IO ()
-setPixel8U (x,y) v image = withGenImage image $ \c_i -> do
-                                         d <- {#get IplImage->imageData#} c_i
-                                         s <- {#get IplImage->widthStep#} c_i
-                                         poke (castPtr (d`plusPtr` (y*(fromIntegral s)
-                                              + x*sizeOf (0::Word8))):: Ptr Word8)
-                                              v
+instance SetPixel (Image DFT D32) where
+    type SP (Image DFT D32) = Complex D32
+    {-#INLINE setPixel#-}
+    setPixel (x,y) (re:+im) image = withGenImage image $ \c_i -> do
+                             d <- {#get IplImage->imageData#} c_i
+                             s <- {#get IplImage->widthStep#} c_i
+                             let cs = fromIntegral s
+                                 fs = sizeOf (undefined :: Float)
+                             poke (castPtr (d`plusPtr` (y*cs + x*2*fs))) re
+                             poke (castPtr (d`plusPtr` (y*cs + (x*2+1)*fs))) im
+
 
 
 getAllPixels image =  [getPixel (i,j) image
@@ -856,4 +905,20 @@ montage (u',v') space' imgs
                                | y <- [0..v-1] , x <- [0..u-1]
                                | i <- imgs ]
                     return r
+
+data CvException = CvException Int String String String Int
+     deriving (Show, Typeable)
+
+instance Exception CvException
+
+setCatch = do
+   let catch i cstr1 cstr2 cstr3 j = do
+         func <- peekCString cstr1
+         msg  <- peekCString cstr2
+         file <- peekCString cstr3
+         throw (CvException (fromIntegral i) func msg file (fromIntegral j)) 
+         return 0
+   cb <- mk'CvErrorCallback catch
+   c'cvRedirectError cb nullPtr nullPtr
+   c'cvSetErrMode c'CV_ErrModeSilent
 

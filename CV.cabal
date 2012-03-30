@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.5
+Version:             0.3.5.3
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -51,7 +51,7 @@ Flag opencv23
 
 
 Library
-    Build-Tools:       c2hs >= 0.16.0
+    Build-Tools:       c2hs >= 0.16.3
     Include-dirs:      cbits/
     Includes:          opencv/cv.h,
                        opencv/cxcore.h,
@@ -87,8 +87,8 @@ Library
 
     Build-Depends:     base >= 4 && < 6,
                        parallel > 3.1,
-                       unix > 2.3,
                        array >= 0.2.0.0,
+                       directory >= 1 && < 2,
                        mtl >= 1.1.0,
                        random >= 1.0.0,
                        carray >= 0.1.5,
@@ -154,6 +154,7 @@ Library
                        CV.Bindings.ImgProc,
                        CV.Bindings.Tracking,
                        CV.Bindings.Drawing,
+                       CV.Bindings.Error,
                        CV.Bindings.Features,
                        CV.Bindings.Iterators
     Extensions: CPP

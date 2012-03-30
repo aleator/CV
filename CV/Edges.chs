@@ -10,7 +10,9 @@ module CV.Edges (
                 -- | For added safety  we define the possible 
                 --   apertures as constants, since the filters accept only
                 --   specific mask sizes.
+                ,SobelAperture
                 ,sScharr,s1,s3,s5,s7
+                ,LaplacianAperture
                 ,l1,l3,l5,l7
                 ) where
 import Foreign.C.Types
@@ -43,7 +45,7 @@ sobelOp (dx,dy) (Sb aperture)
 sobel dd ap im = unsafeOperate (sobelOp dd ap) im
 
 -- | Aperture sizes for sobel operator
-newtype SobelAperture = Sb Int
+newtype SobelAperture = Sb Int deriving(Eq,Ord,Show,Read)
 -- | Use Scharr mask instead
 sScharr = Sb (-1) 
 s1 = Sb 1
@@ -53,7 +55,7 @@ s7 = Sb 7
 
 
 -- | Aperture sizes for laplacian operator
-newtype LaplacianAperture = L Int
+newtype LaplacianAperture = L Int deriving(Eq,Ord,Show,Read)
 l1 = L 1
 l3 = L 3
 l5 = L 5
