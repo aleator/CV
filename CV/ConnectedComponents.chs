@@ -4,7 +4,9 @@
 module CV.ConnectedComponents
        (
        -- * Working with connected components
-        selectSizedComponents
+        fillConnectedComponents
+       ,maskConnectedComponent
+       ,selectSizedComponents
        ,countBlobs
        -- * Working with Image moments
        -- |Note that these functions should probably go to a different module, since
@@ -40,7 +42,25 @@ import System.IO.Unsafe
 
 import CV.ImageOp
 
+fillConnectedComponents :: Image GrayScale D8 -> (Image GrayScale D8, Int)
+fillConnectedComponents image = unsafePerformIO $ do
+  let
+    count :: CInt
+    count = 0
+  withCloneValue image $ \clone ->
+    withImage clone $ \pclone ->
+      with count $ \pcount -> do
+        c'fillConnectedComponents (castPtr pclone) pcount
+        c <- peek pcount
+        return (clone, fromIntegral c)
 
+maskConnectedComponent :: Image GrayScale D8 -> Int -> Image GrayScale D8
+maskConnectedComponent image index = unsafePerformIO $
+  withCloneValue image $ \clone ->
+    withImage image $ \pimage ->
+      withImage clone $ \pclone -> do
+        c'maskConnectedComponent (castPtr pimage) (castPtr pclone) (fromIntegral index)
+        return clone
 
 -- |Count the number of connected components in the image
 countBlobs :: Image GrayScale D8 -> Int 

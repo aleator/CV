@@ -11,4 +11,8 @@
 
 void wrapFilter2(const CvArr* src, CvArr* dst, const CvMat* kernel, CvPoint *anchor);
 
+void fillConnectedComponents(IplImage* src, int *count);
+
+void maskConnectedComponent(const IplImage *src, IplImage *mask, int id);
+
 #endif
