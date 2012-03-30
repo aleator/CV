@@ -667,7 +667,7 @@ blit image1 image2 (x,y)
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
     | otherwise = withImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
-                    ({#call blitImg#} i1 i2 (fromIntegral y) (fromIntegral x))
+                    ({#call plainBlit#} i1 i2 (fromIntegral y) (fromIntegral x))
     where
      ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
      badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
