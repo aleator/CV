@@ -47,7 +47,7 @@ Extra-Source-Files:
                      examples/elaine.jpg
 Flag opencv23
   Description: Compatability for opencv 2.3.1
-  Default:     False
+  Default:     True
 
 
 Library

@@ -195,8 +195,9 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 -- #endtype
 
 
-
+-- | /Spatial and central moments
 #starttype CvMoments
+-- | spatial moments
 #field m00, CDouble
 #field m10, CDouble
 #field m01, CDouble
@@ -207,7 +208,7 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #field m21, CDouble
 #field m12, CDouble
 #field m03, CDouble
-
+-- | central moments
 #field mu20, CDouble
 #field mu11, CDouble
 #field mu02, CDouble
@@ -215,8 +216,19 @@ mkCvPoint2D32F (x,y) = C'CvPoint2D32f x y
 #field mu21, CDouble
 #field mu12, CDouble
 #field mu03, CDouble
-
+-- | @m00 != 0 ? 1/sqrt(m00) : 0@
 #field inv_sqrt_m00, CDouble
+#stoptype
+
+-- | Hu invariants
+#starttype CvHuMoments
+#field hu1 , CDouble
+#field hu2 , CDouble
+#field hu3 , CDouble
+#field hu4 , CDouble
+#field hu5 , CDouble
+#field hu6 , CDouble
+#field hu7 , CDouble
 #stoptype
 
 #starttype CvTermCriteria
