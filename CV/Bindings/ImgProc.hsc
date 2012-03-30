@@ -224,3 +224,16 @@ emptyUniformHistogramND dims =
 --   CvConnectedComp* comp CV_DEFAULT(NULL),
 --   int flags CV_DEFAULT(4),
 --   CvArr* mask CV_DEFAULT(NULL));@
+
+-- | Labels connected components by flood filling each with a different value.
+--   @
+--   void fillConnectedComponents(const IplImage* img, int *count)@
+
+#ccall fillConnectedComponents , Ptr <IplImage> -> Ptr CInt -> IO ()
+
+-- | Masks a connected component by filling it with white, and filling all
+--   other pixels with black.
+--   @
+--   void maskConnectedComponent(const IplImage *src, IplImage *mask, int id)@
+
+#ccall maskConnectedComponent , Ptr <IplImage> -> Ptr <IplImage> -> CInt -> IO ()
