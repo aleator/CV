@@ -2,24 +2,29 @@
 {-#LANGUAGE OverloadedStrings#-}
 import Shelly
 import Prelude hiding (FilePath)
+import System.Environment
+import Data.String
 
-configure    = command_ "cabal" ["configure","-fopencv23"] []
+configure    = command_ "cabal" ["configure"] . map fromString 
 haddock      = command_ "cabal" ["haddock"] []
 moveToTemp   = command_ "mv"    ["-f","dist/doc","/tmp"] []
 cleanTmp     = command_ "rm"    ["-rf", "/tmp/doc"] []
 moveFromTemp = command_ "cp"    ["-rf","/tmp/doc","dist/"] []
 checkout a   = command_ "git"   ["checkout",a] []
 add          = command_ "git"   ["add","dist/doc/*"] []
-commit       = command_ "git"   ["commit","-m 'documentation updated'"] []
+commit       = command_ "git"   ["commit","-am 'documentation updated'"] []
 
-main = shelly $ verbosely $ do
+main = do 
+      as <- getArgs
+      shelly $ verbosely $ do
       echo "Running haddock"
-      silently haddock
+      silently $ configure as
+      haddock 
       cleanTmp
       moveToTemp
-      silently checkout "gh-pages"
+      silently $ checkout "gh-pages"
       moveFromTemp
       add
       commit
       echo "documentation updated. You can now push `gh-pages` branch to github"
-      silently checkout "VT/development"
+      silently $ checkout "VT/development"
