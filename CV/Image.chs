@@ -671,6 +671,7 @@ tileImages image1 image2 (x,y) = unsafePerformIO $
                                                 i1 i2 x y)
 -- | Blit image2 onto image1.
 blitFix = blit
+blit :: Image GrayScale D32 -> Image GrayScale D32 -> (Int,Int) -> IO ()
 blit image1 image2 (x,y)
     | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
     | otherwise = withImage image1 $ \i1 ->
@@ -680,7 +681,7 @@ blit image1 image2 (x,y)
      ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
      badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
 
-blitM :: (CreateImage (Image c d)) => (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
+-- blitM :: (CreateImage (Image c d)) => (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
 blitM (rw,rh) imgs = resultPic
     where
      resultPic = unsafePerformIO $ do
@@ -888,7 +889,7 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
-montage :: (CreateImage (Image c d)) => (Int,Int) -> Int -> [Image c d] -> Image c d
+montage :: (CreateImage (Image GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
 montage (u',v') space' imgs
     | u'*v' /= (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
     | otherwise              = resultPic

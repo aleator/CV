@@ -53,6 +53,52 @@ copyMakeBorder i t b l r border value =
             (cBorderType border)
             (realToFrac value)
 
+-- moments
+
+-- | Calculates all spatial and central moments up to the 3rd order
+--   @
+--   CVAPI(void) cvMoments(
+--     const CvArr* arr,
+--     CvMoments* moments,
+--     int binary CV_DEFAULT(0));@
+
+#ccall cvMoments , Ptr <CvArr> -> Ptr <CvMoments> -> CInt -> IO ()
+
+-- | Retrieve particular spatial moment (m_xy)
+--   @
+--   CVAPI(double) cvGetSpatialMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetSpatialMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Retrieve particular central moment (mu_xy)
+--   @
+--   CVAPI(double) cvGetCentralMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetCentralMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Retrieve particular normalized central moment (eta_xy)
+--   @
+--   CVAPI(double) cvGetNormalizedCentralMoment(
+--     CvMoments* moments,
+--     int x_order,
+--     int y_order );@
+
+#ccall cvGetNormalizedCentralMoment , Ptr <CvMoments> -> CInt -> CInt -> IO (CDouble)
+
+-- | Calculates 7 Hu's invariants from precalculated spatial and central moments
+--   @
+--   CVAPI(void) cvGetHuMoments(
+--     CvMoments* moments,
+--     CvHuMoments* hu_moments );@
+
+#ccall cvGetHuMoments , Ptr <CvMoments> -> Ptr <CvHuMoments> -> IO ()
+
 -- CVAPI(void) cvCornerHarris(
 --   const CvArr* image,
 --   CvArr* harris_responce,
@@ -102,4 +148,93 @@ emptyUniformHistogramND dims =
     withArray dims $ \c_sizes ->
     c'cvCreateHist 1 c_sizes c'CV_HIST_ARRAY nullPtr 1
 
-#ccall cvFindContours, Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr (Ptr <CvSeq>) -> Cint -> CInt -> CInt-> Ptr <CvPoint>
+-- #ccall cvFindContours, Ptr <CvArr> -> Ptr <CvMemStorage> -> Ptr (Ptr <CvSeq>) -> Cint -> CInt -> CInt-> Ptr <CvPoint>
+-- thresholding types
+
+-- | value = value > threshold ? max_value : 0 
+#num CV_THRESH_BINARY
+-- | value = value > threshold ? 0 : max_value
+#num CV_THRESH_BINARY_INV
+-- | value = value > threshold ? threshold : value
+#num CV_THRESH_TRUNC
+-- | value = value > threshold ? value : 0
+#num CV_THRESH_TOZERO
+-- | value = value > threshold ? 0 : value
+#num CV_THRESH_TOZERO_INV
+#num CV_THRESH_MASK
+-- | Use Otsu algorithm to choose the optimal threshold value;
+--   combine the flag with one of the above CV_THRESH_* values.
+--   Note: when using this, the threshold value is ignored.
+#num CV_THRESH_OTSU
+
+-- | CV_THRESH_OTSU | CV_THRESH_BINARY
+#num CV_THRESH_OTSU_BINARY
+-- | CV_THRESH_OTSU | CV_THRESH_BINARY_INV
+#num CV_THRESH_OTSU_BINARY_INV
+-- | CV_THRESH_OTSU | CV_THRESH_TRUNC
+#num CV_THRESH_OTSU_TRUNC
+-- | CV_THRESH_OTSU | CV_THRESH_TOZERO
+#num CV_THRESH_OTSU_TOZERO
+-- | CV_THRESH_OTSU | CV_THRESH_TOZERO
+#num CV_THRESH_OTSU_TOZERO_INV
+
+-- | Applies fixed-level threshold to grayscale image.
+--   This is a basic operation applied before retrieving contours.
+--   @
+--   CVAPI(double) cvThreshold(
+--   const CvArr* src, 
+--   CvArr* dst,
+--   double threshold,
+--   double  max_value,
+--   int threshold_type);@
+
+#ccall cvThreshold , Ptr <CvArr> -> Ptr <CvArr> -> CDouble -> CDouble -> CInt -> IO (CDouble)
+
+-- | Threshold for each pixel is the mean calculated from /block_size/
+--   neighborhood, minus /param1/.
+#num CV_ADAPTIVE_THRESH_MEAN_C
+-- | Threshold for each pixel is the gaussian mean calculated from /block_size/
+--   neighborhood, minus /param1/
+#num CV_ADAPTIVE_THRESH_GAUSSIAN_C
+
+-- | Applies adaptive threshold to grayscale image.
+--   The two parameters for methods CV_ADAPTIVE_THRESH_MEAN_C and
+--   CV_ADAPTIVE_THRESH_GAUSSIAN_C are:
+--   neighborhood size (3, 5, 7 etc.),
+--   and a constant subtracted from mean (...,-3,-2,-1,0,1,2,3,...)
+--   @
+--   CVAPI(void) cvAdaptiveThreshold(
+--   const CvArr* src,
+--   CvArr* dst,
+--   double max_value,
+--   int adaptive_method CV_DEFAULT(CV_ADAPTIVE_THRESH_MEAN_C),
+--   int threshold_type CV_DEFAULT(CV_THRESH_BINARY),
+--   int block_size CV_DEFAULT(3),
+--   double param1 CV_DEFAULT(5));@
+
+#ccall cvAdaptiveThreshold , Ptr <CvArr> -> Ptr <CvArr> -> CDouble -> CInt -> CInt -> CInt -> CDouble -> IO ()
+
+-- | Fills the connected component until the color difference gets large enough
+--   @
+--   CVAPI(void) cvFloodFill(
+--   CvArr* image,
+--   CvPoint seed_point,
+--   CvScalar new_val,
+--   CvScalar lo_diff CV_DEFAULT(cvScalarAll(0)),
+--   CvScalar up_diff CV_DEFAULT(cvScalarAll(0)),
+--   CvConnectedComp* comp CV_DEFAULT(NULL),
+--   int flags CV_DEFAULT(4),
+--   CvArr* mask CV_DEFAULT(NULL));@
+
+-- | Labels connected components by flood filling each with a different value.
+--   @
+--   void fillConnectedComponents(const IplImage* img, int *count)@
+
+#ccall fillConnectedComponents , Ptr <IplImage> -> Ptr CInt -> IO ()
+
+-- | Masks a connected component by filling it with white, and filling all
+--   other pixels with black.
+--   @
+--   void maskConnectedComponent(const IplImage *src, IplImage *mask, int id)@
+
+#ccall maskConnectedComponent , Ptr <IplImage> -> Ptr <IplImage> -> CInt -> IO ()
