@@ -543,6 +543,20 @@ instance GetPixel (Image RGB D32) where
                                          b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
                                          return (r,g,b)
 
+instance GetPixel (Image LAB D32) where
+    type P (Image LAB D32) = (D32,D32,D32)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
+
 getPixelOldRGB (fromIntegral -> x, fromIntegral -> y) image
         = unsafePerformIO $ do
                      withGenImage image $ \img -> do
