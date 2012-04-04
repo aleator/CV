@@ -4,13 +4,12 @@
 module CV.Matrix
     (
     Exists(..),
-    Matrix, emptyMatrix ,fromList,toList,toRows,toCols,get,put,withMatPtr
+    Matrix, emptyMatrix, fromFunction, fromList,toList,toRows,toCols,get,put,withMatPtr
     , transpose, mxm, rodrigues2
     )where
 
 {-#OPTIONS_GHC -fwarn-unused-imports#-}
 
-import System.Posix.Files
 import System.Mem
 
 import Foreign.C.Types
@@ -64,8 +63,16 @@ instance Exists (Matrix Int) where
     type Args (Matrix Int) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC1)
 
+instance Exists (Matrix (Int,Int)) where
+    type Args (Matrix (Int,Int)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC2)
+
 instance Exists (Matrix (Float,Float)) where
     type Args (Matrix (Float,Float)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
+
+instance Exists (Matrix (CFloat,CFloat)) where
+    type Args (Matrix (CFloat,CFloat)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
 
 instance Exists (Matrix (Float,Float,Float)) where
@@ -74,6 +81,10 @@ instance Exists (Matrix (Float,Float,Float)) where
 
 instance Exists (Matrix (Int,Int,Int,Int)) where
     type Args (Matrix (Int,Int,Int,Int)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
+
+instance Exists (Matrix (CInt,CInt,CInt,CInt)) where
+    type Args (Matrix (CInt,CInt,CInt,CInt)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
 
 instance Exists (Matrix Double) where
@@ -136,6 +147,12 @@ mxm m1@(Matrix a_m) m2@(Matrix b_m) = unsafePerformIO $ do
 
 withMatPtr :: Matrix x -> (Ptr C'CvMat -> IO a) -> IO a
 withMatPtr (Matrix m) op = withForeignPtr m op
+
+-- | Generate a matrix from a index function
+fromFunction  :: (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int))
+                  => (Int,Int) -> ((Int,Int) -> t) -> Matrix t
+
+fromFunction s@(w,h) f = fromList s [f (x,y) | x <- [0..w-1], y<-[0..h-1]]
 
 -- | Convert a list of floats into Matrix
 fromList :: forall t . (Storable t, Exists (Matrix t), Args (Matrix t) ~ (Int,Int))

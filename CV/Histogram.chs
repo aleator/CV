@@ -11,8 +11,8 @@ import Data.Array.ST
 import Foreign.C.Types
 import Foreign.ForeignPtr
 import Foreign.Marshal.Array
+import Foreign.Marshal.Alloc
 import Foreign.Ptr
-import C2HSTools hiding (unsafePerformIO)
 import CV.Bindings.Types
 import qualified CV.Bindings.ImgProc as I
 import System.IO.Unsafe
@@ -20,7 +20,7 @@ import Utils.Pointer
 
 -- import Utils.List
 
-newtype (Num a) => HistogramData a = HGD [(a,a)]
+newtype HistogramData a = HGD [(a,a)]
 
 -- | Given a set of images, such as the color channels of color image, and
 --   a histogram with corresponding number of channels, replace the pixels of
@@ -29,11 +29,11 @@ backProjectHistogram :: [Image GrayScale D8] -> I.Histogram -> Image GrayScale D
 backProjectHistogram images@(img:_) (I.Histogram hist) = unsafePerformIO $ do
     r <- cloneImage img
     withImage r $ \c_r ->
-     withPtrList (map imageFPTR images) $ \ptrs -> 
+     withPtrList (map imageFPTR images) $ \ptrs ->
       withForeignPtr hist $ \c_hist ->
         I.c'cvCalcArrBackProject (castPtr ptrs) (castPtr c_r) c_hist
     return r
-backProjectHistogram _ _ = error "Empty list of images" 
+backProjectHistogram _ _ = error "Empty list of images"
 
 -- | Calculate an opencv histogram object from set of images, each with it's
 -- own number of bins.
@@ -42,17 +42,17 @@ histogram :: [(Image GrayScale D8, Int)] -> Bool -> Maybe (Image GrayScale D8)
 
 histogram imageBins accumulate mask  = unsafePerformIO $
  I.creatingHistogram $ do
-        hist <-  I.emptyUniformHistogramND ds 
-        withPtrList (map imageFPTR images) $ \ptrs -> 
+        hist <-  I.emptyUniformHistogramND ds
+        withPtrList (map imageFPTR images) $ \ptrs ->
          case mask of
-            Just m -> do 
+            Just m -> do
                 withImage m $ \c_mask -> do
                 I.c'cvCalcArrHist (castPtr ptrs) hist c_accumulate (castPtr c_mask)
                 return hist
-            Nothing -> do 
+            Nothing -> do
                 I.c'cvCalcArrHist (castPtr ptrs) hist c_accumulate (nullPtr)
                 return hist
-   where 
+   where
     (images,ds) = unzip imageBins
     c_accumulate = 0
 
@@ -63,15 +63,15 @@ histogram imageBins accumulate mask  = unsafePerformIO $
 --                 hg <- buildHistogram cbins image
 --                 bins <-  mapM (getBin hg) [0..cbins-1]
 --                 let avg = sum bins / (fromIntegral.length) bins
---                 let u3 = sum.map (\(value,bin) -> 
+--                 let u3 = sum.map (\(value,bin) ->
 --                                     (value-avg)*(value-avg)*(value-avg)
 --                                     *bin) $
---                            zip binValues bins 
---                 let u2 = sum.map (\(value,bin) -> 
+--                            zip binValues bins
+--                 let u2 = sum.map (\(value,bin) ->
 --                                     (value-avg)*(value-avg)
 --                                     *bin) $
---                            zip binValues bins 
-----                
+--                            zip binValues bins
+----
 --                 return (u3 / (sqrt u2*sqrt u2*sqrt u2))
 --                where
 --                 cbins :: CInt
@@ -89,7 +89,7 @@ cmpIntersect a b = sum $ zipWith min a b
 cmpEuclidian a b = sum $ (zipWith (\x y -> (x-y)^2) a b)
 cmpAbs a b = sum $ (zipWith (\x y -> abs (x-y)) a b)
 
-chiSqrHG  a b = chiSqr (values a) (values b) 
+chiSqrHG  a b = chiSqr (values a) (values b)
 chiSqr a b = sum $ zipWith (calc) a b
     where
      calc a b = (a-b)*(a-b) `divide` (a+b)
@@ -102,13 +102,13 @@ liftBins op (HGD a) = zip (op bins) values
 liftValues op (HGD a) = zip bins (op values)
             where (bins,values) = unzip a
 
-sub (HGD a) (HGD b) | bins a == bins b 
+sub (HGD a) (HGD b) | bins a == bins b
                     = HGD $ zip (bins a) values
                 where
                  bins a = map fst a
                  msnd = map snd
                  values = zipWith (-) (msnd a) (msnd b)
-              
+
 
 noBins (HGD a) = length a
 
@@ -116,7 +116,7 @@ getPositivePart (HGD a) = HGD $ dropWhile ((<0).fst) a
 tcumulate [] = []
 tcumulate values = tail $ scanl (+) 0 values
 
---getCumulativeNormalHistogram binCount image 
+--getCumulativeNormalHistogram binCount image
 --    = HGD $ zip bins $ tcumulate values
 --    where
 --        HGD lst = getNormalHistogram binCount image
@@ -124,45 +124,45 @@ tcumulate values = tail $ scanl (+) 0 values
 --        values :: [Double]
 --        (bins,values) = unzip lst
 
-weightedHistogram img weights start end binCount = unsafePerformIO $ 
-    withImage img $ \i -> 
+weightedHistogram img weights start end binCount = unsafePerformIO $
+    withImage img $ \i ->
      withImage weights $ \w -> do
       bins <- mallocArray (fromIntegral binCount)
-      {#call get_weighted_histogram#} i w (realToFrac start) 
-                                          (realToFrac end) 
+      {#call get_weighted_histogram#} i w (realToFrac start)
+                                          (realToFrac end)
                                           (fromIntegral binCount) bins
       r <- peekArray binCount bins >>= return.map realToFrac
       free bins
       return r
 
 -- TODO: Add binary images
-simpleGetHistogram :: Image GrayScale D32 -> Maybe (Image GrayScale D8) 
+simpleGetHistogram :: Image GrayScale D32 -> Maybe (Image GrayScale D8)
                        -> D32 -> D32 -> Int -> Bool -> [D32]
 simpleGetHistogram img mask start end binCount cumulative = unsafePerformIO $
     withImage img $ \i -> do
-      bins <- mallocArray binCount    
+      bins <- mallocArray binCount
       let isCum | cumulative == True  = 1
                 | cumulative == False = 0
-                
+
       case mask of
         (Just msk) -> do
                    withImage msk $ \m -> do
-                    {#call get_histogram#} i m (realToFrac start) (realToFrac end) 
+                    {#call get_histogram#} i m (realToFrac start) (realToFrac end)
                                                isCum (fromIntegral binCount) bins
-        Nothing  -> {#call get_histogram#} i (nullPtr) 
-                                             (realToFrac start) (realToFrac end) 
+        Nothing  -> {#call get_histogram#} i (nullPtr)
+                                             (realToFrac start) (realToFrac end)
                                              isCum (fromIntegral binCount) bins
 
       r <- peekArray binCount bins >>= return.map realToFrac
       free bins
-      return r        
+      return r
 
-       
-       
-        
+
+
+
 --getNormalHistogram bins image = HGD new
 --    where
---        (HGD lst) = getHistogram bins image 
+--        (HGD lst) = getHistogram bins image
 ----
 ----        value :: [Double]
 --        bin   :: [Double]
@@ -171,11 +171,11 @@ simpleGetHistogram img mask start end binCount cumulative = unsafePerformIO $
 --        size = fromIntegral $ uncurry (*) $ getSize image
 
 --getHistogram :: Int -> Image GrayScale D32 -> HistogramData Double
---getHistogram bins image = unsafePerformIO $ do 
---                            h <- buildHistogram cbins image 
---                            values <- mapM (getBin h) 
---                                        [0..fromIntegral bins-1] 
---                            return.HGD $ 
+--getHistogram bins image = unsafePerformIO $ do
+--                            h <- buildHistogram cbins image
+--                            values <- mapM (getBin h)
+--                                        [0..fromIntegral bins-1]
+--                            return.HGD $
 --                                zip [-1,-1+2/(realToFrac bins)..1] values
 --                        where
 --                         cbins = fromIntegral bins

@@ -12,7 +12,7 @@ import CV.Bindings.ImgProc
 import CV.Image
 import CV.Operations
 import CV.Iterators
-import C2HSTools
+import System.IO.Unsafe
 
 type HarrisDesc = Float
 

@@ -1,5 +1,7 @@
 {-#LANGUAGE ForeignFunctionInterface, TypeFamilies, FlexibleInstances#-}
 #include "cvWrapLEO.h"
+{-#OPTIONS_GHC -fwarn-unused-imports#-}
+
 -- | This module is a collection of various image filters
 module CV.Filters(gaussian,gaussianOp
               ,blurOp,blur,blurNS
@@ -9,16 +11,19 @@ module CV.Filters(gaussian,gaussianOp
               ,secondMomentAdaptiveBinarize,secondMomentAdaptiveBinarizeOp
               ,selectiveAvg,convolve2D,convolve2DI,haar,haarAt
               ,IntegralImage(),integralImage,verticalAverage) where
+
 import Foreign.C.Types
-import Foreign.C.String
-import Foreign.ForeignPtr
 import Foreign.Ptr
+import Foreign.Marshal.Utils
+import CV.Bindings.ImgProc
 
-import CV.Image 
+import Utils.GeometryClass
+import CV.Matrix (Matrix,withMatPtr)
 import CV.ImageOp
-import Debug.Trace
 
-import C2HSTools
+import System.IO.Unsafe
+
+--import C2HSTools
 {#import CV.Image#}
 
 -- Low level wrapper for Susan filtering:
@@ -145,13 +150,17 @@ maskIsOk (w,h) = odd w && odd h && w >0 && h>0
 -- Convolve image with specified kernel stored in flat list.
 -- Kernel must have dimensions (w,h) and specified anchor point
 -- (x,y) within (0,0) and (w,h)
-convolve2D (w,h) (x,y) kernel image = unsafePerformIO $ 
-                                      withImage image $ \img->
-                                      withArray kernel $ \k ->
-                                      creatingImage $
-                                       {#call wrapFilter2D#} 
-                                        img x y w h k
-
+convolve2D :: (Point2D anchor, ELP anchor ~ Int) => 
+              Matrix D32 -> anchor -> Image GrayScale D32 -> Image GrayScale D32
+convolve2D kernel anchor image = unsafePerformIO $ 
+                                      let result = emptyCopy image
+                                      in withGenImage image $ \c_img->
+                                         withGenImage result $ \c_res->
+                                         withMatPtr kernel $ \c_mat ->
+                                         with (convertPt anchor) $ \c_pt ->
+                                         c'wrapFilter2 c_img c_res c_mat c_pt
+                                         >> return result
+                                    
 convolve2DI (x,y) kernel image = unsafePerformIO $ 
                                       withImage image $ \img->
                                       withImage kernel $ \k ->

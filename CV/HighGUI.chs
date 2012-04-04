@@ -6,8 +6,6 @@ import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
-import C2HSTools
-
 import CV.Image
 {#import CV.Image#}
 import CV.ImageOp

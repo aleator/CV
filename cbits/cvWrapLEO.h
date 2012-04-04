@@ -9,9 +9,13 @@
 #endif
 
 #include <stdio.h>
-#include <opencv/cv.h>
-#include <opencv/cxcore.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/video/tracking.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/legacy/compat.hpp>
 #include <complex.h>
 
 IplImage* wrapCreateImage32F(const int width, const int height, const int channels);
@@ -19,11 +23,13 @@ IplImage* wrapCreateImage64F(const int width, const int height, const int channe
 
 IplImage* wrapCreateImage8U(const int width, const int height, const int channels);
 
+IplImage *wrapCopyMakeBorder(IplImage* src, const int top, const int bottom, const int left, const int right, const int borderType, const float value);
+
 void wrapSubRS(const CvArr *src, double s,CvArr *dst);
 void wrapSubS(const CvArr *src, double s,CvArr *dst);
 void wrapAddS(const CvArr *src, double s, CvArr *dst);
 
-double wrapAvg(const CvArr *src);
+double wrapAvg(const CvArr *src, const CvArr *mask);
 double wrapStdDev(const CvArr *src);
 double wrapStdDevMask(const CvArr *src,const CvArr *mask);
 double wrapSum(const CvArr *src);
@@ -238,16 +244,12 @@ IplImage* vignettingModelX2Cyl(int w, int h,double m, double s, double c);
 void wrapDrawText(CvArr *img, char *text, float s, int x, int y,float r,float g,float b);
 
 IplImage* vignettingModelB3(int w, int h,double b1, double b2, double b3);
-inline CvPoint2D64f toNormalizedCoords(CvSize area, CvPoint from);
-inline CvPoint fromNormalizedCoords(CvSize area, CvPoint2D64f from);
-inline double eucNorm(CvPoint2D64f p);
 IplImage* vignettingModelP(int w, int h,double scalex, double scaley, double max);
 IplImage* wrapPerspective(IplImage* src, double a1, double a2, double a3
                                        , double a4, double a5, double a6
                                        , double a7, double a8, double a9);
 IplImage* simplePerspective(double k,IplImage *src);
 double bilinearInterp(IplImage *tex, double u, double v);
-inline CvPoint2D64f fromNormalizedCoords64f(CvSize area, CvPoint2D64f from);
 void findHomography(double* srcPts, double *dstPts, int noPts, double *homography);
 void masked_merge(IplImage *src1, IplImage *mask, IplImage *src2, IplImage *dst);
 IplImage* makeEvenUp(IplImage *src);
@@ -304,9 +306,20 @@ cvEllipseBox(img, *box, *color, thickness, lineType, shift);
 void extractCVSeq(const CvSeq* seq,void *dest);
 
 void printSeq(const CvSeq *seq) {
-printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %d",
-       seq->flags, seq->header_size, seq->total, seq->ptr);
+printf("Seq:\n flags %d\nheader_size %d\n total %d\n ptr %p",
+       seq->flags, seq->header_size, seq->total, (void*)seq->ptr);
 }
+
+int wrapMeanShift(const CvArr* prob_image, CvRect *window, CvTermCriteria *criteria, CvConnectedComp* comp)
+{
+return cvMeanShift(prob_image, *window, *criteria, comp);
+};
+
+void wrapMinAreaRect2(const CvArr* points, CvMemStorage* storage, CvBox2D *r)
+{ *r = cvMinAreaRect2(points, storage); }
+
+void wrapBoundingRect(CvArr* points, int update, CvRect *r)
+{ *r = cvBoundingRect(points, update); }
 
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h

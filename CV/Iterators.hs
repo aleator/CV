@@ -10,10 +10,11 @@ module CV.Iterators
 import Data.Maybe
 import Foreign.Ptr
 import Foreign.ForeignPtr
+import Foreign.Storable
 import CV.Bindings.Types
 import CV.Bindings.Iterators
 import CV.Image
-import C2HSTools
+import System.IO.Unsafe
 
 type F32I = Ptr C'F32_image_iterator
 

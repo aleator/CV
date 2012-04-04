@@ -27,17 +27,19 @@ module CV.Calibration
     -- * Camera calibration
     ,calibrateCamera2) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
+
 import Foreign.C.Types
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Storable
 import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Data.Bits
 
 import CV.Image 
 
-import C2HSTools
+import System.IO.Unsafe
 import Utils.Point
 import Control.Applicative
 
@@ -89,8 +91,8 @@ refineChessboardCorners img pts (winW,winH) (zeroW,zeroH) = unsafePerformIO $ do
         c'wrapFindCornerSubPix c_img c_corners (length pts) winW winH zeroW zeroH tType maxIter epsilon 
         map fromPt `fmap` peekArray (length pts) c_corners
  where
-    mkPt (x,y) = C'CvPoint2D32f x y
-    fromPt (C'CvPoint2D32f x y) = (x,y)
+    mkPt (x,y) = C'CvPoint2D32f (realToFrac x) (realToFrac y)
+    fromPt (C'CvPoint2D32f x y) = (realToFrac x,realToFrac y)
     tType = c'CV_TERMCRIT_ITER
     maxIter = 100
     epsilon = 0.01

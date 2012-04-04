@@ -12,7 +12,7 @@ data Stream m a = Terminated | Value (m (a,Stream m a))
 sideEffect :: (Monad m) => (a -> m ()) -> Stream m a -> Stream m a
 sideEffect p Terminated = Terminated
 sideEffect p (Value next) = Value renext
-	where 
+	where
 	  renext = do
                 (r,n) <- next
                 p r
@@ -22,13 +22,13 @@ sideEffect p (Value next) = Value renext
 listToStream [] = Terminated
 listToStream (l:lst) = Value (return (l,listToStream lst))
 repeatS x = Value (return (x,repeatS x))
-repeatSM x = sequenceS (repeatS x) 
+repeatSM x = sequenceS (repeatS x)
 -- | Create a stream by iterating a monadic action
 iterateS op n = Value cont
-	where 
+	where
          cont = do
 		 r <- op n
-		 return $ (n,iterateS op r) 
+		 return $ (n,iterateS op r)
 
 -- | Pure and monadic left fold over a stream
 foldS op i Terminated = return i
@@ -45,7 +45,6 @@ mergeTimeStreamsWith sa sb op a b = fmap (\(t,(a,b)) -> (t,(op a b))) $ mergeTi
 mergeManyW starts op streams = snd $ foldl1 (\(s,m) (s1,n) -> ((op s s1),mergeTimeStreamsWith s s1 op m n)) (zip starts streams)
 
 mergeS Terminated _ = Terminated
-mergeS _ Terminated = Terminated
 mergeS _ Terminated = Terminated
 mergeS (Value xs) (Value ys) = Value renext
     where
@@ -71,13 +70,13 @@ mergeE (l,r) (Value xs) = Value renext
 
 push x Terminated = Value (return (x,Terminated))
 push x xs = Value (return (x,xs))
- 
+
 
 -- | Map over a stream
 instance (Monad m) => Functor (Stream m) where
     fmap _ Terminated   = Terminated
     fmap f (Value next) = Value renext
-	where 
+	where
 	  renext = do
 		    (r,n) <- next
 		    return (f r,fmap f n)
@@ -86,21 +85,21 @@ instance (Monad m) => Applicative (Stream m) where
     pure f  = repeatS f
     Terminated <*> _ = Terminated
     _ <*> Terminated = Terminated
-    (Value a) <*> (Value b) = Value renext 
-      where 
+    (Value a) <*> (Value b) = Value renext
+      where
       renext = do
         (fun,anext) <- a
         (br,bnext)  <- b
         return (fun br,anext<*>bnext)
-		
+
 zipS a b = (,) <$> a <*> b
-                
+
 --
 sequenceS :: (Monad m) => Stream m (m a) -> (Stream m a)
 sequenceS Terminated = Terminated
 sequenceS (Value next) = Value $ do
 			    (op,n) <- next
-			    r <- op	
+			    r <- op
 		            return (r,sequenceS n)
 
 mapMS :: (Monad m) => (a -> m b) -> Stream m a -> Stream m b
@@ -115,7 +114,7 @@ dropS n next = Value renext
          drop 0 s = return s
          drop _ Terminated = return Terminated
          drop n (Value next) =  do
-            (r,ne) <- next 
+            (r,ne) <- next
             drop (n-1) ne
          renext = do
             r <- drop n next
@@ -182,4 +181,4 @@ runLast l (Value s) = do
    	 runLast n next
 
 runLast1 s = runLast (error "Empty Stream") s
-			 
+

@@ -4,6 +4,8 @@ module CV.TemplateMatching where
 
 import Foreign.C.Types
 import Foreign.Ptr
+import Foreign.Storable
+import Foreign.Marshal.Alloc
 
 import CV.Image
 import CV.Transforms
@@ -13,7 +15,7 @@ import Utils.Point
 import Utils.Rectangle hiding (scale)
 
 {#import CV.Image#}
-import C2HSTools
+import System.IO.Unsafe
 
 getTemplateMap image template = unsafePerformIO $
 	   withImage image $ \cvimg ->
