@@ -9,5 +9,6 @@
 
 IplImage *read_from_tcr(const char *path, unsigned int **timestamp_array);
 IplImage *read_from_tcr_rectified(const char *path);
+IplImage *read_from_tcr_mag(const char *path);
 
 #endif

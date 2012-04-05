@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module CV.Operations
 ( clear
 , set
@@ -6,6 +7,7 @@ module CV.Operations
 , unitNormalize
 , unitStretch
 , logNormalize
+, cartToPolar
 ) where
 
 import CV.Bindings.Core
@@ -78,3 +80,16 @@ unitNormalize i
 unitStretch i = normalize 0 1 NormMinMax i
 
 logNormalize = unitNormalize . IM.log . (1 |+)
+
+cartToPolar :: (Image GrayScale D32, Image GrayScale D32) -> (Image GrayScale D32, Image GrayScale D32)
+cartToPolar (x,y) = unsafePerformIO $ do
+  r::(Image GrayScale D32) <- create (w, h)
+  a::(Image GrayScale D32) <- create (w, h)
+  withImage x $ \px ->
+    withImage y $ \py ->
+      withImage r $ \pr ->
+        withImage a $ \pa -> do
+          c'cvCartToPolar (castPtr px) (castPtr py) (castPtr pr) (castPtr pa) (fromIntegral 0)
+          return (r,a)
+  where
+    (w,h) = getSize x
