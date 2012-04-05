@@ -538,9 +538,23 @@ instance GetPixel (Image RGB D32) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          let cs = fromIntegral s
                                              fs = sizeOf (undefined :: Float)
-                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
                                          g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
-                                         b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
+
+instance  GetPixel (Image RGB D8) where
+    type P (Image RGB D8) = (D8,D8,D8)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: D8)
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
                                          return (r,g,b)
 
 instance GetPixel (Image LAB D32) where
@@ -552,18 +566,10 @@ instance GetPixel (Image LAB D32) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          let cs = fromIntegral s
                                              fs = sizeOf (undefined :: Float)
-                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
-                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         l <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         a <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
                                          b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
-                                         return (r,g,b)
-
-getPixelOldRGB (fromIntegral -> x, fromIntegral -> y) image
-        = unsafePerformIO $ do
-                     withGenImage image $ \img -> do
-                              r <- {#call wrapGet32F2DC#} img y x 0
-                              g <- {#call wrapGet32F2DC#} img y x 1
-                              b <- {#call wrapGet32F2DC#} img y x 2
-                              return (realToFrac r,realToFrac g, realToFrac b)
+                                         return (l,a,b)
 
 -- | Perform (a destructive) inplace map of the image. This should be wrapped inside
 -- withClone or an image operation
@@ -581,19 +587,6 @@ mapImageInplace f image = withGenImage image $ \c_i -> do
                    poke (castPtr (d `plusPtr` (y*cs+x*fs))) (f v)
 
 
-instance  GetPixel (Image RGB D8) where
-    type P (Image RGB D8) = (D8,D8,D8)
-    {-#INLINE getPixel#-}
-    getPixel (x,y) i = unsafePerformIO $
-                        withGenImage i $ \c_i -> do
-                                         d <- {#get IplImage->imageData#} c_i
-                                         s <- {#get IplImage->widthStep#} c_i
-                                         let cs = fromIntegral s
-                                             fs = sizeOf (undefined :: D8)
-                                         r <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
-                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
-                                         b <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
-                                         return (r,g,b)
 
 
 convertTo :: CInt -> CInt -> BareImage -> BareImage
@@ -874,6 +867,18 @@ instance SetPixel (Image GrayScale D8) where
                              poke (castPtr (d`plusPtr` (y*(fromIntegral s)
                                   + x*sizeOf (0::Word8))):: Ptr Word8)
                                   v
+
+instance SetPixel (Image RGB D32) where
+    type SP (Image RGB D32) = (D32,D32,D32)
+    {-#INLINE setPixel#-}
+    setPixel (x,y) (r,g,b) image = withGenImage image $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         poke (castPtr (d`plusPtr` (y*cs +x*3*fs)))     b
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g 
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
 instance SetPixel (Image DFT D32) where
     type SP (Image DFT D32) = Complex D32
