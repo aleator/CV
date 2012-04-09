@@ -101,11 +101,11 @@ mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
 mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
 
 mapImage ::
-     (CreateImage (Image a b),
-      SetPixel (Image a b),
+     (CreateImage (Image c d),
+      SetPixel (Image c d),
       Num (P (Image a b)),
       GetPixel (Image a b)) =>
-     (P (Image a b) -> SP (Image a b)) -> Image a b -> Image a b
+     (P (Image a b) -> SP (Image c d)) -> Image a b -> Image c d
 mapImage f = toImage . mapPixels f . fromImage
 
 
