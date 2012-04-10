@@ -6,6 +6,7 @@ module CV.Pixelwise (Pixelwise(..)
                     ,fromImage
                     ,fromFunction
                     ,toImage
+                    ,toImagePar
                     ,remap
                     ,remapImage
                     ,mapImage
@@ -17,7 +18,7 @@ module CV.Pixelwise (Pixelwise(..)
 import Control.Applicative
 import CV.Image
 import System.IO.Unsafe
-import Control.Parallel.Strategies
+import Control.Concurrent.ParallelIO.Local
 
 -- | A wrapper for allowing functor and applicative instances for non-polymorphic image types.
 data Pixelwise x = MkP {sizeOf :: (Int,Int)
@@ -87,6 +88,11 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
                   ]
         return img
 
+toImagePar n (MkP (w,h) e) = unsafePerformIO $ withPool n $ \pool ->do
+        img <- create (w,h)
+        parallel_ pool [sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]] | j <- [0..h-1]]
+        return img
+
 remapImage ::
      (CreateImage (Image a b),
       SetPixel (Image a b),
@@ -107,7 +113,6 @@ mapImage ::
       GetPixel (Image a b)) =>
      (P (Image a b) -> SP (Image c d)) -> Image a b -> Image c d
 mapImage f = toImage . mapPixels f . fromImage
-
 
 
 -- | Convert a function into construct into a Pixelwise construct

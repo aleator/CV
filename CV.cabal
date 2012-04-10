@@ -100,6 +100,7 @@ Library
                        bindings-DSL >= 1.0.14 && < 1.1,
                        vector >= 0.7.0.1 && < 1.1,
                        lazysmallcheck >= 0.5 && < 1,
+                       parallel-io >= 0.3.2 && < 3.3,
                        storable-tuple >= 0.0.2 && <= 1
     Exposed-modules:   CV.Image                               
                        ,CV.Arbitrary                          
