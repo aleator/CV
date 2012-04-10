@@ -77,7 +77,16 @@ fromImage i = MkP size getP
         getP (x,y) | x>=0 && x<w && y>=0 && y<h = getPixel (x,y) i
                    | otherwise = 0
 
--- | Convert an image to pixelwise construct.
+-- | Convert a pixelwise construct to image.
+toImagePar :: (SetPixel (Image a b), CreateImage (Image a b))
+           => Int -> Pixelwise (SP (Image a b)) -> Image a b
+toImagePar n (MkP (w,h) e) = unsafePerformIO $ withPool n $ \pool -> do
+        img <- create (w,h)
+        parallel_ pool [sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
+                       |j <- [0..h-1]]
+        return img
+
+-- | Convert a pixelwise construct to image.
 toImage :: (SetPixel (Image a b), CreateImage (Image a b))
            => Pixelwise (SP (Image a b)) -> Image a b
 toImage (MkP (w,h) e) = unsafePerformIO $ do
@@ -123,15 +132,6 @@ imageFromFunction :: (SetPixel (Image a b), CreateImage (Image a b)) =>
                      (Int,Int) -> ((Int,Int) -> (SP (Image a b))) -> Image a b
 imageFromFunction size = toImage . fromFunction size
 
-
--- toImageP :: Pixelwise D32 -> Image GrayScale D32
--- toImageP (MkP (w,h) e) = unsafePerformIO $ do
---         img <- create (w,h)
---         let rs = parMap rdeepseq (\j -> unsafePerformIO (
---                                           sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
---                                           >> return True))
---                                  [0..h-1]
---         all (==True) rs `seq` return img
 
 -- | Shorthand for `a <$> fromImage b`
 (<$$>) :: (Num (P b1), Size b1 ~ (Int, Int), Sized b1, GetPixel b1) => (P b1 -> b) -> b1 -> Pixelwise b
