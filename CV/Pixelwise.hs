@@ -97,11 +97,6 @@ toImage (MkP (w,h) e) = unsafePerformIO $ do
                   ]
         return img
 
-toImagePar n (MkP (w,h) e) = unsafePerformIO $ withPool n $ \pool ->do
-        img <- create (w,h)
-        parallel_ pool [sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]] | j <- [0..h-1]]
-        return img
-
 remapImage ::
      (CreateImage (Image a b),
       SetPixel (Image a b),
