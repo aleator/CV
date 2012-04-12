@@ -3,8 +3,10 @@
 {-#OPTIONS_GHC -fwarn-unused-imports#-}
 
 -- | This module is a collection of various image filters
-module CV.Filters(gaussian,gaussianOp
+module CV.Filters(
+               gaussian,gaussianOp
               ,blurOp,blur,blurNS
+              ,bilateral
               ,HasMedianFiltering,median
               ,susan,getCentralMoment,getAbsCentralMoment
               ,getMoment,secondMomentBinarize,secondMomentBinarizeOp
@@ -77,10 +79,16 @@ secondMomentAdaptiveBinarizeOp w h t = ImgOp $ \image ->
                                 (\i-> {#call smab#} i w h t)
 secondMomentAdaptiveBinarize w h t i = unsafeOperate (secondMomentAdaptiveBinarizeOp w h t) i
 
-data SmoothType = BlurNoScale | Blur 
-                | Gaussian | Median 
-                | Bilateral
-                deriving(Enum)
+#c
+enum SmoothType {
+    BlurNoScale =  CV_BLUR_NO_SCALE,
+    Blur        =  CV_BLUR,
+    Gaussian    =  CV_GAUSSIAN,
+    Median      =  CV_MEDIAN ,
+    Bilateral   =  CV_BILATERAL      
+};
+#endc
+{#enum SmoothType {}#}
 
 {#fun cvSmooth as smooth' 
     {withGenImage* `Image GrayScale D32'
@@ -88,39 +96,35 @@ data SmoothType = BlurNoScale | Blur
     ,`Int',`Int',`Int',`Float',`Float'}
     -> `()'#}
 
-gaussianOp (w,h) 
-    | maskIsOk (w,h) = ImgOp $ \img -> 
-                               smooth' img img (fromEnum Gaussian) w h 0 0
+
+-- | Image operation which applies gaussian or unifarm smoothing with a given window size to the image.
+gaussianOp,blurOp,blurNSOp :: (Int, Int) -> ImageOperation GrayScale D32
+gaussianOp m =  withMask m $ \(w,h) img -> smooth' img img (fromEnum Gaussian) w h 0 0
+blurOp m = withMask m $ \(w,h) img -> smooth' img img (fromEnum Blur) w h 0 0
+blurNSOp m = withMask m $ \(w,h) img -> smooth' img img (fromEnum BlurNoScale) w h 0 0
+
+-- | Create a new image by applying gaussian, or uniform smoothing.
+gaussian,blur,blurNS :: (Int, Int) -> Image GrayScale D32 -> Image GrayScale D32
+gaussian = unsafeOperate . gaussianOp
+blur     = unsafeOperate . blurOp
+blurNS   = unsafeOperate . blurNSOp
+
+withMask (w,h) op 
+    | maskIsOk (w,h) = ImgOp $ op (w,h)
     | otherwise = error "One of aperture dimensions is incorrect (should be >=1 and odd))"
 
-gaussian = unsafeOperate.gaussianOp
 
-blurOp (w,h) 
-    | maskIsOk (w,h) = ImgOp $ \img -> 
-                               smooth' img img (fromEnum Blur) w h 0 0
-    | otherwise = error "One of aperture dimensions is incorrect (should be >=1 and odd))"
 
-blurNSOp (w,h) 
-    | maskIsOk (w,h) = ImgOp $ \img -> 
-                               smooth' img img (fromEnum BlurNoScale) w h 0 0
-    | otherwise = error "One of aperture dimensions is incorrect (should be >=1 and odd))"
-
-blur size image = let r = unsafeOperate (blurOp size) image
-                in  r
-blurNS size image = let r = unsafeOperate (blurNSOp size) image
-                in  r
-
--- | TODO: This doesn't give a reasonable result. Investigate
-bilateral :: Int -> Int -> Image GrayScale D8 -> Image GrayScale D8
-bilateral colorS spaceS img = unsafePerformIO $ 
+-- | Apply bilateral filtering 
+bilateral :: (Int,Int) -> (Int,Int) -> Image a D8 -> Image a D8
+bilateral (w,h) (s1,s2) img = unsafePerformIO $ 
             withClone img $ \clone ->
              withGenImage img $ \cimg ->
               withGenImage clone $ \ccln -> do
                    {#call cvSmooth#} cimg ccln  (fromIntegral $ fromEnum Bilateral)
-                        (fromIntegral colorS) (fromIntegral spaceS) 0 0
+                        (fromIntegral w) (fromIntegral h) 
+                        (realToFrac s1) (realToFrac s2) 
 
-
--- TODO: The type is not exactly correct
 
 class HasMedianFiltering a where
     median :: (Int,Int) -> a -> a
