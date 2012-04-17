@@ -105,6 +105,260 @@ float calc_dy(float *pos, uint_t stride)
   return d;
 }
 
+#define C_PI 3.14159265358979323846
+const float pi = C_PI;
+const float dir_diff_small = C_PI / 8;
+const float dir_diff_large = C_PI / 4;
+
+float direction_difference(float a, float b)
+{
+  float diff = a - b;
+  if (diff < 0) diff = -diff;
+  if (diff > pi) diff = 2*pi - diff;
+  return diff;
+}
+/*
+bool is_same_direction(float a, float b, float diff)
+{
+  float lower_bound, upper_bound;
+
+  lower_bound = a - diff;
+  upper_bound = b + diff;
+  
+  if (lower_bound < -pi) {
+    return ((((lower_bound + 2*pi) < b) || -pi < b) && b < upper_bound)
+  }
+  else
+  if (upper_bound > pi) {
+    return (lower_bound < b && (b < pi || b < (upper_bound - 2*pi))); 
+  }
+  else {
+    return (lower_bound < b && b < upper_bound);
+  }
+  return false;
+}
+*/
+
+float calc_directionality_1(float *pos, uint_t stride)
+{
+  float result, dir_c, dir_a, dir_b, dir_diff_s1, dir_diff_s2, value, diff_s, diff_c;
+  
+  result = 0;
+  dir_c = *pos;
+  if (direction_difference(dir_c, pi) < dir_diff_small || direction_difference(dir_c, 0) < dir_diff_small) {
+    dir_a = *(pos - stride);
+    dir_b = *(pos + stride);
+    
+    value = *(pos - stride - 1);
+    dir_diff_s1 = direction_difference(dir_c, value);
+    value = *(pos - 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    value = (*pos + stride - 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    dir_diff_s1 /= 3;
+    
+    value = *(pos - stride + 1);
+    dir_diff_s2 = direction_difference(dir_c, value);
+    value = *(pos + 1);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    value = *(pos + stride + 1);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    dir_diff_s2 /= 3;
+    
+    if (dir_diff_s1 > dir_diff_s2) {
+      diff_s = dir_diff_s1;
+    }
+    else {
+      diff_s = dir_diff_s2;
+    }
+    
+    if (diff_s > dir_diff_small) {
+      diff_c = direction_difference(dir_c, dir_a);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+      diff_c = direction_difference(dir_c, dir_b);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+    }
+  }
+  return result;
+}
+
+float calc_directionality_2(float *pos, uint_t stride)
+{
+  float result, dir_c, dir_a, dir_b, dir_diff_s1, dir_diff_s2, value, diff_s, diff_c;
+  
+  result = 0;
+  dir_c = *pos;
+  if (direction_difference(dir_c, 3*pi/4) < dir_diff_small || direction_difference(dir_c, -pi/4) < dir_diff_small) {
+    dir_a = *(pos - stride + 1);
+    dir_b = *(pos + stride - 1);
+    
+    value = *(pos - stride - 1);
+    dir_diff_s1 = direction_difference(dir_c, value);
+    value = *(pos - stride);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    value = (*pos - 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    dir_diff_s1 /= 3;
+    
+    value = *(pos + stride + 1);
+    dir_diff_s2 = direction_difference(dir_c, value);
+    value = *(pos + stride);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    value = *(pos + 1);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    dir_diff_s2 /= 3;
+    
+    if (dir_diff_s1 > dir_diff_s2) {
+      diff_s = dir_diff_s1;
+    }
+    else {
+      diff_s = dir_diff_s2;
+    }
+    
+    if (diff_s > dir_diff_small) {
+      diff_c = direction_difference(dir_c, dir_a);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+      diff_c = direction_difference(dir_c, dir_b);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+    }
+  }
+  return result;
+}
+
+float calc_directionality_3(float *pos, uint_t stride)
+{
+  float result, dir_c, dir_a, dir_b, dir_diff_s1, dir_diff_s2, value, diff_s, diff_c;
+  
+  result = 0;
+  dir_c = *pos;
+  if (direction_difference(dir_c, pi/2) < dir_diff_small || direction_difference(dir_c, -pi/2) < dir_diff_small) {
+    dir_a = *(pos + 1);
+    dir_b = *(pos - 1);
+    
+    value = *(pos - stride - 1);
+    dir_diff_s1 = direction_difference(dir_c, value);
+    value = *(pos - stride);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    value = (*pos - stride + 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    dir_diff_s1 /= 3;
+    
+    value = *(pos + stride - 1);
+    dir_diff_s2 = direction_difference(dir_c, value);
+    value = *(pos + stride);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    value = *(pos + stride + 1);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    dir_diff_s2 /= 3;
+    
+    if (dir_diff_s1 > dir_diff_s2) {
+      diff_s = dir_diff_s1;
+    }
+    else {
+      diff_s = dir_diff_s2;
+    }
+    
+    if (diff_s > dir_diff_small) {
+      diff_c = direction_difference(dir_c, dir_a);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+      diff_c = direction_difference(dir_c, dir_b);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+    }
+  }
+  return result;
+}
+
+float calc_directionality_4(float *pos, uint_t stride)
+{
+  float result, dir_c, dir_a, dir_b, dir_diff_s1, dir_diff_s2, value, diff_s, diff_c;
+  
+  result = 0;
+  dir_c = *pos;
+  if (direction_difference(dir_c, pi/4) < dir_diff_small || direction_difference(dir_c, -3*pi/4) < dir_diff_small) {
+    dir_a = *(pos + stride + 1);
+    dir_b = *(pos - stride - 1);
+    
+    value = *(pos - stride);
+    dir_diff_s1 = direction_difference(dir_c, value);
+    value = *(pos - stride + 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    value = (*pos + 1);
+    dir_diff_s1 += direction_difference(dir_c, value);
+    dir_diff_s1 /= 3;
+    
+    value = *(pos - 1);
+    dir_diff_s2 = direction_difference(dir_c, value);
+    value = *(pos + stride - 1);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    value = *(pos + stride);
+    dir_diff_s2 += direction_difference(dir_c, value);
+    dir_diff_s2 /= 3;
+    
+    if (dir_diff_s1 > dir_diff_s2) {
+      diff_s = dir_diff_s1;
+    }
+    else {
+      diff_s = dir_diff_s2;
+    }
+    
+    if (diff_s > dir_diff_small) {
+      diff_c = direction_difference(dir_c, dir_a);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+      diff_c = direction_difference(dir_c, dir_b);
+      if (diff_c < dir_diff_small) {
+        result += 1.0;
+      }
+      else
+      if (diff_c < diff_s) {
+        result += 0.5;
+      }
+    }
+  }
+  return result;
+}
+
 IplImage *read_from_tcr(const char *path, uint_t **timestamp_array)
 {
   IplImage *dst;
@@ -307,16 +561,24 @@ IplImage *derivative_direction(IplImage *src, float ignore_val, float ignore_eps
     tr_pos = tr_data + y * tr_stride + 2;
     ta_pos = ta_data + y * ta_stride + 2;
     for (x = 2; x < width - 2; x++, dst_pos++, tr_pos++, ta_pos++) {
-      a = *ta_pos;
+      a = calc_directionality_1(ta_pos, ta_stride) + 
+          0.5 * calc_directionality_2(ta_pos, ta_stride) +
+          calc_directionality_3(ta_pos, ta_stride) +
+          0.5 * calc_directionality_4(ta_pos, ta_stride);
+      /*
       asum = calc_sum9(ta_pos, ta_stride);
       amean = asum / 9;
+      */
       /*r = sqrt(dx*dx+dy*dy);*/
+      /*
       if (abs(a - amean) > 0.3) {
         *dst_pos = a;
       }
       else {
         *dst_pos = 0;
       }
+      */
+      *dst_pos = a;
     }
   }
 
@@ -735,11 +997,11 @@ void equalize_histogram(IplImage *img, float ignore_val, float ignore_eps)
   printf("%f ", hist[0]);
   hist[0] /= count;
   for (i = 1; i < 256; i++) {
-    printf("(%.2f,", hist[i]);
+    /*printf("(%.2f,", hist[i]);*/
     hist[i] = (hist[i] / count) + hist[i-1];
-    printf("%.2f) ", hist[i]);
+    /*printf("%.2f) ", hist[i]);*/
   }
-  printf("\n");
+  /*printf("\n");*/
 
   for (y = 0; y < height; y++) {
     img_pos = img_data + y * img_stride;
@@ -840,7 +1102,7 @@ IplImage *read_from_tcr_mag(const char *path)
   printf("read\n");
   src = read_from_tcr(path, &timestamps);
   printf("filter\n");
-  tmp1 = filter_mean(src, 1, 0, 0.001);
+  tmp1 = filter_mean(src, 3, 0, 0.001);
   cvReleaseImage(&src);
   printf("derivate\n");
   tmp2 = derivative_direction(tmp1, 0, 0.001);
@@ -851,6 +1113,14 @@ IplImage *read_from_tcr_mag(const char *path)
   dst = to_8bit(tmp2);
   cvReleaseImage(&tmp2);
   cvSaveImage("tcr_mag.png", dst, 0);
+  return dst;
+}
+
+IplImage *calc_derivative_direction(IplImage *src)
+{
+  IplImage *dst;
+  dst = derivative_direction(src, 0, 0.001);
+  equalize_histogram(dst, 0, 0.001);
   return dst;
 }
 

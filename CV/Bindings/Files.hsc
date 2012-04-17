@@ -16,3 +16,5 @@ import CV.Image(BareImage)
 #ccall read_from_tcr_rectified , CString -> IO (Ptr BareImage)
 
 #ccall read_from_tcr_mag , CString -> IO (Ptr BareImage)
+
+#ccall calc_derivative_direction , Ptr BareImage -> IO (Ptr BareImage)
