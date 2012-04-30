@@ -477,10 +477,10 @@ grayToRGB :: Image GrayScale D32 -> Image RGB D32
 grayToRGB = S . convertTo (fromIntegral . fromEnum $ CV_GRAY2BGR) 3 . unS
 
 
-bgrToRgb :: Image BGR depth -> Image RGB depth
+bgrToRgb :: Image BGR D8 -> Image RGB D8
 bgrToRgb = S . swapRB . unS
 
-rgbToBgr :: Image BGR depth -> Image RGB depth
+rgbToBgr :: Image RGB D8 -> Image BGR D8
 rgbToBgr = S . swapRB . unS
 
 swapRB :: BareImage -> BareImage
@@ -538,6 +538,32 @@ instance GetPixel (Image RGB D32) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          let cs = fromIntegral s
                                              fs = sizeOf (undefined :: Float)
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
+instance GetPixel (Image BGR D32) where
+    type P (Image BGR D32) = (D32,D32,D32)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: Float)
+                                         b <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
+                                         g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
+                                         r <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
+                                         return (r,g,b)
+instance  GetPixel (Image BGR D8) where
+    type P (Image BGR D8) = (D8,D8,D8)
+    {-#INLINE getPixel#-}
+    getPixel (x,y) i = unsafePerformIO $
+                        withGenImage i $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: D8)
                                          b <- peek (castPtr (d`plusPtr` (y*cs +x*3*fs)))
                                          g <- peek (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs)))
                                          r <- peek (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs)))
@@ -644,13 +670,32 @@ emptyCopy :: (CreateImage (Image a b)) => Image a b -> (Image a b)
 emptyCopy img = unsafePerformIO $ create (getSize img)
 
 -- | Save image. This will convert the image to 8 bit one before saving
-saveImage :: FilePath -> Image c d -> IO ()
-saveImage filename image = do
-                           fpi <- imageTo8Bit $ unS image
-                           withCString  filename $ \name  ->
-                            withGenBareImage fpi    $ \cvArr ->
-							 alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
+class Save a where
+    save :: FilePath -> a -> IO () 
 
+instance Save (Image BGR D32) where
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
+
+instance Save (Image RGB D32) where
+    save filename image = primitiveSave filename (swapRB . unS . unsafeImageTo8Bit $ image)
+
+instance Save (Image RGB D8) where
+    save filename image = primitiveSave filename  (swapRB . unS $ image)
+
+instance Save (Image GrayScale D8) where
+    save filename image = primitiveSave filename (unS $ image)
+
+instance Save (Image GrayScale D32) where
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
+     
+primitiveSave :: FilePath -> BareImage -> IO ()
+primitiveSave filename fpi = do 
+       withCString  filename $ \name  ->
+        withGenBareImage fpi    $ \cvArr ->
+         alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
+
+saveImage :: (Save (Image c d)) => FilePath -> Image c d ->  IO ()
+saveImage = save
 
 getArea :: (Sized a,Num b, Size a ~ (b,b)) => a -> b
 getArea = uncurry (*).getSize
