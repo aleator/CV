@@ -119,7 +119,11 @@ scale (a,b) (Rectangle x y s1 s2)
                   (round (a*fromIntegral s1),round (b*fromIntegral s2))
 
 
-toInt (Rectangle a b c d)
+fromInt (Rectangle a b c d)
     = Rectangle (f a) (f b) (f c) (f d)
  where f = fromIntegral
+
+roundR (Rectangle a b c d)
+    = Rectangle (f a) (f b) (f c) (f d)
+ where f = round
 

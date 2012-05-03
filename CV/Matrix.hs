@@ -5,10 +5,9 @@ module CV.Matrix
     (
     Exists(..),
     Matrix, emptyMatrix, fromFunction, fromList,toList,toRows,toCols,get,put,withMatPtr
-    , transpose, mxm, rodrigues2
+    , transpose, mxm, rodrigues2, identity
     )where
 
-{-#OPTIONS_GHC -fwarn-unused-imports#-}
 
 import System.Mem
 
@@ -91,6 +90,10 @@ instance Exists (Matrix Double) where
     type Args (Matrix Double) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC1)
 
+instance Exists (Matrix (Double,Double)) where
+    type Args (Matrix (Double,Double)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC2)
+
 instance Sized (Matrix a) where
     type Size (Matrix a) = (Int,Int)
     getSize (Matrix e) = unsafePerformIO $ withForeignPtr e $ \mat -> do
@@ -102,6 +105,7 @@ instance Sized (Matrix a) where
 emptyMatrix :: Exists (Matrix a) => Args (Matrix a) -> Matrix a
 emptyMatrix a = create a
 
+-- | Create an identity matrix
 identity :: (Num a, Sized (Matrix a), Args (Matrix a) ~ (Int,Int),  Size (Matrix a) ~ (Int,Int),  Storable a, Exists (Matrix a)) =>
              (Matrix a) -> Matrix a
 identity a = unsafePerformIO $ do
