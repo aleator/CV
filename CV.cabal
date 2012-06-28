@@ -49,6 +49,9 @@ Flag opencv23
   Description: Compatability for opencv 2.3.1
   Default:     False
 
+Flag opencv24
+  Description: Compatability for opencv 2.4
+  Default:     False
 
 Library
     Build-Tools:       c2hs >= 0.16.3
@@ -71,6 +74,9 @@ Library
     if flag(opencv23)
         cpp-options: -DOpenCV23
         cc-options: -DOpenCV23
+    if flag(opencv24)
+        cpp-options: -DOpenCV24
+        cc-options: -DOpenCV24
     cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,

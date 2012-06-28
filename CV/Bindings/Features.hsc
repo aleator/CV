@@ -30,7 +30,9 @@ import CV.Bindings.Types
 #field edgeBlurSize, Int
 #stoptype
 
+#ifndef OpenCV24
 #ccall wrapExtractMSER, Ptr <CvArr> -> Ptr <CvArr> -> Ptr (Ptr <CvSeq>) -> Ptr <CvMemStorage> -> Ptr <CvMSERParams> -> IO ()
+#endif
 
 #ccall cvMoments ,  Ptr <CvArr> -> Ptr <CvMoments> -> Int -> IO ()
 #ccall cvGetSpatialMoment, Ptr <CvMoments> -> CInt -> CInt -> IO CDouble
