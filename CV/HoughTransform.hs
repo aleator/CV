@@ -89,3 +89,11 @@ houghLinesMultiscale img n ρ θ t distDiv angleDiv = unsafePerformIO $ do
         withImage img $ \c_img ->
             c'cvHoughLines2 (castPtr c_img) (castPtr c_m) c'CV_HOUGH_MULTI_SCALE ρ θ t distDiv angleDiv
     return $ toList m
+
+houghCirclesGradient :: Image GrayScale D8 -> Int -> Double -> Double -> Double -> Double -> Int -> Int -> [(CFloat, CFloat, CFloat)]
+houghCirclesGradient img n dp minDist cannyThresh accumThresh minRad maxRad = unsafePerformIO $ do
+    let m :: Matrix (CFloat,CFloat,CFloat) = create (1,n)
+    withMatPtr m $ \c_m ->
+        withImage img $ \c_img ->
+            c'cvHoughCircles (castPtr c_img) (castPtr c_m) c'CV_HOUGH_GRADIENT dp minDist cannyThresh accumThresh minRad maxRad
+    return $ toList m
