@@ -1,6 +1,8 @@
 {-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
 module CV.Features (SURFParams, defaultSURFParams, getSURF
+#ifndef OpenCV24
                    ,getMSER, MSERParams, mkMSERParams, defaultMSERParams
+#endif
                    ,moments,Moments,getSpatialMoment,getCentralMoment,getNormalizedCentralMoment) where
 import CV.Image
 import CV.Bindings.Types
@@ -13,6 +15,7 @@ import Foreign.Marshal.Utils
 import Utils.GeometryClass
 import System.IO.Unsafe
 
+#ifndef OpenCV24
 newtype MSERParams = MP C'CvMSERParams deriving (Show)
 
 -- | Create parameters for getMSER.
@@ -49,6 +52,7 @@ getMSER image mask (MP params) = unsafePerformIO $
       pts :: [C'CvPoint] <- cvSeqToList ctr
       return (map convertPt pts)
 
+#endif
 
 -- TODO: Move this to some utility module
 withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α

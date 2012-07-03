@@ -78,6 +78,10 @@ instance Exists (Matrix (Float,Float,Float)) where
     type Args (Matrix (Float,Float,Float)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC3)
 
+instance Exists (Matrix (CFloat,CFloat,CFloat)) where
+    type Args (Matrix (CFloat,CFloat,CFloat)) = (Int,Int)
+    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC3)
+
 instance Exists (Matrix (Int,Int,Int,Int)) where
     type Args (Matrix (Int,Int,Int,Int)) = (Int,Int)
     create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
@@ -240,4 +244,3 @@ put (Matrix m) row col v = withForeignPtr m $ \mat -> do
 putRaw :: forall t. (Storable t) => Ptr t -> CInt -> Int -> Int -> Int -> t -> IO ()
 putRaw d step eltSize col row v =
          poke (castPtr (d `plusPtr` (col*(fromIntegral step)+row*eltSize))) v
-
