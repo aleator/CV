@@ -768,7 +768,7 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
                                 withImage image1Alpha $ \i1a ->
                                  withImage image2Alpha $ \i2a ->
                                   withImage image2 $ \i2 ->
-                                   ({#call alphaBlit#} i1 i1a i2 i2a x y)
+                                   ({#call alphaBlit#} i1 i1a i2 i2a y x)
 
 
 -- | Create a copy of an image
