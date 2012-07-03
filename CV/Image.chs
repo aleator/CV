@@ -115,7 +115,7 @@ import Data.List(genericLength)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
-import Foreign.ForeignPtr (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
@@ -256,28 +256,28 @@ instance Loadable ((Image GrayScale D32)) where
         e <- loadImage fp
         case e of
          Just i -> return i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image RGB D32)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
          Just i -> return $ unsafeImageTo32F $ bgrToRgb i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image RGB D8)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
          Just i -> return $ bgrToRgb i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image GrayScale D8)) where
     readFromFile fp = do
         e <- loadImage8 fp
         case e of
          Just i -> return i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 
 -- | This function loads and converts image to an arbitrary format. Notice that it is
