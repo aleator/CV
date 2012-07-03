@@ -292,9 +292,11 @@ void wrapExtractSURF(const CvArr* image, const CvArr* mask, CvSeq** keypoints, C
 return cvExtractSURF(image, mask, keypoints, descriptors, storage, *param, useProvidedKeyPts);
 };
 
+#ifndef OpenCV24
 void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
 cvExtractMSER( _img, _mask, contours, storage, *params );
 };
+#endif
 
 void wrapEllipseBox(CvArr* img, CvBox2D *box, CvScalar *color
                    ,int thickness, int lineType, int shift)
