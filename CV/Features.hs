@@ -106,7 +106,7 @@ getSURF (SP params) image mask = unsafePerformIO $
     ptr_keypoints <- peek ptr_ptr_keypoints
     ptr_descriptors <- peek ptr_ptr_descriptors
     a <- cvSeqToList ptr_keypoints
-    b <- if c'CvSURFParams'extended params /= 1
+    b <- if c'CvSURFParams'extended params == 1
            then do
             es :: [FloatBlock128] <- cvSeqToList ptr_descriptors
             return (map (\(FP128 e) -> e) es)
