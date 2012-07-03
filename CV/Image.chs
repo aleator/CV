@@ -98,6 +98,7 @@ module CV.Image (
 
 import System.Mem
 import System.Directory
+import System.FilePath
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -690,6 +691,8 @@ instance Save (Image GrayScale D32) where
      
 primitiveSave :: FilePath -> BareImage -> IO ()
 primitiveSave filename fpi = do 
+       exists <- doesDirectoryExist (takeDirectory filename)
+       when (not exists) $ throw (CvIOError $ "Directory does not exist: " ++ (takeDirectory filename))
        withCString  filename $ \name  ->
         withGenBareImage fpi    $ \cvArr ->
          alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
@@ -974,7 +977,10 @@ montage (u',v') space' imgs
 data CvException = CvException Int String String String Int
      deriving (Show, Typeable)
 
+data CvIOError = CvIOError String deriving (Show,Typeable)
+
 instance Exception CvException
+instance Exception CvIOError
 
 setCatch = do
    let catch i cstr1 cstr2 cstr3 j = do
