@@ -124,7 +124,7 @@ getHomography srcPts dstPts =
                          {#call findHomography#} c_src c_dst (fromIntegral $ length srcPts) c_hmg
                          peekArray (3*3) c_hmg
     where
-     flatten = concatMap (\(a,b) -> [a,b]) 
+     flatten = map realToFrac . concatMap (\(a,b) -> [a,b]) 
      src = flatten srcPts
      dst = flatten dstPts
 
