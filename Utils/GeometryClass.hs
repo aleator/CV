@@ -1,4 +1,4 @@
-{-#LANGUAGE TypeFamilies,FlexibleInstances#-}
+{-#LANGUAGE TypeFamilies,FlexibleInstances, FlexibleContexts#-}
 module Utils.GeometryClass where
 
 import Utils.Rectangle
@@ -14,10 +14,19 @@ instance Point2D (Int,Int) where
    pt = id
    toPt = id
 
+instance Point2D (Float,Float) where
+   type ELP (Float,Float) = Float
+   pt = id
+   toPt = id
+
 instance Point2D (Double,Double) where
    type ELP (Double,Double) = Double
    pt = id
    toPt = id
+
+-- | Extract integer coordinates of a point
+ipt :: (Point2D a,RealFrac (ELP a)) => a -> (Int,Int)
+ipt = (\(x,y) -> (round x, round y)) . pt
 
 convertPt :: (Point2D a, Point2D b, ELP a ~ ELP b) => a -> b
 convertPt = toPt . pt
