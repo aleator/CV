@@ -1,5 +1,5 @@
 {-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
-module CV.Features (SURFParams, defaultSURFParams, getSURF
+module CV.Features (SURFParams, defaultSURFParams, mkSURFParams, getSURF
 #ifndef OpenCV24
                    ,getMSER, MSERParams, mkMSERParams, defaultMSERParams
 #endif
