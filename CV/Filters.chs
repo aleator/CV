@@ -132,6 +132,9 @@ class HasMedianFiltering a where
 instance HasMedianFiltering (Image GrayScale D8) where
     median = median'
 
+instance HasMedianFiltering (Image GrayScale D32) where
+    median a = unsafeImageTo32F . median' a . unsafeImageTo8Bit
+
 instance HasMedianFiltering (Image RGB D8) where
     median = median'
 
