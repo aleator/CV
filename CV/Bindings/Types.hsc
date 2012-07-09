@@ -9,6 +9,7 @@ import Foreign.Marshal.Utils
 import Foreign.Marshal.Array
 import Utils.GeometryClass
 import Utils.Rectangle
+import qualified Data.Vector.Unboxed as U
 import GHC.Float
 
 #strict_import
@@ -87,6 +88,15 @@ cvSeqToList ptrseq = do
    dest <- mallocArray (fromIntegral $ c'CvSeq'total seq)
    c'extractCVSeq ptrseq (castPtr dest)
    peekArray (fromIntegral $ c'CvSeq'total seq) dest
+
+-- | A version of `cvSeqToList` that returns a vector instead. All the warnings of `CvSeqToList` apply.
+cvSeqToVector :: (U.Unbox a, Storable a) => Ptr C'CvSeq -> IO (U.Vector a)
+cvSeqToVector ptrseq = do
+   seq <- peek ptrseq
+   dest <- mallocArray (fromIntegral $ c'CvSeq'total seq)
+   c'extractCVSeq ptrseq (castPtr dest)
+   U.generateM (fromIntegral $ c'CvSeq'total seq) (peekElemOff dest)
+   -- peekArray (fromIntegral $ c'CvSeq'total seq) dest
 
 
 #starttype CvRect
