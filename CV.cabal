@@ -63,12 +63,10 @@ Library
                        opencv/highgui.h,
                        cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
-                       cbits/cvWrapFeatures.h,
                        cbits/wrapImgProc.h,
                        cbits/cvIterators.h
     c-sources:         cbits/cvWrapLEO.c,
                        cbits/cvWrapCore.c,
-                       cbits/cvWrapFeatures.c,
                        cbits/wrapImgProc.c,
                        cbits/cvIterators.c
     install-includes:  cbits/cvWrapLEO.h,

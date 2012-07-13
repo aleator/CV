@@ -889,8 +889,8 @@ void calculateAtan(IplImage *src, IplImage *dst)
 {
   CvSize imageSize = cvGetSize(dst);
   double r=0; int i; int j;
-  for(i=0; i<imageSize.width; ++i)
-    for(j=0; j<imageSize.height; ++j) {
+  for(j=0; j<imageSize.width; ++j)
+    for(i=0; i<imageSize.height; ++i) {
           r = FGET(src,j,i); //// cvGetReal2D(src,j,i);
           FGET(dst,j,i) = atan(r);
           //cvSet2D(dst,j,i,cvScalarAll(atan(r)));
@@ -900,8 +900,8 @@ void calculateAtan(IplImage *src, IplImage *dst)
 void calculateAtan2(IplImage *src1,IplImage *src2, IplImage *dst)
 {
   CvSize imageSize = cvGetSize(dst);
-  for(int i=0; i<imageSize.width; ++i)
-    for(int j=0; j<imageSize.height; ++j) {
+  for(int j=0; j<imageSize.width; ++j)
+    for(int i=0; i<imageSize.height; ++i) {
           double a = FGET(src1,j,i);
           double b = FGET(src2,j,i);
           FGET(dst,j,i) = atan2(a,b);
