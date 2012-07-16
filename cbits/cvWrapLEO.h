@@ -321,6 +321,8 @@ void wrapMinAreaRect2(const CvArr* points, CvMemStorage* storage, CvBox2D *r)
 void wrapBoundingRect(CvArr* points, int update, CvRect *r)
 { *r = cvBoundingRect(points, update); }
 
+void blitShadow(IplImage *a, IplImage *b);
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo

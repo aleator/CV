@@ -222,11 +222,26 @@ reconstructFromLaplacian pyramid = foldl1 (\a b -> (pyrUp a) #+ b) (pyramid)
   --   safeAdd x y = sameSizePad y x #+ y  
 
 -- TODO: Could have wider type
--- |Enlarge image so, that it's size is divisible by 2^n 
+-- |Enlargen the image so that its size is divisible by 2^n. Fill the area
+--  outside the image with black.
 enlarge :: Int -> Image GrayScale D32 -> Image GrayScale D32
 enlarge n img =  unsafePerformIO $ do
                    i <- create (w2,h2)
                    blit i img (0,0)
+                   return i
+    where
+     (w,h) = getSize img
+     (w2,h2) = (pad w, pad h)
+     pad x = x + (np - x `mod` np)
+     np = 2^n
+
+-- | Enlargen the image so that its size is is divisible by 2^n. Replicate
+--   the border of the image.
+enlargeShadow :: Int -> Image GrayScale D32 -> Image GrayScale D32
+enlargeShadow n img =  unsafePerformIO $ do
+                   i <- create (w2,h2)
+                   withImage img $ \c_img -> 
+                    withImage i  $ \c_i   -> {#call blitShadow#} c_i c_img 
                    return i
     where
      (w,h) = getSize img

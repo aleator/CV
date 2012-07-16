@@ -454,6 +454,30 @@ void blitImg(IplImage *a, IplImage *b,int offset_x, int offset_y)
 // printf("Done!\n"); fflush(stdout);
 }
 
+// Assuming a is the bigger image
+void blitShadow(IplImage *a, IplImage *b)
+{
+ CvSize sa = cvGetSize(a);
+ CvSize sb = cvGetSize(b);
+
+ for ( int i=0; i<sb.width; i++ )
+  for ( int j=0; j<sb.height; j++ )
+   FGET(a,i,j) = FGET(b,i,j);
+
+ for ( int i=sb.width; i<sa.width; i++ )
+  for ( int j=0; j<sb.height; j++ )
+   FGET(a,i,j) = FGET(b,sb.width-1,j);
+
+ for ( int i=0; i<sb.width; i++ )
+  for ( int j=sb.height; j<sa.height; j++ )
+   FGET(a,i,j) = FGET(b,i,sb.height-1);
+
+ for ( int i=sb.width; i<sa.width; i++ )
+  for ( int j=sb.height; j<sa.height; j++ )
+   FGET(a,i,j) = FGET(b,sb.width-1,sb.height-1);
+
+}
+
 IplImage* makeEvenDown(IplImage *src)
 {
  CvSize size = cvGetSize(src);
