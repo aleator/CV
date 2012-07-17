@@ -205,6 +205,21 @@ safePyrDown img = evenize result
      result = pyrDown img 
      (w,h)  = getSize result 
 
+-- | Enlargen the image so that its size is a power of two.
+minEnlarge :: Image GrayScale D32 -> Image GrayScale D32
+minEnlarge i = enlargeShadow (min (ceiling (logBase 2 (f w))) (ceiling (logBase 2 (f h)))) i
+    where 
+     f = fromIntegral
+     (w,h) = getSize i
+
+-- | Calculate an infinite gaussian pyramid of an image while keeping track of
+--   various corner cases and gotchas.
+gaussianPyramid :: Image GrayScale D32 -> [Image GrayScale D32]
+gaussianPyramid = iterate pyrDown' . minEnlarge
+    where 
+     pyrDown' i = let (w,h) = getSize i
+                  in if (w`div`2) <=1 || (h`div`2) <= 1 then i else pyrDown i
+
 -- |Calculate the laplacian pyramid of an image up to the nth level.
 --  Notice that the image size must be divisible by 2^n or opencv 
 --  will abort (TODO!)
