@@ -46,6 +46,7 @@ module CV.Image (
 -- * Image information
 , ImageDepth
 , Sized(..)
+, biggerThan
 , getArea
 , getChannel
 , getImageChannels
@@ -94,6 +95,8 @@ module CV.Image (
 -- * Extended error handling
 , setCatch
 , CvException
+, CvSizeError(..)
+, CvIOError(..)
 ) where
 
 import System.Mem
@@ -305,6 +308,13 @@ loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 class Sized a where
     type Size a :: *
     getSize :: a -> Size a
+
+biggerThan :: (Sized a, Sized b, Size a~(Int,Int), Size b ~Size a) => a -> b -> Bool
+biggerThan a b = w1>=w2 && h1>=h2
+    where
+     (w1,h1) = getSize a
+     (w2,h2) = getSize b
+
 
 instance Sized BareImage where
     type Size BareImage = (Int,Int)
@@ -978,9 +988,11 @@ data CvException = CvException Int String String String Int
      deriving (Show, Typeable)
 
 data CvIOError = CvIOError String deriving (Show,Typeable)
+data CvSizeError = CvSizeError String deriving (Show,Typeable)
 
 instance Exception CvException
 instance Exception CvIOError
+instance Exception CvSizeError
 
 setCatch = do
    let catch i cstr1 cstr2 cstr3 j = do
