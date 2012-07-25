@@ -46,7 +46,7 @@ data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 -- |Mirror an image over a cardinal axis
 flip :: CreateImage (Image c d) => MirrorAxis -> Image c d -> Image c d
 flip axis img = unsafePerformIO $ do
-                 let cl = emptyCopy img
+                 cl <- create (getSize img)
                  withGenImage img $ \cimg -> 
                   withGenImage cl $ \ccl -> do
                     {#call cvFlip#} cimg ccl (if axis == Vertical then 0 else 1)
@@ -66,7 +66,7 @@ data Interpolation = NearestNeighbour | Linear
 -- |Simulate a radial distortion over an image
 radialDistort :: Image GrayScale D32 -> Double -> Image GrayScale D32
 radialDistort img k = unsafePerformIO $ do
-                       let target = emptyCopy img 
+                       target <- create (getSize img)
                        withImage img $ \cimg ->
                         withImage target $ \ctarget ->
                          {#call radialRemap#} cimg ctarget (realToFrac k)
@@ -128,6 +128,16 @@ getHomography srcPts dstPts =
      src = flatten srcPts
      dst = flatten dstPts
 
+getHomography' srcPts dstPts = 
+    unsafePerformIO $ withArray src $ \c_src ->
+                       withArray dst $ \c_dst ->
+                        allocaArray (3*3) $ \c_hmg -> do
+                         {#call findHomography#} c_src c_dst (fromIntegral $ length srcPts) c_hmg
+                         peekArray (3*3) c_hmg
+    where
+     flatten = map realToFrac . concatMap (\(a,b) -> [a,b]) 
+     src = flatten srcPts
+     dst = flatten dstPts
 
 --- Pyramid transforms
 -- |Return a copy of an image with an even size
@@ -243,16 +253,6 @@ enum DistanceType {
 #endc
 {#enum DistanceType {}#}
 
-#ifdef OpenCV24
-#c
-enum LabelType {
-     DIST_LABEL_CCOMP = CV_DIST_LABEL_CCOMP
-    ,DIST_LABEL_PIXEL = CV_DIST_LABEL_PIXEL
-};
-#endc
-{#enum LabelType {}#}
-#endif
-
 -- |Mask sizes accepted by distanceTransform
 data MaskSize = M3 | M5 deriving (Eq,Ord,Enum,Show)
 
@@ -266,9 +266,6 @@ distanceTransform dtype maskSize source = unsafePerformIO $ do
                                   (fromIntegral . fromEnum $ dtype) 
                                   (fromIntegral . fromEnum $ maskSize)
                                    nullPtr nullPtr
-#ifdef OpenCV24
-                                   (fromIntegral . fromEnum $ DIST_LABEL_CCOMP)
-#endif
     return result
     -- TODO: Add handling for labels
     -- TODO: Add handling for custom masks

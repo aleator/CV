@@ -159,9 +159,9 @@ maskIsOk (w,h) = odd w && odd h && w >0 && h>0
 -- (x,y) within (0,0) and (w,h)
 convolve2D :: (Point2D anchor, ELP anchor ~ Int) => 
               Matrix D32 -> anchor -> Image GrayScale D32 -> Image GrayScale D32
-convolve2D kernel anchor image = unsafePerformIO $ 
-                                      let result = emptyCopy image
-                                      in withGenImage image $ \c_img->
+convolve2D kernel anchor image = unsafePerformIO $ do
+                                      result <- create (getSize image)
+                                      withGenImage image $ \c_img->
                                          withGenImage result $ \c_res->
                                          withMatPtr kernel $ \c_mat ->
                                          with (convertPt anchor) $ \c_pt ->

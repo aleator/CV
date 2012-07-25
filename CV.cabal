@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.5.4
+Version:             0.3.6.0
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -18,6 +18,8 @@ Description:         This is a machine vision package that wraps some functional
                       <http://aleator.github.com/CV/>
                      .
                      Changelog.
+                     0.3.6.0 - Critical referential transparency bug fix.
+                     .
                      0.3.5.4 - Bug fixes and preliminary compatability with opencv 2.4
                      .
                      0.3.5 - Many new wrappers, clean ups and other fixes.
