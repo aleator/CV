@@ -57,6 +57,8 @@ void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double r, double g, 
 
 void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, float b);
 
+void wrapDrawEllipse(IplImage *img, int x, int y, int r1, int r2, float a, float a1, float a2, float r, float g, float b, int thickness);
+
 void wrapMatMul(int w, int h, double *mat
                , double *vec, double *t);
 
