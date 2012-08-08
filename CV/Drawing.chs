@@ -138,6 +138,15 @@ instance Drawable DFT D32 where
    ellipseBoxOp (r:+i) = primEllipseBox (r,i,0,0) 
    fillPolyOp (r:+i)   = primFillPolyOp (r,i,0)
 
+instance Drawable GrayScale D8 where
+    type Color GrayScale D8 = D8
+    putTextOp color = primTextOp (color,color,color) 
+    lineOp c = primLineOp (c,c,c) 
+    circleOp c = primCircleOp (c,c,c)
+    ellipseBoxOp c  = primEllipseBox (fromIntegral c,fromIntegral c,fromIntegral c,0) 
+    rectOp c = primRectOp (c,c,c)
+    fillPolyOp c = primFillPolyOp (c,c,c)
+
 instance Drawable GrayScale D32 where
     type Color GrayScale D32 = D32
     putTextOp color = primTextOp (color,color,color) 

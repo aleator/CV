@@ -151,10 +151,18 @@ instance FromBounds C'CvRect where
 #field height , CInt
 #stoptype
 
+instance Sized C'CvSize where
+    type Size  C'CvSize = (Int,Int)
+    getSize (C'CvSize w h)  = (fromIntegral w,fromIntegral h)
+
 #starttype CvSize2D32f
 #field width , CFloat
 #field height , CFloat
 #stoptype
+
+instance Sized C'CvSize2D32f where
+    type Size  C'CvSize2D32f = (Float,Float)
+    getSize (C'CvSize2D32f w h)  = (realToFrac w, realToFrac h)
 
 #starttype CvConnectedComp
 #field area, CDouble
@@ -182,6 +190,10 @@ instance Point2D C'CvPoint2D32f where
    type ELP C'CvPoint2D32f = Double
    pt (C'CvPoint2D32f x y) = (realToFrac x,realToFrac y)
    toPt (x,y) = C'CvPoint2D32f (realToFrac x) (realToFrac y)
+
+instance Sized C'CvBox2D where
+    type Size  C'CvBox2D = (Float,Float)
+    getSize (C'CvBox2D _ s _) = getSize s
 
 -- // #starttype CV_32FC2
 -- // #field x , Float

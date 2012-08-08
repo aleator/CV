@@ -129,6 +129,8 @@ import Control.Exception
 import Data.Data
 import Data.Typeable
 
+import Utils.GeometryClass
+
 
 
 
@@ -304,16 +306,6 @@ loadColorImage = unsafeloadUsing imageTo32F 1
 loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
--- | Typeclass for elements with a size, such as images and matrices.
-class Sized a where
-    type Size a :: *
-    getSize :: a -> Size a
-
-biggerThan :: (Sized a, Sized b, Size a~(Int,Int), Size b ~Size a) => a -> b -> Bool
-biggerThan a b = w1>=w2 && h1>=h2
-    where
-     (w1,h1) = getSize a
-     (w2,h2) = getSize b
 
 
 instance Sized BareImage where

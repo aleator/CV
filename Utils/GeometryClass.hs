@@ -60,3 +60,14 @@ class LineSegment a where
    type ELS a :: *
    startEnd :: a -> ((ELS a, ELS a),(ELS a, ELS a))
 
+-- | Typeclass for elements with a size, such as images and matrices.
+class Sized a where
+    type Size a :: *
+    getSize :: a -> Size a
+
+biggerThan :: (Sized a, Sized b, Size a~(Int,Int), Size b ~Size a) => a -> b -> Bool
+biggerThan a b = w1>=w2 && h1>=h2
+    where
+     (w1,h1) = getSize a
+     (w2,h2) = getSize b
+
