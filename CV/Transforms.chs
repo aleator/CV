@@ -3,13 +3,14 @@
 -- |Various image transformations from opencv and other sources.
 module CV.Transforms  where
 
-import CV.Image
+import CV.Image as I 
 import Foreign.Ptr
 import Foreign.C.Types
 import Foreign.Marshal.Array
 import System.IO.Unsafe
 {#import CV.Image#}
 import CV.ImageMathOp
+import CV.Matrix as M
 
 -- |Since DCT is valid only for even sized images, we provide a
 -- function to crop images to even sizes.
@@ -46,7 +47,7 @@ data MirrorAxis = Vertical | Horizontal deriving (Show,Eq)
 -- |Mirror an image over a cardinal axis
 flip :: CreateImage (Image c d) => MirrorAxis -> Image c d -> Image c d
 flip axis img = unsafePerformIO $ do
-                 let cl = emptyCopy img
+                 cl <- I.create (getSize img)
                  withGenImage img $ \cimg -> 
                   withGenImage cl $ \ccl -> do
                     {#call cvFlip#} cimg ccl (if axis == Vertical then 0 else 1)
@@ -66,7 +67,7 @@ data Interpolation = NearestNeighbour | Linear
 -- |Simulate a radial distortion over an image
 radialDistort :: Image GrayScale D32 -> Double -> Image GrayScale D32
 radialDistort img k = unsafePerformIO $ do
-                       let target = emptyCopy img 
+                       target <- I.create (getSize img)
                        withImage img $ \cimg ->
                         withImage target $ \ctarget ->
                          {#call radialRemap#} cimg ctarget (realToFrac k)
@@ -79,7 +80,7 @@ scaleSingleRatio tpe x img = scale tpe (x,x) img
 -- |Scale an image with different ratios for axes
 scale :: (CreateImage (Image c D32), RealFloat a) => Interpolation -> (a,a) -> Image c D32 -> Image c D32
 scale tpe (x,y) img = unsafePerformIO $ do
-                    target <- create (w',h') 
+                    target <- I.create (w',h') 
                     withGenImage img $ \i -> 
                      withGenImage target $ \t -> 
                         {#call cvResize#} i t 
@@ -94,7 +95,7 @@ scale tpe (x,y) img = unsafePerformIO $ do
 scaleToSize :: (CreateImage (Image c D32)) => 
     Interpolation -> Bool -> (Int,Int) -> Image c D32 -> Image c D32
 scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
-                    target <- create (w',h') 
+                    target <- I.create (w',h') 
                     withGenImage img $ \i -> 
                      withGenImage target $ \t -> 
                         {#call cvResize#} i t 
@@ -128,6 +129,30 @@ getHomography srcPts dstPts =
      src = flatten srcPts
      dst = flatten dstPts
 
+#c
+enum HomographyMethod {
+     Default = 0,
+     Ransac  = CV_RANSAC,
+     LMeds   = CV_LMEDS
+     };
+#endc
+{#enum HomographyMethod {}#}
+
+getHomography' :: Matrix Float -> Matrix Float -> HomographyMethod -> Float -> Matrix Float
+getHomography' srcPts dstPts method ransacThreshold = 
+    unsafePerformIO $ do
+    hmg <- M.create (3,3) :: IO (Matrix Float)
+    withMatPtr srcPts  $ \c_src ->
+     withMatPtr dstPts $ \c_dst ->
+     withMatPtr hmg    $ \c_hmg -> do
+                          {#call cvFindHomography#} 
+                           (castPtr c_src) 
+                           (castPtr c_dst) 
+                           (castPtr c_hmg)
+                           (fromIntegral $ fromEnum method)
+                           (realToFrac ransacThreshold)
+                           nullPtr
+                          return hmg
 
 --- Pyramid transforms
 -- |Return a copy of an image with an even size
@@ -176,7 +201,7 @@ cv_Gaussian = 7
 -- |Downsize image by 50% efficiently. Image dimensions must be even.
 pyrDown ::(CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrDown image = unsafePerformIO $ do
-                 res <- create size 
+                 res <- I.create size 
                  withGenImage image $ \cImg -> 
                    withGenImage res $ \cResImg -> 
                      {#call cvPyrDown#} cImg cResImg cv_Gaussian
@@ -188,7 +213,7 @@ pyrDown image = unsafePerformIO $ do
 -- |Enlarge image to double in each dimension. Used to recover pyramidal layers
 pyrUp :: (CreateImage (Image GrayScale a)) => Image GrayScale a -> Image GrayScale a
 pyrUp image = unsafePerformIO $ do
-                 res <- create size 
+                 res <- I.create size 
                  withGenImage image $ \cImg -> 
                    withGenImage res $ \cResImg -> 
                      {#call cvPyrUp#} cImg cResImg cv_Gaussian
@@ -241,7 +266,7 @@ reconstructFromLaplacian pyramid = foldl1 (\a b -> (pyrUp a) #+ b) (pyramid)
 --  outside the image with black.
 enlarge :: Int -> Image GrayScale D32 -> Image GrayScale D32
 enlarge n img =  unsafePerformIO $ do
-                   i <- create (w2,h2)
+                   i <- I.create (w2,h2)
                    blit i img (0,0)
                    return i
     where
@@ -273,32 +298,19 @@ enum DistanceType {
 #endc
 {#enum DistanceType {}#}
 
-#ifdef OpenCV24
-#c
-enum LabelType {
-     DIST_LABEL_CCOMP = CV_DIST_LABEL_CCOMP
-    ,DIST_LABEL_PIXEL = CV_DIST_LABEL_PIXEL
-};
-#endc
-{#enum LabelType {}#}
-#endif
-
 -- |Mask sizes accepted by distanceTransform
 data MaskSize = M3 | M5 deriving (Eq,Ord,Enum,Show)
 
 -- |Perform a distance transform on the image
 distanceTransform :: DistanceType -> MaskSize -> Image GrayScale D8 -> Image GrayScale D32 --TODO: Input should be a black and white image
 distanceTransform dtype maskSize source = unsafePerformIO $ do
-    result :: Image GrayScale D32 <- create (getSize source)
+    result :: Image GrayScale D32 <- I.create (getSize source)
     withGenImage source $ \c_source ->
      withGenImage result $ \c_result ->
         {#call cvDistTransform #} c_source c_result 
                                   (fromIntegral . fromEnum $ dtype) 
                                   (fromIntegral . fromEnum $ maskSize)
                                    nullPtr nullPtr
-#ifdef OpenCV24
-                                   (fromIntegral . fromEnum $ DIST_LABEL_CCOMP)
-#endif
     return result
     -- TODO: Add handling for labels
     -- TODO: Add handling for custom masks
