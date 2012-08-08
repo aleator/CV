@@ -10,7 +10,8 @@ import Foreign.Marshal.Array
 import System.IO.Unsafe
 {#import CV.Image#}
 import CV.ImageMathOp
-import CV.Matrix as M
+import qualified CV.Matrix as M
+import CV.Matrix (Matrix,withMatPtr)
 
 -- |Since DCT is valid only for even sized images, we provide a
 -- function to crop images to even sizes.
@@ -298,6 +299,15 @@ enum DistanceType {
 #endc
 {#enum DistanceType {}#}
 
+#c
+enum LabelType {
+     CCOMP = CV_DIST_LABEL_CCOMP
+    ,PIXEL = CV_DIST_LABEL_PIXEL
+};
+#endc
+{#enum LabelType {}#}
+
+
 -- |Mask sizes accepted by distanceTransform
 data MaskSize = M3 | M5 deriving (Eq,Ord,Enum,Show)
 
@@ -311,6 +321,7 @@ distanceTransform dtype maskSize source = unsafePerformIO $ do
                                   (fromIntegral . fromEnum $ dtype) 
                                   (fromIntegral . fromEnum $ maskSize)
                                    nullPtr nullPtr
+                                  (fromIntegral . fromEnum $ CCOMP)
     return result
     -- TODO: Add handling for labels
     -- TODO: Add handling for custom masks

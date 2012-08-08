@@ -2152,7 +2152,7 @@ int blobCount(IplImage *src)
 //@+node:aleator.20060413093124.1:sizeFilter
 IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
 {
-    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_32F, 1 );
+    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1 );
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contour = 0;
 

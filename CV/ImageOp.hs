@@ -20,6 +20,10 @@ nonOp = ImgOp (\i -> return ())
 -- |Apply image operation to a Copy of an image
 img <# op = unsafeOperate op img
 
+blitOp img pos = ImgOp $ \i -> blit img i pos
+
+setPixelOp pos v = ImgOp $ \i -> setPixel pos v i
+
 -- motivating example:
 -- >>> hop i = stretchHistogram $ i #- gaussian (5,5)
 -- allocates two extra images
