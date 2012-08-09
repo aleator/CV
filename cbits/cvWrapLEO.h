@@ -321,6 +321,9 @@ void wrapMinAreaRect2(const CvArr* points, CvMemStorage* storage, CvBox2D *r)
 void wrapBoundingRect(CvArr* points, int update, CvRect *r)
 { *r = cvBoundingRect(points, update); }
 
+void wrapWarpPerspective(const CvArr* src, CvArr* dst, const CvMat* mapMatrix )
+{ cvWarpPerspective( src,  dst,  mapMatrix, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(0)); }
+
 void blitShadow(IplImage *a, IplImage *b);
 
 #endif

@@ -2409,6 +2409,7 @@ for( int i = 0; i < seq->total; i++ )
     CV_NEXT_SEQ_ELEM( seq->elem_size, reader );
 }}
 
+
 #ifndef OpenCV24
 void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
 cvExtractMSER( _img, _mask, contours, storage, *params );

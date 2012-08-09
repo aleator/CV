@@ -14,6 +14,7 @@ module CV.Drawing(
                 ,Drawable(..)
                 -- * Extra drawing operations
                 ,drawLinesOp
+                ,drawPolyLineOp 
                 ,drawBox2Dop 
                 -- * Floodfill operations
                 ,fillOp
@@ -178,11 +179,17 @@ rectangle color thickness rect i =
 fillPoly :: Drawable c d => Color c d -> [(Int, Int)] -> Image c d -> IO (Image c d)
 fillPoly c pts i = operate (fillPolyOp c pts) i
 
--- | Draw a polyline
+-- | Draw a line segments
 drawLinesOp :: Drawable c d => Color c d -> Int -> [((Int, Int), (Int, Int))] -> CV.ImageOp.ImageOperation c d
 drawLinesOp color thickness segments = 
     foldl (#>) nonOp 
      $ map (\(a,b) -> lineOp color thickness a b) segments
+
+-- | Draw a polyline
+drawPolyLineOp :: Drawable c d => Color c d -> Int -> [((Int, Int))] -> CV.ImageOp.ImageOperation c d
+drawPolyLineOp color thickness segments = 
+    foldl (#>) nonOp 
+     $ map (\(a,b) -> lineOp color thickness a b) $ zip segments (tail segments)
 
 -- | Apply drawLinesOp to an image
 drawLines :: Drawable c d => Image c d -> Color c d -> Int -> [((Int, Int), (Int, Int))]

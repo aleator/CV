@@ -26,9 +26,15 @@ import Foreign.C.Types
 #ccall cvReleaseMat , Ptr (Ptr <CvMat>) -> IO ()
 
 #ccall cvTranspose  , Ptr <CvMat> -> Ptr <CvMat> -> IO ()
+#ccall cvInvert     , Ptr <CvMat> -> Ptr <CvMat> -> CInt -> IO ()
 #ccall cvGEMM       , Ptr <CvMat> -> Ptr <CvMat> -> Double -> Ptr <CvMat> -> Double -> Ptr <CvMat> -> Int -> IO ()
 
 #ccall cvRodrigues2  , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> IO Int
+
+-- Matrix inversions
+#num CV_LU 
+#num CV_SVD 
+#num CV_SVD_SYM 
 
 #num CV_GEMM_A_T
 #num CV_GEMM_B_T

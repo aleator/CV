@@ -269,6 +269,7 @@ toCvTCrit (ITER i) = C'CvTermCriteria c'CV_TERMCRIT_ITER (fromIntegral i) 0
 #num CV_TERMCRIT_EPS     
 
 
+
 -- Memory Storage
 #ccall cvCreateMemStorage, Int -> IO (Ptr <CvMemStorage>)
 #ccall cvReleaseMemStorage, Ptr (Ptr <CvMemStorage>) -> IO ()
