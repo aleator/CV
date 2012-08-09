@@ -5,7 +5,7 @@ module CV.Matrix
     (
     Exists(..),
     Matrix, emptyMatrix, fromFunction, fromList,toList,toRows,toCols,get,put,withMatPtr
-    , transpose, mxm, rodrigues2, identity
+    , transpose, mxm, invert,  rodrigues2, identity
     )where
 
 
@@ -135,6 +135,16 @@ rodrigues2 m@(Matrix f_m) = unsafePerformIO $ do
                  withForeignPtr f_m $ \c_m ->
                   withForeignPtr f_c $ \c_c -> c'cvRodrigues2 c_m c_c nullPtr
                  return res
+
+
+-- | Matrix inversion
+invert :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Matrix a
+invert m@(Matrix f_m) = unsafePerformIO $ do
+                 res@(Matrix f_c) <- create (getSize m)
+                 withForeignPtr f_m $ \c_m ->
+                  withForeignPtr f_c $ \c_c -> c'cvInvert c_m c_c (fromIntegral . fromEnum $ c'CV_LU)
+                 return res
+
 
 
 -- | Ordinary matrix multiplication

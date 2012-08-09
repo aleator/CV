@@ -117,6 +117,15 @@ perspectiveTransform img (map realToFrac -> [a1,a2,a3,a4,a5,a6,a7,a8,a9])
     = unsafePerformIO $ 
        withImage img $ \cimg -> creatingImage $ {#call wrapPerspective#} cimg a1 a2 a3 a4 a5 a6 a7 a8 a9
 
+perspectiveTransform' :: (CreateImage (Image c d)) => Matrix Float -> Image c d -> (Int,Int)-> Image c d
+perspectiveTransform' mat img size
+    = unsafePerformIO $ do
+       r <- create  size
+       withImage img $ \c_img ->
+         withMatPtr mat $ \c_mat ->
+         withImage r $ \c_r -> {#call wrapWarpPerspective#} (castPtr c_img) (castPtr c_r) (castPtr c_mat)
+       return r
+
 
 -- |Find a homography between two sets of points in. The resulting 3x3 matrix is returned as a list.
 getHomography srcPts dstPts = 
