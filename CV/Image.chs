@@ -77,6 +77,7 @@ module CV.Image (
 , bgrToRgb
 , rgbToBgr
 , unsafeImageTo32F 
+, unsafeImageTo64F 
 , unsafeImageTo8Bit 
 
 -- * Low level access operations
@@ -803,6 +804,11 @@ withCloneValue img fun = do
                 result <- cloneImage img
                 r <- fun result
                 return r
+
+unsafeImageTo64F :: Image c d -> Image c D64
+unsafeImageTo64F img = unsafePerformIO $ withGenImage img $ \image ->
+                creatingImage
+                 ({#call ensure64F #} image)
 
 unsafeImageTo32F :: Image c d -> Image c D32
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image ->

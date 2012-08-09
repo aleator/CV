@@ -280,6 +280,36 @@ IplImage* ensure8U(const IplImage *src)
 
 // Return image that is IPL_DEPTH_32F version of
 // given src
+IplImage* ensure64F(const IplImage *src)
+{
+ CvSize size;
+ IplImage *result;
+ int channels = src->nChannels;
+ int dstDepth = IPL_DEPTH_64F;
+ size = cvGetSize(src);
+ result = cvCreateImage(size,dstDepth,channels);
+
+ switch(src->depth) {
+  case IPL_DEPTH_32F:
+  case IPL_DEPTH_64F:
+   cvConvertScale(src,result,1,0); // Scale the values to [0,255]
+   return result;
+  case IPL_DEPTH_8U:
+  case IPL_DEPTH_8S:
+   cvConvertScale(src,result,1.0/255.0,0);
+   return result;
+  case IPL_DEPTH_16S:
+   cvConvertScale(src,result,1.0/65535.0,0);
+   return result;
+  case IPL_DEPTH_32S:
+   cvConvertScale(src,result,1.0/4294967295.0,0);
+   return result;
+  default:
+   printf("Cannot convert to floating image");
+   abort();
+ }
+}
+
 IplImage* ensure32F(const IplImage *src)
 {
  CvSize size;
@@ -307,7 +337,6 @@ IplImage* ensure32F(const IplImage *src)
   default:
    printf("Cannot convert to floating image");
    abort();
-
  }
 }
 

@@ -326,6 +326,8 @@ void wrapWarpPerspective(const CvArr* src, CvArr* dst, const CvMat* mapMatrix )
 
 void blitShadow(IplImage *a, IplImage *b);
 
+IplImage* ensure64F(const IplImage *src);
+
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h
 //@-leo
