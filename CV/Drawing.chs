@@ -38,12 +38,13 @@ import CV.Bindings.Types
 import CV.Bindings.Drawing
 import Utils.Point
 
-{#import CV.Image#}
+import CV.Image hiding (Complex)
+import qualified CV.Image
 
 import CV.ImageOp
 import Utils.GeometryClass
 import Utils.Rectangle
-import Data.Complex
+import Data.Complex as C
 
 -- | Is the shape filled or just a boundary?
 data ShapeStyle = Filled | Stroked Int
@@ -124,14 +125,14 @@ primFillPolyOp (c1,c2,c3) pts = ImgOp $ \i -> do
                                   let (xs,ys) = unzip pts
                                   xs' <- newArray $ map fromIntegral xs
                                   ys' <- newArray $ map fromIntegral  ys
-                                  {#call wrapFillPolygon#} img 
+                                  {#call wrapFillPolygon#} (castPtr img) 
                                        (fromIntegral $ length xs) xs' ys' 
                                    (realToFrac c1) (realToFrac c2) (realToFrac c3) 
                                   free xs'
                                   free ys'
 
-instance Drawable DFT D32 where
-   type Color DFT D32 = Complex D32
+instance Drawable CV.Image.Complex D32 where
+   type Color CV.Image.Complex D32 = Complex D32
    putTextOp (r:+i)   = primTextOp (r,i,0) -- Boy does this feel silly :)
    lineOp (r:+i)      = primLineOp (r,i,0) 
    circleOp (r:+i)    = primCircleOp (r,i,0)
@@ -162,7 +163,7 @@ fillOp :: (Int,Int) -> D32 -> D32 -> D32 -> Bool -> ImageOperation GrayScale D32
 fillOp (x,y) color low high floats = 
     ImgOp $ \i -> do
       withImage i $ \img -> 
-        ({#call wrapFloodFill#} img (fromIntegral x) (fromIntegral y)
+        ({#call wrapFloodFill#} (castPtr img) (fromIntegral x) (fromIntegral y)
             (realToFrac color) (realToFrac low) (realToFrac high) (toCINT $ floats))
     where
      toCINT False = 0

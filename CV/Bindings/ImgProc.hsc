@@ -52,7 +52,6 @@ copyMakeBorder i t b l r border value =
             (fromIntegral r)
             (cBorderType border)
             (realToFrac value)
-
 -- moments
 
 -- | Calculates all spatial and central moments up to the 3rd order

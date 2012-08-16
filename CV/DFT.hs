@@ -1,143 +1,61 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module CV.DFT where
 
+import CV.Bindings.Types
 import CV.Bindings.Core
 import CV.Bindings.ImgProc
-import CV.Bindings.Types
 import CV.Image
-import CV.Operations
-
-import Foreign.Ptr (castPtr,nullPtr)
+import CV.ImageMath as IM
+import CV.ImageMathOp
 import System.IO.Unsafe
-import Data.Complex
+import Foreign.Ptr
 
-type I32 = Image GrayScale D32
-type Idft32 = Image DFT D32
-data Ipolar32 = Ipolar32 (Complex D32)
-
-data Swap = SwapQuadrants | DontSwapQuadrants deriving (Eq,Show)
-
-dft = dft' SwapQuadrants
-dft' :: Swap -> Image GrayScale d -> Image DFT D32
-dft' swap i = unsafePerformIO $ do
-  --n::(Image GrayScale D32) <- create (w', h')
-  --n <- copyMakeBorder i 0 (h'-h) 0 (w'-w) BorderReplicate 0
-  z::(Image GrayScale D32) <- create (w, h)
-  d::(Image DFT D32) <- create (w, h)
-  withImage i $ \i_ptr ->
-    withImage z $ \z_ptr ->
-      withImage d $ \d_ptr -> do
-        c'cvMerge (castPtr i_ptr) (castPtr z_ptr) nullPtr nullPtr (castPtr d_ptr)
-        c'cvDFT (castPtr d_ptr) (castPtr d_ptr) c'CV_DXT_FORWARD (fromIntegral 0)
-        case swap of
-         SwapQuadrants -> c'swapQuadrants (castPtr d_ptr)
-         DontSwapQuadrants -> return ()
-        return d
+dft :: Image GrayScale d -> Image Complex D32
+dft i = unsafePerformIO $ do
+  n::(Image GrayScale D32) <- create (w', h')
+  n <- copyMakeBorder i 0 (h'-h) 0 (w'-w) BorderConstant 0
+  c::(Image Complex D32) <- create (w', h')
+  withGenImage n $ \nimg ->
+    withGenImage c $ \cimg -> do
+      c'cvMerge nimg nullPtr nullPtr nullPtr cimg
+      c'cvDFT cimg cimg c'CV_DXT_FORWARD 0
+      return c
   where
     (w,h) = getSize i
-    --w' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral w)
-    --h' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral h)
+    w' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral w)
+    h' = fromIntegral $ c'cvGetOptimalDFTSize (fromIntegral h)
 
-idft = idft' SwapQuadrants
-idft' :: Swap -> Image DFT D32 -> Image GrayScale D32
-idft' swap d = unsafePerformIO $ do
+idft :: Image Complex D32 -> Image GrayScale D32
+idft c = unsafePerformIO $ do
   n::(Image GrayScale D32) <- create s
-  --z::(Image GrayScale D32) <- create s
-  withImage d $ \d_ptr ->
-    withImage n $ \n_ptr -> do
-      --withImage z $ \z_ptr -> do
-        case swap of
-         SwapQuadrants -> c'swapQuadrants (castPtr d_ptr)
-         DontSwapQuadrants -> return ()
-        --c'swapQuadrants (castPtr d_ptr)
-        c'cvDFT (castPtr d_ptr) (castPtr n_ptr) c'CV_DXT_INV_SCALE (fromIntegral 0)
-        --c'cvSplit (castPtr d_ptr) (castPtr n_ptr) (castPtr z_ptr) nullPtr nullPtr
-        return n
+  withGenImage c $ \c_ptr ->
+    withGenImage n $ \n_ptr -> do
+      c'cvDFT c_ptr c_ptr c'CV_DXT_INVERSE 0
+      c'cvSplit c_ptr n_ptr nullPtr nullPtr nullPtr
+      return n
   where
-    s = getSize d
+    s = getSize c
 
-swapQuadrants img = unsafePerformIO $ do
-            e <- cloneImage img
-            withImage e (c'swapQuadrants . castPtr)
-            return e
-
-dftSplit :: Image DFT D32 -> (Image GrayScale D32, Image GrayScale D32)
-dftSplit d = unsafePerformIO $ do
+complexSplit :: Image Complex D32 -> (Image GrayScale D32, Image GrayScale D32)
+complexSplit c = unsafePerformIO $ do
   re::(Image GrayScale D32) <- create (w, h)
   im::(Image GrayScale D32) <- create (w, h)
-  withImage d $ \d_ptr ->
-    withImage re $ \re_ptr ->
-      withImage im $ \im_ptr -> do
-        c'cvSplit (castPtr d_ptr) (castPtr re_ptr) (castPtr im_ptr) nullPtr nullPtr
+  withGenImage c $ \c_ptr ->
+    withGenImage re $ \re_ptr ->
+      withGenImage im $ \im_ptr -> do
+        c'cvSplit c_ptr re_ptr im_ptr nullPtr nullPtr
         return (re,im)
   where
-    (w,h) = getSize d
+    (w,h) = getSize c
 
-dftMerge :: (Image GrayScale D32, Image GrayScale D32) -> Image DFT D32
-dftMerge (re,im) = unsafePerformIO $ do
-  d::(Image DFT D32) <- create (w, h)
-  withImage re $ \re_ptr ->
-    withImage im $ \im_ptr ->
-      withImage d $ \d_ptr -> do
-        c'cvMerge (castPtr re_ptr) (castPtr im_ptr) nullPtr nullPtr (castPtr d_ptr)
-  return d
-  where
-    (w,h) = getSize re
-
-dftToPolar :: Image DFT D32 -> (Image GrayScale D32, Image GrayScale D32)
-dftToPolar d = unsafePerformIO $ do
+complexToMagnitude :: Image Complex D32 -> Image GrayScale D32
+complexToMagnitude c = unsafePerformIO $ do
   mag::(Image GrayScale D32) <- create (w, h)
-  ang::(Image GrayScale D32) <- create (w, h)
-  withImage re $ \re_ptr ->
-    withImage im $ \im_ptr ->
-      withImage mag $ \mag_ptr ->
-        withImage ang $ \ang_ptr ->
-          c'cvCartToPolar (castPtr re_ptr) (castPtr im_ptr) (castPtr mag_ptr) (castPtr ang_ptr) (fromIntegral 0)
-  return (mag,ang)
+  withGenImage re $ \re_ptr ->
+    withGenImage im $ \im_ptr ->
+      withGenImage mag $ \mag_ptr -> do
+        c'cvCartToPolar re_ptr im_ptr mag_ptr nullPtr (fromIntegral 0)
+        return $ IM.log $ 1 |+ mag
   where
-    (re,im) = dftSplit d
-    (w,h) = getSize d
-
-dftFromPolar :: (Image GrayScale D32, Image GrayScale D32) -> Image DFT D32
-dftFromPolar (mag,ang) = unsafePerformIO $ do
-  re::(Image GrayScale D32) <- create (w, h)
-  im::(Image GrayScale D32) <- create (w, h)
-  withImage mag $ \mag_ptr ->
-    withImage ang $ \ang_ptr ->
-      withImage re $ \re_ptr -> do
-        withImage im $ \im_ptr -> do
-          c'cvPolarToCart (castPtr mag_ptr) (castPtr ang_ptr) (castPtr re_ptr) (castPtr im_ptr) (fromIntegral 0)
-  return $ dftMerge (re,im)
-  where
-    (w,h) = getSize mag
-
---withPolar :: Image DFT D32 ->
---    ((Image GrayScale D32, Image GrayScale D32) -> (Image GrayScale D32, Image GrayScale D32)) ->
---    Image DFT D32
-
-
-rgbSplit :: Image RGB D32 -> (Image GrayScale D32, Image GrayScale D32, Image GrayScale D32)
-rgbSplit i = unsafePerformIO $ do
-  r::(Image GrayScale D32) <- create (w, h)
-  g::(Image GrayScale D32) <- create (w, h)
-  b::(Image GrayScale D32) <- create (w, h)
-  withImage i $ \i_ptr ->
-    withImage r $ \r_ptr ->
-      withImage g $ \g_ptr ->
-        withImage b $ \b_ptr -> do
-          c'cvSplit (castPtr i_ptr) (castPtr r_ptr) (castPtr g_ptr) (castPtr b_ptr) nullPtr
-          return (r,g,b)
-  where
-    (w,h) = getSize i
-
-rgbMerge :: (Image GrayScale D32, Image GrayScale D32, Image GrayScale D32) -> Image RGB D32
-rgbMerge (r,g,b) = unsafePerformIO $ do
-  i::(Image RGB D32) <- create (w, h)
-  withImage r $ \r_ptr ->
-    withImage g $ \g_ptr ->
-      withImage b $ \b_ptr ->
-        withImage i $ \i_ptr -> do
-          c'cvMerge (castPtr r_ptr) (castPtr g_ptr) (castPtr b_ptr) nullPtr (castPtr i_ptr)
-          return i
-  where
-    (w,h) = getSize r
+    (re,im) = complexSplit c
+    (w,h) = getSize c

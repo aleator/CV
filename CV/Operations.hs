@@ -64,9 +64,9 @@ normalize :: Double -> Double -> NormType -> Image c d -> Image c d
 normalize a b t src =
   unsafePerformIO $ do
     withCloneValue src $ \clone ->
-      withImage src $ \si ->
-        withImage clone $ \ci -> do
-          c'cvNormalize (castPtr si) (castPtr ci) (realToFrac a) (realToFrac b) (cNormType t) nullPtr
+      withGenImage src $ \si ->
+        withGenImage clone $ \ci -> do
+          c'cvNormalize si ci (realToFrac a) (realToFrac b) (cNormType t) nullPtr
           return clone
 
 unitNormalize i

@@ -1,6 +1,7 @@
 module Utils.Pointer where 
 import Foreign.C.Types
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe
 import Foreign.Ptr
 import Foreign.Marshal.Array
 

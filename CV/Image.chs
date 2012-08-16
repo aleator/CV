@@ -4,8 +4,9 @@ module CV.Image (
 -- * Basic types
  Image(..)
 , create
-, empty 
-, emptyCopy 
+, empty
+, emptyCopy
+, emptyCopy'
 , cloneImage
 , withClone
 , withCloneValue
@@ -14,7 +15,7 @@ module CV.Image (
 -- * Colour spaces
 , ChannelOf
 , GrayScale
-, DFT
+, Complex
 , RGB
 , RGBA
 , RGB_Channel(..)
@@ -124,8 +125,7 @@ import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
-import Data.Complex
-import Data.Complex
+import qualified Data.Complex as C
 import Control.Monad
 import Control.Exception
 import Data.Data
@@ -140,8 +140,7 @@ import Utils.GeometryClass
 
 -- | Single channel grayscale image
 data GrayScale
-
-data DFT
+data Complex
 data RGB
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 
@@ -520,8 +519,8 @@ instance GetPixel (Image GrayScale D8) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Word8))):: Ptr Word8)
 
-instance GetPixel (Image DFT D32) where
-    type P (Image DFT D32) = Complex D32
+instance GetPixel (Image Complex D32) where
+    type P (Image Complex D32) = C.Complex D32
     {-#INLINE getPixel#-}
     getPixel (x,y) i = unsafePerformIO $
                         withGenImage i $ \c_i -> do
@@ -531,7 +530,7 @@ instance GetPixel (Image DFT D32) where
                                              fs = sizeOf (undefined :: Float)
                                          re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
                                          im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
-                                         return (re:+im)
+                                         return (re C.:+ im)
 
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
@@ -637,7 +636,7 @@ class CreateImage a where
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
-instance CreateImage (Image DFT D32) where
+instance CreateImage (Image Complex D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
@@ -673,6 +672,9 @@ empty size = unsafePerformIO $ create size
 -- | Allocate a new image that of the same size and type as the exemplar image given.
 emptyCopy :: (CreateImage (Image a b)) => Image a b -> (Image a b)
 emptyCopy img = unsafePerformIO $ create (getSize img)
+
+emptyCopy' :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
+emptyCopy' img = create (getSize img)
 
 -- | Save image. This will convert the image to 8 bit one before saving
 class Save a where
@@ -942,10 +944,10 @@ instance SetPixel (Image RGB D32) where
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g 
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
-instance SetPixel (Image DFT D32) where
-    type SP (Image DFT D32) = Complex D32
+instance SetPixel (Image Complex D32) where
+    type SP (Image Complex D32) = C.Complex D32
     {-#INLINE setPixel#-}
-    setPixel (x,y) (re:+im) image = withGenImage image $ \c_i -> do
+    setPixel (x,y) (re C.:+ im) image = withGenImage image $ \c_i -> do
                              d <- {#get IplImage->imageData#} c_i
                              s <- {#get IplImage->widthStep#} c_i
                              let cs = fromIntegral s

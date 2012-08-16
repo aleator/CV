@@ -1833,7 +1833,7 @@ void localVerticalBinaryPattern(IplImage *src, int *LBP)
 //@-node:aleator.20051207074905:LBP
 //@+node:aleator.20051109102750:Selective Average
 // Assuming grayscale image calculate local selective average of point x y
-double calcSelectiveAvg(IplImage *img,double t
+inline double calcSelectiveAvg(IplImage *img,double t
                                    ,int x, int y
                                    ,int wwidth, int wheight)
 {
