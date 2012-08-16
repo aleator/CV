@@ -66,15 +66,21 @@ Library
                        cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
                        cbits/wrapImgProc.h,
-                       cbits/cvIterators.h
+                       cbits/cvIterators.h,
+                       cbits/cvProjection.h,
+                       cbits/cvFiles.h
     c-sources:         cbits/cvWrapLEO.c,
                        cbits/cvWrapCore.c,
                        cbits/wrapImgProc.c,
-                       cbits/cvIterators.c
+                       cbits/cvIterators.c,
+                       cbits/cvProjection.c,
+                       cbits/cvFiles.c
     install-includes:  cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
                        cbits/wrapImgProc.h,
-                       cbits/cvIterators.h
+                       cbits/cvIterators.h,
+                       cbits/cvProjection.h,
+                       cbits/cvFiles.h
     if flag(opencv23)
         cpp-options: -DOpenCV23
         cc-options: -DOpenCV23
@@ -154,6 +160,8 @@ Library
                        ,CV.Tracking                           
                        ,CV.Transforms                         
                        ,CV.Video                              
+                       ,CV.Projection
+                       ,CV.Files
                        ,Utils.DrawingClass                    
                        ,Utils.Function                        
                        ,Utils.GeometryClass                   
@@ -171,7 +179,9 @@ Library
                        CV.Bindings.Drawing,
                        CV.Bindings.Error,
                        CV.Bindings.Features,
-                       CV.Bindings.Iterators
+                       CV.Bindings.Iterators,
+                       CV.Bindings.Projection,
+                       CV.Bindings.Files
     Extensions: CPP
 
 source-repository head
