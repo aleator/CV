@@ -1,8 +1,9 @@
 module CV.Sampling where
 
 import CV.Image
-import System.Random
+import Control.Monad.Primitive
 import Control.Monad
+import System.Random.MWC
 
 import Foreign.C.Types
 import qualified CV.ImageMath as IM
@@ -63,11 +64,11 @@ getCenteredPatches size coords image = map (\c -> getRegion (adjust c)
                                          adjust (x,y) = (x-w`div`2
                                                         ,y-h`div`2)
 
--- Make a random selections in IO monad
-randomSelect lst = randomRIO (0,length lst -1) >>= \x ->
-                              return (lst !! x)
+---- Make a random selections in IO monad
+--randomSelect lst = randomRIO (0,length lst -1) >>= \x ->
+--                              return (lst !! x)
                               
-select k lst = sequence $ replicate k (randomSelect lst)
+-- select k lst = sequence $ replicate k (randomSelect lst)
 
 -- Discard coords around image borders. Useful for safely picking patches
 discardAroundEdges (iw,ih) (vb,hb) coords = filter inRange coords
@@ -89,28 +90,28 @@ getMarkedPatches size source marks
     where coords = getCoordsFromMarks marks
 
 
----- Get some random image patches
---randomPatches size count image = do
---    coords <- replicateM count $ randomCoord (w,h)
---    return $ getPatches size coords image
--- where
---    (pwidth,pheight) = size
---    (iwidth,iheight) = getSize image
---    (w,h) = (iwidth - pwidth , iheight-pheight) 
+-- Get some random image patches
+randomPatches size count image gen = do
+    coords <- replicateM count $ randomCoord (w,h) gen
+    return $ getPatches size coords image
+ where
+    (pwidth,pheight) = size
+    (iwidth,iheight) = getSize image
+    (w,h) = (iwidth - pwidth , iheight-pheight) 
 
----- Get some random pixels from image
---randomPixels count image = do
---   coords <- replicateM count $ randomCoord size
---   return $ map (flip getPixel $ image) $ coords 
--- where
---  size = getSize image
+-- Get some random pixels from image
+-- randomPixels count image = do
+--    coords <- replicateM count $ randomCoord size
+--    return $ map (flip getPixel $ image) $ coords 
+--  where
+--   size = getSize image
 
 ---- Get some random coords from image
 --randomCoords :: MonadRandom m => Int -> (Int,Int) -> m [(Int,Int)]
 --randomCoords count area = replicateM count $ randomCoord area
 
---randomCoord :: MonadRandom m => (Int,Int) -> m (Int,Int)
---randomCoord (w,h) = do
---            x <- (getRandomR (0::Int,fromIntegral $ w-1))
---            y <- (getRandomR (0::Int,fromIntegral $ h-1))
---            return (x,y) 
+randomCoord :: PrimMonad m => (Int,Int) -> Gen (PrimState m) -> m (Int,Int)
+randomCoord (w,h) g = do
+            x <- uniformR (0::Int,fromIntegral $ w-1) g
+            y <- uniformR (0::Int,fromIntegral $ h-1) g
+            return (x,y) 
