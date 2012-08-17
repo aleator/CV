@@ -72,9 +72,9 @@ module CV.Image (
 , tileImages
 
 -- * Conversions
-, rgbToGray 
+, rgbToGray
 , grayToRGB
-, rgbToLab 
+, rgbToLab
 , bgrToRgb
 , rgbToBgr
 , cloneTo64F
@@ -114,6 +114,7 @@ import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
+
 import CV.Bindings.Error
 
 import Data.Maybe(catMaybes)
@@ -431,37 +432,37 @@ enum CvtCodes {
     CV_BayerGB2BGR_VNG =63,
     CV_BayerRG2BGR_VNG =64,
     CV_BayerGR2BGR_VNG =65,
-    
+
     CV_BayerBG2RGB_VNG =CV_BayerRG2BGR_VNG,
     CV_BayerGB2RGB_VNG =CV_BayerGR2BGR_VNG,
     CV_BayerRG2RGB_VNG =CV_BayerBG2BGR_VNG,
     CV_BayerGR2RGB_VNG =CV_BayerGB2BGR_VNG,
-    
+
     CV_BGR2HSV_FULL = 66,
     CV_RGB2HSV_FULL = 67,
     CV_BGR2HLS_FULL = 68,
     CV_RGB2HLS_FULL = 69,
-    
+
     CV_HSV2BGR_FULL = 70,
     CV_HSV2RGB_FULL = 71,
     CV_HLS2BGR_FULL = 72,
     CV_HLS2RGB_FULL = 73,
-    
+
     CV_LBGR2Lab     = 74,
     CV_LRGB2Lab     = 75,
     CV_LBGR2Luv     = 76,
     CV_LRGB2Luv     = 77,
-    
+
     CV_Lab2LBGR     = 78,
     CV_Lab2LRGB     = 79,
     CV_Luv2LBGR     = 80,
     CV_Luv2LRGB     = 81,
-    
+
     CV_BGR2YUV      = 82,
     CV_RGB2YUV      = 83,
     CV_YUV2BGR      = 84,
     CV_YUV2RGB      = 85,
-    
+
     CV_COLORCVT_MAX  =100
 };
 #endc
@@ -678,10 +679,10 @@ emptyCopy' img = create (getSize img)
 
 -- | Save image. This will convert the image to 8 bit one before saving
 class Save a where
-    save :: FilePath -> a -> IO () 
+    save :: FilePath -> a -> IO ()
 
 instance Save (Image BGR D32) where
-    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image)
 
 instance Save (Image RGB D32) where
     save filename image = primitiveSave filename (swapRB . unS . unsafeImageTo8Bit $ image)
@@ -693,10 +694,10 @@ instance Save (Image GrayScale D8) where
     save filename image = primitiveSave filename (unS $ image)
 
 instance Save (Image GrayScale D32) where
-    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
-     
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image)
+
 primitiveSave :: FilePath -> BareImage -> IO ()
-primitiveSave filename fpi = do 
+primitiveSave filename fpi = do
        exists <- doesDirectoryExist (takeDirectory filename)
        when (not exists) $ throw (CvIOError $ "Directory does not exist: " ++ (takeDirectory filename))
        withCString  filename $ \name  ->
@@ -941,7 +942,7 @@ instance SetPixel (Image RGB D32) where
                                          let cs = fromIntegral s
                                              fs = sizeOf (undefined :: Float)
                                          poke (castPtr (d`plusPtr` (y*cs +x*3*fs)))     b
-                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g 
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
 instance SetPixel (Image Complex D32) where
@@ -974,13 +975,13 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 --  between images. Images are assumed to be the same size (determined by the first image)
 montage :: (CreateImage (Image GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
 montage (u',v') space' imgs
-    | u'*v' /= (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
+    | u'*v' < (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
     | otherwise              = resultPic
     where
      space = fromIntegral space'
      (u,v) = (fromIntegral u', fromIntegral v')
      (rw,rh) = (u*xstep,v*ystep)
-     (w,h) = getSize (head imgs)
+     (w,h) = foldl (\(mx,my) (x,y) -> (max mx x, max my y)) (0,0) $ map getSize imgs
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
@@ -1005,7 +1006,7 @@ setCatch = do
          func <- peekCString cstr1
          msg  <- peekCString cstr2
          file <- peekCString cstr3
-         throw (CvException (fromIntegral i) func msg file (fromIntegral j)) 
+         throw (CvException (fromIntegral i) func msg file (fromIntegral j))
          return 0
    cb <- mk'CvErrorCallback catch
    c'cvRedirectError cb nullPtr nullPtr

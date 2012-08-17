@@ -2,6 +2,7 @@
 module CV.Operations
 ( clear
 , set
+, expand
 , NormType(..)
 , normalize
 , unitNormalize
@@ -11,6 +12,7 @@ module CV.Operations
 ) where
 
 import CV.Bindings.Core
+import CV.Bindings.ImgProc
 import CV.Bindings.Types
 import CV.Image
 import CV.ImageMath as IM
@@ -30,6 +32,12 @@ set v i = unsafePerformIO $ do
   withImage i $ \i_ptr ->
     c'wrapSetAll (castPtr i_ptr) (realToFrac v) nullPtr
   return i
+
+
+expand :: (Int,Int,Int,Int) -> Image d c -> Image d c
+expand (top,bottom,left,right) i = unsafePerformIO $
+  copyMakeBorder i top bottom left right BorderReplicate 0
+
 
 data NormType =
   NormC |
