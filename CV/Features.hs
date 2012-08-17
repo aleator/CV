@@ -1,6 +1,8 @@
 {-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
-module CV.Features (SURFParams, defaultSURFParams, getSURF
+module CV.Features (SURFParams, defaultSURFParams, mkSURFParams, getSURF
+#ifndef OpenCV24
                    ,getMSER, MSERParams, mkMSERParams, defaultMSERParams
+#endif
                    ,moments,Moments,getSpatialMoment,getCentralMoment,getNormalizedCentralMoment) where
 import CV.Image
 import CV.Bindings.Types
@@ -13,6 +15,7 @@ import Foreign.Marshal.Utils
 import Utils.GeometryClass
 import System.IO.Unsafe
 
+#ifndef OpenCV24
 newtype MSERParams = MP C'CvMSERParams deriving (Show)
 
 -- | Create parameters for getMSER.
@@ -49,6 +52,7 @@ getMSER image mask (MP params) = unsafePerformIO $
       pts :: [C'CvPoint] <- cvSeqToList ctr
       return (map convertPt pts)
 
+#endif
 
 -- TODO: Move this to some utility module
 withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α
@@ -106,7 +110,7 @@ getSURF (SP params) image mask = unsafePerformIO $
     ptr_keypoints <- peek ptr_ptr_keypoints
     ptr_descriptors <- peek ptr_ptr_descriptors
     a <- cvSeqToList ptr_keypoints
-    b <- if c'CvSURFParams'extended params /= 1
+    b <- if c'CvSURFParams'extended params == 1
            then do
             es :: [FloatBlock128] <- cvSeqToList ptr_descriptors
             return (map (\(FP128 e) -> e) es)

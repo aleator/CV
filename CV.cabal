@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.5.3
+Version:             0.3.6.2
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -18,6 +18,10 @@ Description:         This is a machine vision package that wraps some functional
                       <http://aleator.github.com/CV/>
                      .
                      Changelog.
+                     0.3.6.0 - Critical referential transparency bug fix.
+                     .
+                     0.3.5.4 - Bug fixes and preliminary compatability with opencv 2.4
+                     .
                      0.3.5 - Many new wrappers, clean ups and other fixes.
                      .
                      0.3.4 - Pixelwise operations, bug fixes and additional documentation
@@ -49,6 +53,9 @@ Flag opencv23
   Description: Compatability for opencv 2.3.1
   Default:     True
 
+Flag opencv24
+  Description: Compatability for opencv 2.4
+  Default:     False
 
 Library
     Build-Tools:       c2hs >= 0.16.3
@@ -59,18 +66,27 @@ Library
                        cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
                        cbits/wrapImgProc.h,
-                       cbits/cvIterators.h
+                       cbits/cvIterators.h,
+                       cbits/cvProjection.h,
+                       cbits/cvFiles.h
     c-sources:         cbits/cvWrapLEO.c,
                        cbits/cvWrapCore.c,
                        cbits/wrapImgProc.c,
-                       cbits/cvIterators.c
+                       cbits/cvIterators.c,
+                       cbits/cvProjection.c,
+                       cbits/cvFiles.c
     install-includes:  cbits/cvWrapLEO.h,
                        cbits/cvWrapCore.h,
                        cbits/wrapImgProc.h,
-                       cbits/cvIterators.h
+                       cbits/cvIterators.h,
+                       cbits/cvProjection.h,
+                       cbits/cvFiles.h
     if flag(opencv23)
         cpp-options: -DOpenCV23
         cc-options: -DOpenCV23
+    if flag(opencv24)
+        cpp-options: -DOpenCV24
+        cc-options: -DOpenCV24
     cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
@@ -90,7 +106,7 @@ Library
                        array >= 0.2.0.0,
                        directory >= 1 && < 2,
                        mtl >= 1.1.0,
-                       random >= 1.0.0,
+                       -- random >= 1.0.0,
                        carray >= 0.1.5,
                        QuickCheck >= 2.1,
                        containers >= 0.2,
@@ -101,7 +117,10 @@ Library
                        vector >= 0.7.0.1 && < 1.1,
                        lazysmallcheck >= 0.5 && < 1,
                        parallel-io    >= 0.3.2 && < 0.3.3,
-                       storable-tuple >= 0.0.2 && <= 1
+                       storable-tuple >= 0.0.2 && <= 1,
+                       mwc-random >= 0.12.0.0,
+                       primitive  >= 0.4.1, 
+                       filepath >= 1.3.0.0 && < 1.4
 
     Exposed-modules:   CV.Image                               
                        ,CV.Arbitrary                          
@@ -141,6 +160,8 @@ Library
                        ,CV.Tracking                           
                        ,CV.Transforms                         
                        ,CV.Video                              
+                       ,CV.Projection
+                       ,CV.Files
                        ,Utils.DrawingClass                    
                        ,Utils.Function                        
                        ,Utils.GeometryClass                   
@@ -158,7 +179,9 @@ Library
                        CV.Bindings.Drawing,
                        CV.Bindings.Error,
                        CV.Bindings.Features,
-                       CV.Bindings.Iterators
+                       CV.Bindings.Iterators,
+                       CV.Bindings.Projection,
+                       CV.Bindings.Files
     Extensions: CPP
 
 source-repository head

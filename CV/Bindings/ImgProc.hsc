@@ -52,7 +52,6 @@ copyMakeBorder i t b l r border value =
             (fromIntegral r)
             (cBorderType border)
             (realToFrac value)
-
 -- moments
 
 -- | Calculates all spatial and central moments up to the 3rd order
@@ -119,6 +118,18 @@ copyMakeBorder i t b l r border value =
 --   double param1 CV_DEFAULT(0),
 --   double param2 CV_DEFAULT(0)
 -- );
+--
+-- CvSeq* cvHoughCircles(
+--   CvArr* image,
+--   void* circle_storage,
+--   int method,
+--   double dp,
+--   double min_dist,
+--   double param1=100,
+--   double param2=100,
+--   int min_radius=0,
+--   int max_radius=0
+-- );
 
 #num CV_HOUGH_STANDARD
 #num CV_HOUGH_PROBABILISTIC
@@ -126,6 +137,7 @@ copyMakeBorder i t b l r border value =
 #num CV_HOUGH_GRADIENT
 
 #ccall cvHoughLines2, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Int -> Double -> Double -> IO ()
+#ccall cvHoughCircles, Ptr <CvArr> -> Ptr () -> Int -> Double -> Double -> Double -> Double -> Int -> Int -> IO ()
 
 #ccall wrapFilter2, Ptr  <CvArr> -> Ptr <CvArr> -> Ptr <CvMat> -> Ptr <CvPoint> -> IO ()
 

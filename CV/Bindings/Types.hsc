@@ -9,6 +9,7 @@ import Foreign.Marshal.Utils
 import Foreign.Marshal.Array
 import Utils.GeometryClass
 import Utils.Rectangle
+import qualified Data.Vector.Unboxed as U
 import GHC.Float
 
 #strict_import
@@ -88,6 +89,15 @@ cvSeqToList ptrseq = do
    c'extractCVSeq ptrseq (castPtr dest)
    peekArray (fromIntegral $ c'CvSeq'total seq) dest
 
+-- | A version of `cvSeqToList` that returns a vector instead. All the warnings of `CvSeqToList` apply.
+cvSeqToVector :: (U.Unbox a, Storable a) => Ptr C'CvSeq -> IO (U.Vector a)
+cvSeqToVector ptrseq = do
+   seq <- peek ptrseq
+   dest <- mallocArray (fromIntegral $ c'CvSeq'total seq)
+   c'extractCVSeq ptrseq (castPtr dest)
+   U.generateM (fromIntegral $ c'CvSeq'total seq) (peekElemOff dest)
+   -- peekArray (fromIntegral $ c'CvSeq'total seq) dest
+
 
 #starttype CvRect
 #field x , CInt
@@ -141,10 +151,18 @@ instance FromBounds C'CvRect where
 #field height , CInt
 #stoptype
 
+instance Sized C'CvSize where
+    type Size  C'CvSize = (Int,Int)
+    getSize (C'CvSize w h)  = (fromIntegral w,fromIntegral h)
+
 #starttype CvSize2D32f
 #field width , CFloat
 #field height , CFloat
 #stoptype
+
+instance Sized C'CvSize2D32f where
+    type Size  C'CvSize2D32f = (Float,Float)
+    getSize (C'CvSize2D32f w h)  = (realToFrac w, realToFrac h)
 
 #starttype CvConnectedComp
 #field area, CDouble
@@ -172,6 +190,10 @@ instance Point2D C'CvPoint2D32f where
    type ELP C'CvPoint2D32f = Double
    pt (C'CvPoint2D32f x y) = (realToFrac x,realToFrac y)
    toPt (x,y) = C'CvPoint2D32f (realToFrac x) (realToFrac y)
+
+instance Sized C'CvBox2D where
+    type Size  C'CvBox2D = (Float,Float)
+    getSize (C'CvBox2D _ s _) = getSize s
 
 -- // #starttype CV_32FC2
 -- // #field x , Float
@@ -245,6 +267,7 @@ toCvTCrit (ITER i) = C'CvTermCriteria c'CV_TERMCRIT_ITER (fromIntegral i) 0
 #num CV_TERMCRIT_ITER    
 #num CV_TERMCRIT_NUMBER  
 #num CV_TERMCRIT_EPS     
+
 
 
 -- Memory Storage

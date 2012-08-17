@@ -4,8 +4,9 @@ module CV.Image (
 -- * Basic types
  Image(..)
 , create
-, empty 
-, emptyCopy 
+, empty
+, emptyCopy
+, emptyCopy'
 , cloneImage
 , withClone
 , withCloneValue
@@ -14,7 +15,7 @@ module CV.Image (
 -- * Colour spaces
 , ChannelOf
 , GrayScale
-, DFT
+, Complex
 , RGB
 , RGBA
 , RGB_Channel(..)
@@ -46,6 +47,7 @@ module CV.Image (
 -- * Image information
 , ImageDepth
 , Sized(..)
+, biggerThan
 , getArea
 , getChannel
 , getImageChannels
@@ -70,12 +72,14 @@ module CV.Image (
 , tileImages
 
 -- * Conversions
-, rgbToGray 
+, rgbToGray
 , grayToRGB
-, rgbToLab 
+, rgbToLab
 , bgrToRgb
 , rgbToBgr
+, cloneTo64F
 , unsafeImageTo32F 
+, unsafeImageTo64F 
 , unsafeImageTo8Bit 
 
 -- * Low level access operations
@@ -94,10 +98,13 @@ module CV.Image (
 -- * Extended error handling
 , setCatch
 , CvException
+, CvSizeError(..)
+, CvIOError(..)
 ) where
 
 import System.Mem
 import System.Directory
+import System.FilePath
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -107,6 +114,7 @@ import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
+
 import CV.Bindings.Error
 
 import Data.Maybe(catMaybes)
@@ -114,16 +122,17 @@ import Data.List(genericLength)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
-import Foreign.ForeignPtr (unsafeForeignPtrToPtr)
+import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 import Foreign.Storable
 import System.IO.Unsafe
 import Data.Word
-import Data.Complex
-import Data.Complex
+import qualified Data.Complex as C
 import Control.Monad
 import Control.Exception
 import Data.Data
 import Data.Typeable
+
+import Utils.GeometryClass
 
 
 
@@ -132,8 +141,7 @@ import Data.Typeable
 
 -- | Single channel grayscale image
 data GrayScale
-
-data DFT
+data Complex
 data RGB
 data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 
@@ -255,28 +263,28 @@ instance Loadable ((Image GrayScale D32)) where
         e <- loadImage fp
         case e of
          Just i -> return i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image RGB D32)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
          Just i -> return $ unsafeImageTo32F $ bgrToRgb i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image RGB D8)) where
     readFromFile fp = do
         e <- loadColorImage8 fp
         case e of
          Just i -> return $ bgrToRgb i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 instance Loadable ((Image GrayScale D8)) where
     readFromFile fp = do
         e <- loadImage8 fp
         case e of
          Just i -> return i
-         Nothing -> fail $ "Could not load "++fp
+         Nothing -> throw $ CvIOError $ "Could not load "++fp
 
 
 -- | This function loads and converts image to an arbitrary format. Notice that it is
@@ -300,10 +308,7 @@ loadColorImage = unsafeloadUsing imageTo32F 1
 loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
--- | Typeclass for elements with a size, such as images and matrices.
-class Sized a where
-    type Size a :: *
-    getSize :: a -> Size a
+
 
 instance Sized BareImage where
     type Size BareImage = (Int,Int)
@@ -427,37 +432,37 @@ enum CvtCodes {
     CV_BayerGB2BGR_VNG =63,
     CV_BayerRG2BGR_VNG =64,
     CV_BayerGR2BGR_VNG =65,
-    
+
     CV_BayerBG2RGB_VNG =CV_BayerRG2BGR_VNG,
     CV_BayerGB2RGB_VNG =CV_BayerGR2BGR_VNG,
     CV_BayerRG2RGB_VNG =CV_BayerBG2BGR_VNG,
     CV_BayerGR2RGB_VNG =CV_BayerGB2BGR_VNG,
-    
+
     CV_BGR2HSV_FULL = 66,
     CV_RGB2HSV_FULL = 67,
     CV_BGR2HLS_FULL = 68,
     CV_RGB2HLS_FULL = 69,
-    
+
     CV_HSV2BGR_FULL = 70,
     CV_HSV2RGB_FULL = 71,
     CV_HLS2BGR_FULL = 72,
     CV_HLS2RGB_FULL = 73,
-    
+
     CV_LBGR2Lab     = 74,
     CV_LRGB2Lab     = 75,
     CV_LBGR2Luv     = 76,
     CV_LRGB2Luv     = 77,
-    
+
     CV_Lab2LBGR     = 78,
     CV_Lab2LRGB     = 79,
     CV_Luv2LBGR     = 80,
     CV_Luv2LRGB     = 81,
-    
+
     CV_BGR2YUV      = 82,
     CV_RGB2YUV      = 83,
     CV_YUV2BGR      = 84,
     CV_YUV2RGB      = 85,
-    
+
     CV_COLORCVT_MAX  =100
 };
 #endc
@@ -515,8 +520,8 @@ instance GetPixel (Image GrayScale D8) where
                                          s <- {#get IplImage->widthStep#} c_i
                                          peek (castPtr (d`plusPtr` (y*(fromIntegral s) +x*sizeOf (0::Word8))):: Ptr Word8)
 
-instance GetPixel (Image DFT D32) where
-    type P (Image DFT D32) = Complex D32
+instance GetPixel (Image Complex D32) where
+    type P (Image Complex D32) = C.Complex D32
     {-#INLINE getPixel#-}
     getPixel (x,y) i = unsafePerformIO $
                         withGenImage i $ \c_i -> do
@@ -526,7 +531,7 @@ instance GetPixel (Image DFT D32) where
                                              fs = sizeOf (undefined :: Float)
                                          re <- peek (castPtr (d`plusPtr` (y*cs + x*2*fs)))
                                          im <- peek (castPtr (d`plusPtr` (y*cs +(x*2+1)*fs)))
-                                         return (re:+im)
+                                         return (re C.:+ im)
 
 -- #define UGETC(img,color,x,y) (((uint8_t *)((img)->imageData + (y)*(img)->widthStep))[(x)*3+(color)])
 instance GetPixel (Image RGB D32) where
@@ -632,7 +637,7 @@ class CreateImage a where
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
-instance CreateImage (Image DFT D32) where
+instance CreateImage (Image Complex D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 2
 instance CreateImage (Image LAB D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 3
@@ -669,12 +674,15 @@ empty size = unsafePerformIO $ create size
 emptyCopy :: (CreateImage (Image a b)) => Image a b -> (Image a b)
 emptyCopy img = unsafePerformIO $ create (getSize img)
 
+emptyCopy' :: (CreateImage (Image a b)) => Image a b -> IO (Image a b)
+emptyCopy' img = create (getSize img)
+
 -- | Save image. This will convert the image to 8 bit one before saving
 class Save a where
-    save :: FilePath -> a -> IO () 
+    save :: FilePath -> a -> IO ()
 
 instance Save (Image BGR D32) where
-    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image)
 
 instance Save (Image RGB D32) where
     save filename image = primitiveSave filename (swapRB . unS . unsafeImageTo8Bit $ image)
@@ -686,10 +694,12 @@ instance Save (Image GrayScale D8) where
     save filename image = primitiveSave filename (unS $ image)
 
 instance Save (Image GrayScale D32) where
-    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image) 
-     
+    save filename image = primitiveSave filename (unS . unsafeImageTo8Bit $ image)
+
 primitiveSave :: FilePath -> BareImage -> IO ()
-primitiveSave filename fpi = do 
+primitiveSave filename fpi = do
+       exists <- doesDirectoryExist (takeDirectory filename)
+       when (not exists) $ throw (CvIOError $ "Directory does not exist: " ++ (takeDirectory filename))
        withCString  filename $ \name  ->
         withGenBareImage fpi    $ \cvArr ->
          alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
@@ -768,7 +778,7 @@ blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
                                 withImage image1Alpha $ \i1a ->
                                  withImage image2Alpha $ \i2a ->
                                   withImage image2 $ \i2 ->
-                                   ({#call alphaBlit#} i1 i1a i2 i2a x y)
+                                   ({#call alphaBlit#} i1 i1a i2 i2a y x)
 
 
 -- | Create a copy of an image
@@ -798,6 +808,16 @@ withCloneValue img fun = do
                 result <- cloneImage img
                 r <- fun result
                 return r
+
+cloneTo64F :: Image c d -> IO (Image c D64)
+cloneTo64F img = withGenImage img $ \image ->
+                creatingImage
+                 ({#call ensure64F #} image)
+
+unsafeImageTo64F :: Image c d -> Image c D64
+unsafeImageTo64F img = unsafePerformIO $ withGenImage img $ \image ->
+                creatingImage
+                 ({#call ensure64F #} image)
 
 unsafeImageTo32F :: Image c d -> Image c D32
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image ->
@@ -922,13 +942,13 @@ instance SetPixel (Image RGB D32) where
                                          let cs = fromIntegral s
                                              fs = sizeOf (undefined :: Float)
                                          poke (castPtr (d`plusPtr` (y*cs +x*3*fs)))     b
-                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g 
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
-instance SetPixel (Image DFT D32) where
-    type SP (Image DFT D32) = Complex D32
+instance SetPixel (Image Complex D32) where
+    type SP (Image Complex D32) = C.Complex D32
     {-#INLINE setPixel#-}
-    setPixel (x,y) (re:+im) image = withGenImage image $ \c_i -> do
+    setPixel (x,y) (re C.:+ im) image = withGenImage image $ \c_i -> do
                              d <- {#get IplImage->imageData#} c_i
                              s <- {#get IplImage->widthStep#} c_i
                              let cs = fromIntegral s
@@ -955,13 +975,13 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 --  between images. Images are assumed to be the same size (determined by the first image)
 montage :: (CreateImage (Image GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
 montage (u',v') space' imgs
-    | u'*v' /= (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
+    | u'*v' < (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
     | otherwise              = resultPic
     where
      space = fromIntegral space'
      (u,v) = (fromIntegral u', fromIntegral v')
      (rw,rh) = (u*xstep,v*ystep)
-     (w,h) = getSize (head imgs)
+     (w,h) = foldl (\(mx,my) (x,y) -> (max mx x, max my y)) (0,0) $ map getSize imgs
      (xstep,ystep) = (fromIntegral space + w,fromIntegral space + h)
      edge = space`div`2
      resultPic = unsafePerformIO $ do
@@ -974,14 +994,19 @@ montage (u',v') space' imgs
 data CvException = CvException Int String String String Int
      deriving (Show, Typeable)
 
+data CvIOError = CvIOError String deriving (Show,Typeable)
+data CvSizeError = CvSizeError String deriving (Show,Typeable)
+
 instance Exception CvException
+instance Exception CvIOError
+instance Exception CvSizeError
 
 setCatch = do
    let catch i cstr1 cstr2 cstr3 j = do
          func <- peekCString cstr1
          msg  <- peekCString cstr2
          file <- peekCString cstr3
-         throw (CvException (fromIntegral i) func msg file (fromIntegral j)) 
+         throw (CvException (fromIntegral i) func msg file (fromIntegral j))
          return 0
    cb <- mk'CvErrorCallback catch
    c'cvRedirectError cb nullPtr nullPtr

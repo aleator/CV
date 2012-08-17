@@ -57,6 +57,8 @@ void wrapDrawLine(CvArr *img, int x, int y, int x1, int y1, double r, double g, 
 
 void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, float b);
 
+void wrapDrawEllipse(IplImage *img, int x, int y, int r1, int r2, float a, float a1, float a2, float r, float g, float b, int thickness);
+
 void wrapMatMul(int w, int h, double *mat
                , double *vec, double *t);
 
@@ -292,9 +294,9 @@ void wrapExtractSURF(const CvArr* image, const CvArr* mask, CvSeq** keypoints, C
 return cvExtractSURF(image, mask, keypoints, descriptors, storage, *param, useProvidedKeyPts);
 };
 
-void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
-cvExtractMSER( _img, _mask, contours, storage, *params );
-};
+#ifndef OpenCV24
+void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params );
+#endif
 
 void wrapEllipseBox(CvArr* img, CvBox2D *box, CvScalar *color
                    ,int thickness, int lineType, int shift)
@@ -320,6 +322,13 @@ void wrapMinAreaRect2(const CvArr* points, CvMemStorage* storage, CvBox2D *r)
 
 void wrapBoundingRect(CvArr* points, int update, CvRect *r)
 { *r = cvBoundingRect(points, update); }
+
+void wrapWarpPerspective(const CvArr* src, CvArr* dst, const CvMat* mapMatrix )
+{ cvWarpPerspective( src,  dst,  mapMatrix, CV_INTER_LINEAR+CV_WARP_FILL_OUTLIERS, cvScalarAll(0)); }
+
+void blitShadow(IplImage *a, IplImage *b);
+
+IplImage* ensure64F(const IplImage *src);
 
 #endif
 //@-node:aleator.20050908101148.2:@thin cvWrapLEO.h

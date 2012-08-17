@@ -22,7 +22,7 @@ module CV.Conversions (
     ,acquireImageSlow8URGB'
     ) where
 
-import Data.Complex
+import Data.Complex as C
 
 import CV.Image
 import Data.Word
@@ -76,7 +76,7 @@ copyImageToFCArray (S img) = unsafePerformIO $
 
 
 -- |Copy the real part of an array to image
-copyComplexCArrayToImage :: CArray (Int,Int) (Complex Double) -> Image GrayScale D32
+copyComplexCArrayToImage :: CArray (Int,Int) (C.Complex Double) -> Image GrayScale D32
 copyComplexCArrayToImage carr = S $ unsafePerformIO $
                           creatingBareImage (withCArray carr (acquireImageSlowComplex' w h))
     where
@@ -99,7 +99,7 @@ copyImageToExistingCArray (S img) arr =
      (w,h) = getSize img
 
 -- |Copy image as a real part of a complex CArray
-copyImageToComplexCArray :: Image GrayScale D32 -> CArray (Int,Int) (Complex Double)
+copyImageToComplexCArray :: Image GrayScale D32 -> CArray (Int,Int) (C.Complex Double)
 copyImageToComplexCArray (S img) = unsafePerformIO $
          withBareImage img $ \cimg ->
           createCArray ((0,0),(w-1,h-1)) (exportImageSlowComplex' cimg) --({#call exportImageSlow#} cimg)
@@ -113,7 +113,7 @@ foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowF"
   exportImageSlowF' :: ((Ptr (BareImage)) -> ((Ptr Float) -> (IO ())))
 
 foreign import ccall safe "CV/cvWrapLeo.h exportImageSlowComplex"
-  exportImageSlowComplex' :: ((Ptr (BareImage)) -> ((Ptr (Complex Double)) -> (IO ())))
+  exportImageSlowComplex' :: ((Ptr (BareImage)) -> ((Ptr (C.Complex Double)) -> (IO ())))
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow"
   acquireImageSlow' :: (Int -> (Int -> ((Ptr Double) -> (IO (Ptr (BareImage))))))
@@ -131,5 +131,5 @@ foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlow8U"
   acquireImageSlow8U' :: (Int -> (Int -> ((Ptr Word8) -> (IO (Ptr (BareImage))))))
 
 foreign import ccall safe "CV/cvWrapLeo.h acquireImageSlowComplex"
-  acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (Complex Double)) -> (IO (Ptr (BareImage))))))
+  acquireImageSlowComplex' :: (Int -> (Int -> ((Ptr (C.Complex Double)) -> (IO (Ptr (BareImage))))))
 

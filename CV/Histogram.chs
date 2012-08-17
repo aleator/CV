@@ -39,7 +39,6 @@ backProjectHistogram _ _ = error "Empty list of images"
 -- own number of bins.
 histogram :: [(Image GrayScale D8, Int)] -> Bool -> Maybe (Image GrayScale D8)
                -> I.Histogram
-
 histogram imageBins accumulate mask  = unsafePerformIO $
  I.creatingHistogram $ do
         hist <-  I.emptyUniformHistogramND ds

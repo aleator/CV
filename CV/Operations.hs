@@ -1,14 +1,18 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module CV.Operations
 ( clear
 , set
+, expand
 , NormType(..)
 , normalize
 , unitNormalize
 , unitStretch
 , logNormalize
+, cartToPolar
 ) where
 
 import CV.Bindings.Core
+import CV.Bindings.ImgProc
 import CV.Bindings.Types
 import CV.Image
 import CV.ImageMath as IM
@@ -28,6 +32,12 @@ set v i = unsafePerformIO $ do
   withImage i $ \i_ptr ->
     c'wrapSetAll (castPtr i_ptr) (realToFrac v) nullPtr
   return i
+
+
+expand :: (Int,Int,Int,Int) -> Image d c -> Image d c
+expand (top,bottom,left,right) i = unsafePerformIO $
+  copyMakeBorder i top bottom left right BorderReplicate 0
+
 
 data NormType =
   NormC |
@@ -64,9 +74,9 @@ normalize :: Double -> Double -> NormType -> Image c d -> Image c d
 normalize a b t src =
   unsafePerformIO $ do
     withCloneValue src $ \clone ->
-      withImage src $ \si ->
-        withImage clone $ \ci -> do
-          c'cvNormalize (castPtr si) (castPtr ci) (realToFrac a) (realToFrac b) (cNormType t) nullPtr
+      withGenImage src $ \si ->
+        withGenImage clone $ \ci -> do
+          c'cvNormalize si ci (realToFrac a) (realToFrac b) (cNormType t) nullPtr
           return clone
 
 unitNormalize i
@@ -78,3 +88,16 @@ unitNormalize i
 unitStretch i = normalize 0 1 NormMinMax i
 
 logNormalize = unitNormalize . IM.log . (1 |+)
+
+cartToPolar :: (Image GrayScale D32, Image GrayScale D32) -> (Image GrayScale D32, Image GrayScale D32)
+cartToPolar (x,y) = unsafePerformIO $ do
+  r::(Image GrayScale D32) <- create (w, h)
+  a::(Image GrayScale D32) <- create (w, h)
+  withImage x $ \px ->
+    withImage y $ \py ->
+      withImage r $ \pr ->
+        withImage a $ \pa -> do
+          c'cvCartToPolar (castPtr px) (castPtr py) (castPtr pr) (castPtr pa) (fromIntegral 0)
+          return (r,a)
+  where
+    (w,h) = getSize x

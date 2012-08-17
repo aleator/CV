@@ -11,47 +11,6 @@ import CV.Image(BareImage)
 #include "cvWrapCore.h"
 #include <opencv2/core/core_c.h>
 
--- CVAPI(IplImage*) cvCreateImage(
---   CvSize size,
---   int depth,
---   int channels
--- );
-
--- Creates IPL image (header and data)
-
--- need to use wrapper functions since passing struct by value.
-
--- #ccall wrapCreateImage , CInt -> CInt -> CInt -> CInt -> IO (Ptr IplImage)
-
--- Releases IPL image header and data
--- CVAPI(void) cvReleaseImage(
---   IplImage** image
--- );
-
--- Allocates and initializes CvMat header and allocates data
--- CVAPI(CvMat*) cvCreateMat(
---  int rows,
---  int cols,
---  int type
--- );
-
--- Releases CvMat header and deallocates matrix data
--- (reference counting is used for data)
--- CVAPI(void) cvReleaseMat(
---   CvMat** mat
--- );
-
--- CVAPI(void) cvSet(
---   CvArr* arr,
---   CvScalar value,
---   const CvArr* mask CV_DEFAULT(NULL)
--- );
-
--- Sets all or "masked" elements of input array
--- to the same value
-
--- need to use wrapper functions since passing struct by value.
-
 #ccall wrapSet , Ptr <CvArr> -> Ptr <CvScalar> -> Ptr <CvArr> -> IO ()
 #ccall wrapSetAll , Ptr <CvArr> -> CDouble -> Ptr <CvArr> -> IO ()
 #ccall wrapSet1 , Ptr <CvArr> -> CDouble -> Ptr <CvArr> -> IO ()
@@ -59,50 +18,14 @@ import CV.Image(BareImage)
 #ccall wrapSet3 , Ptr <CvArr> -> CDouble -> CDouble -> CDouble -> Ptr <CvArr> -> IO ()
 #ccall wrapSet4 , Ptr <CvArr> -> CDouble -> CDouble -> CDouble -> CDouble -> Ptr <CvArr> -> IO ()
 
--- CVAPI(void) cvSetZero(
---   CvArr* arr
--- );
-
 -- Clears all the array elements (sets them to 0)
+#ccall cvSetZero , Ptr BareImage -> IO ()
 
-#ccall cvSetZero , Ptr <CvArr> -> IO ()
+#ccall cvSplit , Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> IO ()
 
--- CVAPI(void) cvSplit(
---   const CvArr* src,
---   CvArr* dst0,
---   CvArr* dst1,
---   CvArr* dst2,
---   CvArr* dst3
--- );
+#ccall cvMerge , Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> IO ()
 
--- Splits a multi-channel array into the set of single-channel arrays or
--- extracts particular [color] plane
-
-#ccall cvSplit , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> IO ()
-
--- |CVAPI(void) cvMerge(
--- |  const CvArr* src0,
--- |  const CvArr* src1,
--- |  const CvArr* src2,
--- |  const CvArr* src3,
--- |  CvArr* dst
--- |);
--- |Merges a set of single-channel arrays into the single multi-channel array
--- |or inserts one particular [color] plane to the array
-#ccall cvMerge , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> IO ()
-
--- CVAPI(void) cvCartToPolar(
---   const CvArr* x,
---   const CvArr* y,
---   CvArr* magnitude,
---   CvArr* angle CV_DEFAULT(NULL),
---   int angle_in_degrees CV_DEFAULT(0)
--- );
-
--- Does cartesian->polar coordinates conversion.
--- Either of output components (magnitude or angle) is optional
-
-#ccall cvCartToPolar , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
+#ccall cvCartToPolar , Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> CInt -> IO ()
 
 -- | CVAPI(void) cvPolarToCart(
 -- |   const CvArr* magnitude,
@@ -165,7 +88,7 @@ import CV.Image(BareImage)
 --   const CvArr* mask CV_DEFAULT(NULL)
 -- );
 
-#ccall cvNormalize , Ptr <CvArr> -> Ptr <CvArr> -> CDouble -> CDouble -> CInt -> Ptr <CvArr> -> IO ()
+#ccall cvNormalize , Ptr BareImage -> Ptr BareImage -> CDouble -> CDouble -> CInt -> Ptr BareImage -> IO ()
 
 -- stuff related to DFT
 
@@ -178,6 +101,7 @@ import CV.Image(BareImage)
 #num CV_DXT_COMPLEX_OUTPUT
 #num CV_DXT_REAL_OUTPUT
 #num CV_DXT_INV_REAL
+#num CV_DXT_INVERSE_SCALE
 
 -- CVAPI(void) cvDFT(
 --   const CvArr* src,
@@ -191,11 +115,7 @@ import CV.Image(BareImage)
 --   real->ccs (forward),
 --   ccs->real (inverse)
 
-#ccall cvDFT , Ptr <CvArr> -> Ptr <CvArr> -> CInt -> CInt -> IO ()
-
--- #ccall cvWrapDFT , Ptr <CvArr> -> Ptr <CvArr> -> IO ()
-
--- #ccall cvWrapIDFT , Ptr <CvArr> -> Ptr <CvArr> -> IO ()
+#ccall cvDFT , Ptr BareImage -> Ptr BareImage -> CInt -> CInt -> IO ()
 
 -- CVAPI(void) cvMulSpectrums(
 --   const CvArr* src1,
@@ -204,11 +124,9 @@ import CV.Image(BareImage)
 --   int flags
 -- );
 
-#ccall swapQuadrants, Ptr <CvArr> -> IO ()
-
 -- Multiply results of DFTs: DFT(X)*DFT(Y) or DFT(X)*conj(DFT(Y))
 
-#ccall cvMulSpectrums , Ptr <CvArr> -> Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
+#ccall cvMulSpectrums , Ptr BareImage -> Ptr BareImage -> Ptr BareImage -> CInt -> IO ()
 
 -- CVAPI(int) cvGetOptimalDFTSize(
 --   int size0
@@ -227,5 +145,7 @@ import CV.Image(BareImage)
 
 -- Discrete Cosine Transform
 
-#ccall cvDCT , Ptr <CvArr> -> Ptr <CvArr> -> CInt -> IO ()
+#ccall cvDCT , Ptr BareImage -> Ptr BareImage -> CInt -> IO ()
 
+-- TODO: This might be expanded:
+#opaque_t CvSeq

@@ -16,6 +16,7 @@ import Utils.Rectangle hiding (scale)
 
 {#import CV.Image#}
 import System.IO.Unsafe
+import Control.Exception
 
 getTemplateMap image template = unsafePerformIO $
 	   withImage image $ \cvimg ->
@@ -38,6 +39,7 @@ enum MatchType {
 
 simpleTemplateMatch :: MatchType -> Image GrayScale D32 -> Image GrayScale D32 -> ((Int,Int),Double)
 simpleTemplateMatch mt image template 
+ | image `biggerThan` template
 	= unsafePerformIO $ do
 	   withImage image $ \cvimg ->
 	    withImage template $ \cvtemp ->
@@ -49,9 +51,11 @@ simpleTemplateMatch mt image template
 			y <- peek ptrinty;
 			v <- peek ptrdblval;
 		    return ((fromIntegral x,fromIntegral y),realToFrac v); }
+ | otherwise = throw $ CvSizeError "simpleTemplateMatch: template is bigger than the image"
 
 matchTemplate :: MatchType-> Image GrayScale D32 -> Image GrayScale D32 -> Image GrayScale D32 
-matchTemplate mt image template = unsafePerformIO $ do
+matchTemplate mt image template 
+ | image `biggerThan` template = unsafePerformIO $ do
      let isize = getSize image
          tsize = getSize template
          size  = isize - tsize + (1,1) 
@@ -61,6 +65,7 @@ matchTemplate mt image template = unsafePerformIO $ do
        withGenImage res $ \cresult -> 
         {#call cvMatchTemplate#} cimg ctempl cresult (fromIntegral . fromEnum $ mt)
      return res
+ | otherwise = throw $ CvSizeError $ "MatchTemplate: template larger than the image"
 
 
 -- | Perform subpixel template matching using intensity interpolation

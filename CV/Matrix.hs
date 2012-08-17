@@ -5,7 +5,7 @@ module CV.Matrix
     (
     Exists(..),
     Matrix, emptyMatrix, fromFunction, fromList,toList,toRows,toCols,get,put,withMatPtr
-    , transpose, mxm, rodrigues2, identity
+    , transpose, mxm, invert,  rodrigues2, identity
     )where
 
 
@@ -52,47 +52,51 @@ matrixFinalizer ptr = with ptr c'cvReleaseMat
 
 class Exists a where
     type Args a :: *
-    create :: Args a -> a
+    create :: Args a -> IO a
 
 instance Exists (Matrix Float) where
     type Args (Matrix Float) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC1)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32FC1)
 
 instance Exists (Matrix Int) where
     type Args (Matrix Int) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC1)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32SC1)
 
 instance Exists (Matrix (Int,Int)) where
     type Args (Matrix (Int,Int)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC2)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32SC2)
 
 instance Exists (Matrix (Float,Float)) where
     type Args (Matrix (Float,Float)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32FC2)
 
 instance Exists (Matrix (CFloat,CFloat)) where
     type Args (Matrix (CFloat,CFloat)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC2)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32FC2)
 
 instance Exists (Matrix (Float,Float,Float)) where
     type Args (Matrix (Float,Float,Float)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32FC3)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32FC3)
+
+instance Exists (Matrix (CFloat,CFloat,CFloat)) where
+    type Args (Matrix (CFloat,CFloat,CFloat)) = (Int,Int)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32FC3)
 
 instance Exists (Matrix (Int,Int,Int,Int)) where
     type Args (Matrix (Int,Int,Int,Int)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32SC4)
 
 instance Exists (Matrix (CInt,CInt,CInt,CInt)) where
     type Args (Matrix (CInt,CInt,CInt,CInt)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_32SC4)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_32SC4)
 
 instance Exists (Matrix Double) where
     type Args (Matrix Double) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC1)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_64FC1)
 
 instance Exists (Matrix (Double,Double)) where
     type Args (Matrix (Double,Double)) = (Int,Int)
-    create (r,c) = unsafePerformIO $ creatingMat (c'cvCreateMat r c c'CV_64FC2)
+    create (r,c) = creatingMat (c'cvCreateMat r c c'CV_64FC2)
 
 instance Sized (Matrix a) where
     type Size (Matrix a) = (Int,Int)
@@ -103,14 +107,14 @@ instance Sized (Matrix a) where
 
 -- | Create an empty matrix of given dimensions
 emptyMatrix :: Exists (Matrix a) => Args (Matrix a) -> Matrix a
-emptyMatrix a = create a
+emptyMatrix = unsafePerformIO . create
 
 -- | Create an identity matrix
 identity :: (Num a, Sized (Matrix a), Args (Matrix a) ~ (Int,Int),  Size (Matrix a) ~ (Int,Int),  Storable a, Exists (Matrix a)) =>
              (Matrix a) -> Matrix a
 identity a = unsafePerformIO $ do
-             let res = create (getSize a)
-                 (rows,cols) = getSize a
+             res <- create (getSize a)
+             let (rows,cols) = getSize a
              sequence_ [put res row col 1
                        | row <- [0..rows-1]
                        | col <- [0..cols-1]]
@@ -119,7 +123,7 @@ identity a = unsafePerformIO $ do
 -- | Transpose a matrix. Does not do complex conjugation for complex matrices
 transpose :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Matrix a
 transpose m@(Matrix f_m) = unsafePerformIO $ do
-                 let res@(Matrix f_c) = create (getSize m)
+                 res@(Matrix f_c) <- create (getSize m)
                  withForeignPtr f_m $ \c_m ->
                   withForeignPtr f_c $ c'cvTranspose c_m
                  return res
@@ -127,10 +131,20 @@ transpose m@(Matrix f_m) = unsafePerformIO $ do
 -- | Convert a rotation vector to a rotation matrix (1x3 -> 3x3)
 rodrigues2 :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Matrix a
 rodrigues2 m@(Matrix f_m) = unsafePerformIO $ do
-                 let res@(Matrix f_c) = create (3,3)
+                 res@(Matrix f_c) <- create (3,3)
                  withForeignPtr f_m $ \c_m ->
                   withForeignPtr f_c $ \c_c -> c'cvRodrigues2 c_m c_c nullPtr
                  return res
+
+
+-- | Matrix inversion
+invert :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Matrix a
+invert m@(Matrix f_m) = unsafePerformIO $ do
+                 res@(Matrix f_c) <- create (getSize m)
+                 withForeignPtr f_m $ \c_m ->
+                  withForeignPtr f_c $ \c_c -> c'cvInvert c_m c_c (fromIntegral . fromEnum $ c'CV_LU)
+                 return res
+
 
 
 -- | Ordinary matrix multiplication
@@ -138,7 +152,7 @@ mxm :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a -> Ma
 mxm m1@(Matrix a_m) m2@(Matrix b_m) = unsafePerformIO $ do
                  let (w1,h1) = getSize m1
                      (w2,h2) = getSize m2
-                     res@(Matrix f_c) = create (w1,h2)
+                 res@(Matrix f_c) <-create (w1,h2)
                  when (h1 /= w2) . error  $
                     "Matrix dimensions do not match for multiplication: "
                     ++show (w1,h1)
@@ -240,4 +254,3 @@ put (Matrix m) row col v = withForeignPtr m $ \mat -> do
 putRaw :: forall t. (Storable t) => Ptr t -> CInt -> Int -> Int -> Int -> t -> IO ()
 putRaw d step eltSize col row v =
          poke (castPtr (d `plusPtr` (col*(fromIntegral step)+row*eltSize))) v
-

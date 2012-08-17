@@ -66,7 +66,7 @@ imageHoughLinesMultiScale n ρ θ t distDiv angleDiv img =
 
 houghLinesStandard :: Image GrayScale D8 -> Int -> Double -> Double -> Int -> [(CFloat,CFloat)]
 houghLinesStandard img n ρ θ t = unsafePerformIO $ do
-    let m :: Matrix (CFloat,CFloat) = create (1,n)
+    m :: Matrix (CFloat,CFloat) <- create (1,n)
     withMatPtr m $ \c_m ->
         withImage img $ \c_img ->
             c'cvHoughLines2 (castPtr c_img) (castPtr c_m) c'CV_HOUGH_STANDARD ρ θ t 0 0
@@ -75,7 +75,7 @@ houghLinesStandard img n ρ θ t = unsafePerformIO $ do
 houghLinesProbabilistic :: Image GrayScale D8 -> Int -> Double -> Double -> Int -> Double -> Double
                                 -> [(CInt,CInt,CInt,CInt)]
 houghLinesProbabilistic img n ρ θ t minLength maxGap = unsafePerformIO $ do
-    let m :: Matrix (CInt,CInt,CInt,CInt) = create (1,n)
+    m :: Matrix (CInt,CInt,CInt,CInt) <- create (1,n)
     withMatPtr m $ \c_m ->
         withImage img $ \c_img ->
             c'cvHoughLines2 (castPtr c_img) (castPtr c_m) c'CV_HOUGH_PROBABILISTIC ρ θ t minLength maxGap
@@ -84,8 +84,16 @@ houghLinesProbabilistic img n ρ θ t minLength maxGap = unsafePerformIO $ do
 houghLinesMultiscale :: Image GrayScale D8 -> Int -> Double -> Double -> Int -> Double -> Double
                                 -> [(CFloat,CFloat)]
 houghLinesMultiscale img n ρ θ t distDiv angleDiv = unsafePerformIO $ do
-    let m :: Matrix (CFloat,CFloat) = create (1,n)
+    m :: Matrix (CFloat,CFloat) <- create (1,n)
     withMatPtr m $ \c_m ->
         withImage img $ \c_img ->
             c'cvHoughLines2 (castPtr c_img) (castPtr c_m) c'CV_HOUGH_MULTI_SCALE ρ θ t distDiv angleDiv
+    return $ toList m
+
+houghCirclesGradient :: Image GrayScale D8 -> Int -> Double -> Double -> Double -> Double -> Int -> Int -> [(CFloat, CFloat, CFloat)]
+houghCirclesGradient img n dp minDist cannyThresh accumThresh minRad maxRad = unsafePerformIO $ do
+    m :: Matrix (CFloat,CFloat,CFloat) <- create (1,n)
+    withMatPtr m $ \c_m ->
+        withImage img $ \c_img ->
+            c'cvHoughCircles (castPtr c_img) (castPtr c_m) c'CV_HOUGH_GRADIENT dp minDist cannyThresh accumThresh minRad maxRad
     return $ toList m

@@ -280,6 +280,36 @@ IplImage* ensure8U(const IplImage *src)
 
 // Return image that is IPL_DEPTH_32F version of
 // given src
+IplImage* ensure64F(const IplImage *src)
+{
+ CvSize size;
+ IplImage *result;
+ int channels = src->nChannels;
+ int dstDepth = IPL_DEPTH_64F;
+ size = cvGetSize(src);
+ result = cvCreateImage(size,dstDepth,channels);
+
+ switch(src->depth) {
+  case IPL_DEPTH_32F:
+  case IPL_DEPTH_64F:
+   cvConvertScale(src,result,1,0); // Scale the values to [0,255]
+   return result;
+  case IPL_DEPTH_8U:
+  case IPL_DEPTH_8S:
+   cvConvertScale(src,result,1.0/255.0,0);
+   return result;
+  case IPL_DEPTH_16S:
+   cvConvertScale(src,result,1.0/65535.0,0);
+   return result;
+  case IPL_DEPTH_32S:
+   cvConvertScale(src,result,1.0/4294967295.0,0);
+   return result;
+  default:
+   printf("Cannot convert to floating image");
+   abort();
+ }
+}
+
 IplImage* ensure32F(const IplImage *src)
 {
  CvSize size;
@@ -307,7 +337,6 @@ IplImage* ensure32F(const IplImage *src)
   default:
    printf("Cannot convert to floating image");
    abort();
-
  }
 }
 
@@ -375,7 +404,10 @@ void wrapFillPolygon(IplImage *img, int pc, int *xs, int *ys, float r, float g, 
  free(pts);
 }
 
-
+void wrapDrawEllipse(IplImage *img, int x, int y, int r1, int r2, float a, float a1, float a2, float r, float g, float b, int thickness)
+{
+  cvEllipse(img, cvPoint(x,y),cvSize(r1,r2),a,a1,a2,CV_RGB(r,g,b),thickness,8,0);
+}
 
 int getImageWidth(IplImage *img)
 {
@@ -452,6 +484,30 @@ void blitImg(IplImage *a, IplImage *b,int offset_x, int offset_y)
  cvCopy(b,a,NULL);
  cvResetImageROI(a);
 // printf("Done!\n"); fflush(stdout);
+}
+
+// Assuming a is the bigger image
+void blitShadow(IplImage *a, IplImage *b)
+{
+ CvSize sa = cvGetSize(a);
+ CvSize sb = cvGetSize(b);
+
+ for ( int i=0; i<sb.width; i++ )
+  for ( int j=0; j<sb.height; j++ )
+   FGET(a,i,j) = FGET(b,i,j);
+
+ for ( int i=sb.width; i<sa.width; i++ )
+  for ( int j=0; j<sb.height; j++ )
+   FGET(a,i,j) = FGET(b,sb.width-1,j);
+
+ for ( int i=0; i<sb.width; i++ )
+  for ( int j=sb.height; j<sa.height; j++ )
+   FGET(a,i,j) = FGET(b,i,sb.height-1);
+
+ for ( int i=sb.width; i<sa.width; i++ )
+  for ( int j=sb.height; j<sa.height; j++ )
+   FGET(a,i,j) = FGET(b,sb.width-1,sb.height-1);
+
 }
 
 IplImage* makeEvenDown(IplImage *src)
@@ -889,8 +945,8 @@ void calculateAtan(IplImage *src, IplImage *dst)
 {
   CvSize imageSize = cvGetSize(dst);
   double r=0; int i; int j;
-  for(i=0; i<imageSize.width; ++i)
-    for(j=0; j<imageSize.height; ++j) {
+  for(j=0; j<imageSize.width; ++j)
+    for(i=0; i<imageSize.height; ++i) {
           r = FGET(src,j,i); //// cvGetReal2D(src,j,i);
           FGET(dst,j,i) = atan(r);
           //cvSet2D(dst,j,i,cvScalarAll(atan(r)));
@@ -900,8 +956,8 @@ void calculateAtan(IplImage *src, IplImage *dst)
 void calculateAtan2(IplImage *src1,IplImage *src2, IplImage *dst)
 {
   CvSize imageSize = cvGetSize(dst);
-  for(int i=0; i<imageSize.width; ++i)
-    for(int j=0; j<imageSize.height; ++j) {
+  for(int j=0; j<imageSize.width; ++j)
+    for(int i=0; i<imageSize.height; ++i) {
           double a = FGET(src1,j,i);
           double b = FGET(src2,j,i);
           FGET(dst,j,i) = atan2(a,b);
@@ -1780,7 +1836,7 @@ void localVerticalBinaryPattern(IplImage *src, int *LBP)
 //@-node:aleator.20051207074905:LBP
 //@+node:aleator.20051109102750:Selective Average
 // Assuming grayscale image calculate local selective average of point x y
-double calcSelectiveAvg(IplImage *img,double t
+inline double calcSelectiveAvg(IplImage *img,double t
                                    ,int x, int y
                                    ,int wwidth, int wheight)
 {
@@ -2128,7 +2184,7 @@ int blobCount(IplImage *src)
 //@+node:aleator.20060413093124.1:sizeFilter
 IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
 {
-    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_32F, 1 );
+    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1 );
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contour = 0;
 
@@ -2139,7 +2195,7 @@ IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
     {
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
-        CvScalar color = cvScalar(1,1,1,1);
+        CvScalar color = cvScalar(255,255,255,255);
         cvDrawContours( dst, contour, color, color, -1, CV_FILLED, 8,
             cvPoint(0,0));
     }
@@ -2348,7 +2404,11 @@ int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners
 
 double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints, const CvMat* pointCounts, CvSize *imageSize, CvMat* cameraMatrix, CvMat* distCoeffs, CvMat* rvecs, CvMat* tvecs, int flags)
 {
+#ifdef OpenCV24
+return cvCalibrateCamera2(objectPoints, imagePoints, pointCounts, *imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags, cvTermCriteria(CV_TERMCRIT_ITER+CV_TERMCRIT_EPS,30,DBL_EPSILON));
+#else
 return cvCalibrateCamera2(objectPoints, imagePoints, pointCounts, *imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags);
+#endif
 };
 
 void wrapFindCornerSubPix(const CvArr* image, CvPoint2D32f* corners, int count, int winW, int winH, int zeroW, int zeroH, int tType, int maxIter, double epsilon) {
@@ -2382,6 +2442,11 @@ for( int i = 0; i < seq->total; i++ )
 }}
 
 
+#ifndef OpenCV24
+void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
+cvExtractMSER( _img, _mask, contours, storage, *params );
+};
+#endif
 //
 //@-node:aleator.20051220091717:Matrix multiplication
 //@-all
