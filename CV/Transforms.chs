@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns, ScopedTypeVariables, PatternGuards, FlexibleContexts#-}
+{-#LANGUAGE CPP, ForeignFunctionInterface, ViewPatterns, ScopedTypeVariables, PatternGuards, FlexibleContexts#-}
 #include "cvWrapLEO.h"
 -- |Various image transformations from opencv and other sources.
 module CV.Transforms  where
