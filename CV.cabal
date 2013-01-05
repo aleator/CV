@@ -87,7 +87,6 @@ Library
     if flag(opencv24)
         cpp-options: -DOpenCV24
         cc-options: -DOpenCV24
-    cc-options:        --std=c99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
                        opencv_core,
