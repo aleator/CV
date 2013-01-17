@@ -4,6 +4,7 @@ module CV.Thresholding(
   -- * Interfaces to OpenCV functions
   ThresholdType(..)
 , threshold
+, thresholdInPlace
 , thresholdOtsu
 , AdaptiveType(..)
 , adaptiveThreshold
@@ -24,6 +25,7 @@ import CV.Morphology
 import System.IO.Unsafe
 import CV.Sampling
 import Utils.List
+import Unsafe.Coerce
 import Data.List
 import CV.Histogram
 import CV.Bindings.ImgProc
@@ -95,6 +97,14 @@ threshold ttype tval image =
           c'cvThreshold (castPtr pimage) (castPtr presult) (realToFrac tval)
             (realToFrac (maxval image)) (cThresholdType ttype)
           return result
+
+-- TODO: Convert into imageOperation
+thresholdInPlace :: (MaxVal d) => ThresholdType -> Double -> Image GrayScale d -> IO (Image GrayScale D8)
+thresholdInPlace ttype tval image = do
+      withImage image $ \pimage ->
+          c'cvThreshold (castPtr pimage) (castPtr pimage) (realToFrac tval)
+            (realToFrac (maxval image)) (cThresholdType ttype)
+      return (unsafeCoerce image)
 
 -- | Thresholds a grayscale image using the otsu method according to the
 --   selected type. Threshold value is selected automatically, and only 8-bit
