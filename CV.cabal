@@ -83,10 +83,10 @@ Library
                        cbits/cvFiles.h
     if flag(opencv23)
         cpp-options: -DOpenCV23
-        cc-options: -DOpenCV23
+        cc-options: -DOpenCV23 -std=gnu99
     if flag(opencv24)
         cpp-options: -DOpenCV24
-        cc-options: -DOpenCV24
+        cc-options: -DOpenCV24 -std=gnu99
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
                        opencv_core,

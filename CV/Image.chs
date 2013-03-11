@@ -92,6 +92,7 @@ module CV.Image (
 , creatingBareImage
 , withGenImage
 , withImage
+, withRawImageData
 , imageFPTR
 , ensure32F
 
@@ -173,6 +174,12 @@ imageFPTR (S (BareImage fptr)) = fptr
 withImage :: Image c d -> (Ptr BareImage ->IO a) -> IO a
 withImage (S i) op = withBareImage i op
 --withGenNewImage (S i) op = withGenImage i op
+
+withRawImageData :: Image c d -> (Int -> Ptr Word8 -> IO a) -> IO a
+withRawImageData (S i) op = withBareImage i $ \pp-> do
+                             d  <- {#get IplImage->imageData#} pp 
+                             wd <- {#get IplImage->widthStep#} pp
+                             op (fromIntegral wd) (castPtr d)
 
 -- Ok. this is just the example why I need image types
 withUniPtr with x fun = with x $ \y ->
@@ -932,6 +939,18 @@ instance SetPixel (Image GrayScale D8) where
                              poke (castPtr (d`plusPtr` (y*(fromIntegral s)
                                   + x*sizeOf (0::Word8))):: Ptr Word8)
                                   v
+
+instance SetPixel (Image RGB D8) where
+    type SP (Image RGB D8) = (D8,D8,D8)
+    {-#INLINE setPixel#-}
+    setPixel (x,y) (r,g,b) image = withGenImage image $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: D8)
+                                         poke (castPtr (d`plusPtr` (y*cs +x*3*fs)))     b
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
 instance SetPixel (Image RGB D32) where
     type SP (Image RGB D32) = (D32,D32,D32)
