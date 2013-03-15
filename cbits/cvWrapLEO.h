@@ -203,7 +203,7 @@ void wrapDrawRectangle(CvArr *img, int x1, int y1,
 
 void calculateAtan(IplImage *src, IplImage *dst);
 void calculateAtan2(IplImage *src1,IplImage *src2, IplImage *dst);
-
+double calcSelectiveAvg(IplImage *img, double t , int x, int y , int wwidth, int wheight);
 
 // Contours
 typedef struct {

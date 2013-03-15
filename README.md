@@ -8,7 +8,14 @@ How To Install
 ==============
 
 The main installation instructions are detailed in the [Project Wiki]. In short, install
-GHC 7.4.1, cabal install, c2hs and c version of opencv and your good to go.
+GHC >= 7.4.1, cabal install, c2hs and c version of opencv and your good to go.
+According to the OpenCV version you are using, you may need to run the installation
+process with one of these two flags ```-fopencv23``` or ```-fopencv24```, like so:
+
+```
+cabal install -fopencv24
+```
+
 There is also an [example installation transcript with all the gory details] in the wiki.
 
 [example installation with all the gory details]: https://github.com/aleator/CV/wiki/One-go-at-installing-CV
