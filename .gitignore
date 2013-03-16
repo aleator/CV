@@ -10,6 +10,9 @@ examples/img_channel1.tif
 examples/img_channel2.tif
 examples/img_channel3.tif
 tutorial/*.swp
+examples/*.hi
+examples/*.o
+examples/edges.png
 
 dist/
 *.hi
