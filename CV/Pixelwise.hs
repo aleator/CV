@@ -11,6 +11,7 @@ module CV.Pixelwise (Pixelwise(..)
                     ,remapImage
                     ,mapImage
                     ,mapPixels
+                    ,mapNeighbourhood
                     ,imageFromFunction
                     ,imageToFunction
                     ,(<$$>)
@@ -105,11 +106,18 @@ remapImage ::
      (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
 
 remapImage f i = toImage . remap f $ fromImage i
--- toImage . remap f . fromImage . toImage . remap f . fromImage
 
+-- | Map over indevidual pixels
 mapPixels :: (t -> x) -> Pixelwise t -> Pixelwise x
 mapPixels f (MkP s e) = MkP s (\(i,j) -> f $ e (i,j))
 
+-- | Map over all neighbourhoods of the image
+mapNeighbourhood :: (((Int,Int) ->t) -> x) -> Pixelwise t -> Pixelwise x
+mapNeighbourhood f (MkP s e) = MkP s (\(i,j) -> f $ n e (i,j))
+   where
+    n f (u,v) (x,y) = f (x+u,y+v)
+
+-- | Map over pixels of an image.
 mapImage ::
      (CreateImage (Image c d),
       SetPixel (Image c d),

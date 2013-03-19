@@ -58,7 +58,9 @@ mkRec = uncurry mkRectangle
 fromPtSize (x,y) (w,h) = Rectangle x y w h
 
 -- | Return rectangle r2 in coordinate system defined by r1
-inCoords r1 r2@(Rectangle x y w h) = fromPtSize ((x,y)-topLeft r1,(w,h) )
+inCoords :: Num t =>
+     Rectangle t -> Rectangle t -> Rectangle t
+inCoords r1 r2@(Rectangle x y w h) = fromPtSize ((x,y)-topLeft r1) (w,h)
 
 -- | Return a point in coordinates of given rectangle
 inCoords' r1 pt = pt - topLeft r1
