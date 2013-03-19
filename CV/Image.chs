@@ -73,6 +73,7 @@ module CV.Image (
 
 -- * Conversions
 , rgbToGray
+, rgbToGray8
 , grayToRGB
 , rgbToLab
 , bgrToRgb
@@ -485,6 +486,9 @@ rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
 rgbToGray :: Image RGB D32 -> Image GrayScale D32
 rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
 
+rgbToGray8 :: Image RGB D8 -> Image GrayScale D8
+rgbToGray8 = S . convert8UTo cvRGBtoGRAY 1 . unS
+
 grayToRGB :: Image GrayScale D32 -> Image RGB D32
 grayToRGB = S . convertTo (fromIntegral . fromEnum $ CV_GRAY2BGR) 3 . unS
 
@@ -626,6 +630,14 @@ mapImageInplace f image = withGenImage image $ \c_i -> do
 
 
 
+convert8UTo :: CInt -> CInt -> BareImage -> BareImage
+convert8UTo code channels img = unsafePerformIO $ creatingBareImage $ do
+    res <- {#call wrapCreateImage8U#} w h channels
+    withBareImage img $ \cimg ->
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+    return res
+ where
+    (fromIntegral -> w,fromIntegral -> h) = getSize img
 
 convertTo :: CInt -> CInt -> BareImage -> BareImage
 convertTo code channels img = unsafePerformIO $ creatingBareImage $ do

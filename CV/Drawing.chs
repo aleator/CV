@@ -101,6 +101,16 @@ instance Drawable RGB D32 where
     fillPolyOp   (r,g,b)  = primFillPolyOp (r,g,b)
     ellipseOp    (r,g,b)  = primEllipseOp (r,g,b)
 
+instance Drawable RGB D8 where
+    type Color RGB D8 = (D8,D8,D8)
+    putTextOp    (r,g,b)  = primTextOp      (r,g,b)
+    lineOp       (r,g,b)  = primLineOp      (r,g,b)
+    circleOp     (r,g,b)  = primCircleOp    (r,g,b)
+    ellipseBoxOp (r,g,b)  = primEllipseBox  (fromIntegral r,fromIntegral g,fromIntegral b,0)
+    rectOp       (r,g,b)  = primRectOp      (r,g,b)
+    fillPolyOp   (r,g,b)  = primFillPolyOp  (r,g,b)
+    ellipseOp    (r,g,b)  = primEllipseOp   (r,g,b)
+
 primTextOp (c1,c2,c3) size text (x,y)  = ImgOp $ \img -> do
                                    withGenImage img $ \cimg ->
                                     withCString text $ \(ctext) ->
