@@ -40,6 +40,7 @@ module CV.Image (
 -- * Pixel level access
 , GetPixel(..)
 , SetPixel(..)
+, safeGetPixel
 , getAllPixels
 , getAllPixelsRowMajor
 , mapImageInplace
@@ -506,6 +507,17 @@ swapRB img = unsafePerformIO $ do
      withBareImage res $ \cres ->
         {#call cvConvertImage#} (castPtr cimg) (castPtr cres) (fromIntegral . fromEnum $ CvtSwapRB)
     return res
+
+
+safeGetPixel :: (Int,Int) -> Image GrayScale D8 -> D8
+safeGetPixel (x,y) i | x<0 || x>= w || y<0 || y>=h = getPixel (x',y') i
+                     | otherwise = 0
+                where
+                    (w,h) = getSize i
+                    (x',y') = (clamp (0,w-1) x, clamp (0,h-1) y)
+
+clamp :: Ord a => (a, a) -> a -> a
+clamp (a,b) x = max a (min b x)
 
 
 class GetPixel a where
