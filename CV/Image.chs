@@ -114,6 +114,7 @@ import Foreign.Concurrent
 import Foreign.Ptr
 import Control.Parallel.Strategies
 import Control.DeepSeq
+import Control.Lens
 
 import CV.Bindings.Error
 

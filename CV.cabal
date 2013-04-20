@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.6.2
+Version:             0.3.7.0
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -106,7 +106,7 @@ Library
                        array >= 0.2.0.0,
                        directory >= 1 && < 2,
                        mtl >= 1.1.0,
-                       -- random >= 1.0.0,
+                       lens >= 3.7.0,
                        carray >= 0.1.5,
                        QuickCheck >= 2.1,
                        containers >= 0.2,
