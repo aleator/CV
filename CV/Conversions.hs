@@ -17,6 +17,7 @@ module CV.Conversions (
     -- * Acquiring images from pointers
     ,unsafe8UC_RGBFromPtr
     ,unsafe8UC_BGRFromPtr
+    ,unsafe8UC_MONOFromPtr
     ,acquireImageSlowF'
     ,acquireImageSlow'
     ,acquireImageSlow8URGB'
@@ -41,6 +42,9 @@ unsafe8UC_RGBFromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8U
 unsafe8UC_BGRFromPtr :: (Int,Int) -> Ptr Word8 -> IO (Image RGB D8)
 unsafe8UC_BGRFromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8UBGR' w h ptr)
 
+unsafe8UC_MONOFromPtr :: (Int,Int) -> Ptr Word8 -> IO (Image GrayScale D8)
+unsafe8UC_MONOFromPtr (w,h) ptr = S `fmap`  creatingBareImage (acquireImageSlow8U' w h ptr)
+
 -- |Copy the contents of a CArray into CV.Image type.
 copy8UCArrayToImage :: CArray (Int,Int) Word8 -> Image GrayScale D8
 copy8UCArrayToImage carr = S $ unsafePerformIO $
@@ -48,6 +52,7 @@ copy8UCArrayToImage carr = S $ unsafePerformIO $
     where
      ((sx,sy),(ex,ey)) = bounds carr
      (w,h) = (fromIntegral $ ex-sx+1, fromIntegral $ ey-sy+1)
+--
 -- |Copy the contents of a CArray into CV.Image type.
 copyCArrayToImage :: CArray (Int,Int) Double -> Image GrayScale D32
 copyCArrayToImage carr = S $ unsafePerformIO $

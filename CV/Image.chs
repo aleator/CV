@@ -40,6 +40,7 @@ module CV.Image (
 -- * Pixel level access
 , GetPixel(..)
 , SetPixel(..)
+, safeGetPixel
 , getAllPixels
 , getAllPixelsRowMajor
 , mapImageInplace
@@ -73,6 +74,7 @@ module CV.Image (
 
 -- * Conversions
 , rgbToGray
+, rgbToGray8
 , grayToRGB
 , rgbToLab
 , bgrToRgb
@@ -92,6 +94,7 @@ module CV.Image (
 , creatingBareImage
 , withGenImage
 , withImage
+, withRawImageData
 , imageFPTR
 , ensure32F
 
@@ -174,6 +177,12 @@ imageFPTR (S (BareImage fptr)) = fptr
 withImage :: Image c d -> (Ptr BareImage ->IO a) -> IO a
 withImage (S i) op = withBareImage i op
 --withGenNewImage (S i) op = withGenImage i op
+
+withRawImageData :: Image c d -> (Int -> Ptr Word8 -> IO a) -> IO a
+withRawImageData (S i) op = withBareImage i $ \pp-> do
+                             d  <- {#get IplImage->imageData#} pp 
+                             wd <- {#get IplImage->widthStep#} pp
+                             op (fromIntegral wd) (castPtr d)
 
 -- Ok. this is just the example why I need image types
 withUniPtr with x fun = with x $ \y ->
@@ -479,6 +488,9 @@ rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
 rgbToGray :: Image RGB D32 -> Image GrayScale D32
 rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
 
+rgbToGray8 :: Image RGB D8 -> Image GrayScale D8
+rgbToGray8 = S . convert8UTo cvRGBtoGRAY 1 . unS
+
 grayToRGB :: Image GrayScale D32 -> Image RGB D32
 grayToRGB = S . convertTo (fromIntegral . fromEnum $ CV_GRAY2BGR) 3 . unS
 
@@ -496,6 +508,17 @@ swapRB img = unsafePerformIO $ do
      withBareImage res $ \cres ->
         {#call cvConvertImage#} (castPtr cimg) (castPtr cres) (fromIntegral . fromEnum $ CvtSwapRB)
     return res
+
+
+safeGetPixel :: (Int,Int) -> Image GrayScale D8 -> D8
+safeGetPixel (x,y) i | x<0 || x>= w || y<0 || y>=h = getPixel (x',y') i
+                     | otherwise = 0
+                where
+                    (w,h) = getSize i
+                    (x',y') = (clamp (0,w-1) x, clamp (0,h-1) y)
+
+clamp :: Ord a => (a, a) -> a -> a
+clamp (a,b) x = max a (min b x)
 
 
 class GetPixel a where
@@ -620,6 +643,14 @@ mapImageInplace f image = withGenImage image $ \c_i -> do
 
 
 
+convert8UTo :: CInt -> CInt -> BareImage -> BareImage
+convert8UTo code channels img = unsafePerformIO $ creatingBareImage $ do
+    res <- {#call wrapCreateImage8U#} w h channels
+    withBareImage img $ \cimg ->
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+    return res
+ where
+    (fromIntegral -> w,fromIntegral -> h) = getSize img
 
 convertTo :: CInt -> CInt -> BareImage -> BareImage
 convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
@@ -933,6 +964,18 @@ instance SetPixel (Image GrayScale D8) where
                              poke (castPtr (d`plusPtr` (y*(fromIntegral s)
                                   + x*sizeOf (0::Word8))):: Ptr Word8)
                                   v
+
+instance SetPixel (Image RGB D8) where
+    type SP (Image RGB D8) = (D8,D8,D8)
+    {-#INLINE setPixel#-}
+    setPixel (x,y) (r,g,b) image = withGenImage image $ \c_i -> do
+                                         d <- {#get IplImage->imageData#} c_i
+                                         s <- {#get IplImage->widthStep#} c_i
+                                         let cs = fromIntegral s
+                                             fs = sizeOf (undefined :: D8)
+                                         poke (castPtr (d`plusPtr` (y*cs +x*3*fs)))     b
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
+                                         poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
 instance SetPixel (Image RGB D32) where
     type SP (Image RGB D32) = (D32,D32,D32)

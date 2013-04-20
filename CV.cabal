@@ -83,11 +83,10 @@ Library
                        cbits/cvFiles.h
     if flag(opencv23)
         cpp-options: -DOpenCV23
-        cc-options: -DOpenCV23
+        cc-options: -DOpenCV23 -std=gnu99
     if flag(opencv24)
         cpp-options: -DOpenCV24
-        cc-options: -DOpenCV24
-    cc-options:        --std=c99 -U__BLOCKS__
+        cc-options: -DOpenCV24 -std=gnu99
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
                        opencv_core,
@@ -114,7 +113,7 @@ Library
                        binary >= 0.5,
                        deepseq >= 1.1,
                        bindings-DSL >= 1.0.14 && < 1.1,
-                       vector >= 0.7.0.1 && < 1.1,
+                       vector >= 0.10.0.0 && < 1.1,
                        lazysmallcheck >= 0.5 && < 1,
                        parallel-io    >= 0.3.2 && < 0.3.3,
                        storable-tuple >= 0.0.2 && <= 1,
