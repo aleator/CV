@@ -846,16 +846,28 @@ cloneTo64F img = withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure64F #} image)
 
+-- | Convert an image to from arbitrary bit depth into 64 bit, floating point, image.
+--   This conversion does preserve the color space.
+-- Note: this function is named unsafe because it will lose information
+-- from the image. 
 unsafeImageTo64F :: Image c d -> Image c D64
 unsafeImageTo64F img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure64F #} image)
 
+-- | Convert an image to from arbitrary bit depth into 32 bit, floating point, image.
+--   This conversion does preserve the color space.
+-- Note: this function is named unsafe because it will lose information
+-- from the image. 
 unsafeImageTo32F :: Image c d -> Image c D32
 unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
                  ({#call ensure32F #} image)
 
+-- | Convert an image to from arbitrary bit depth into 8 bit image.
+--   This conversion does preserve the color space.
+-- Note: this function is named unsafe because it will lose information
+-- from the image. 
 unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
 unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image ->
                 creatingImage
