@@ -1295,7 +1295,8 @@ IplImage *read_from_tcr_rectified_old(const char *path)
         unsigned int x, y, minx, maxx, miny, maxy, count;
         unsigned int new_width, new_height, startx, endx, starty, endy;
         float value, sum, sum1, sum2, min, max, ratio, stretch, avg, sdv;
-        float sum_count, min_count, stretch_1, stretch_2;
+        int sum_count, min_count;
+        float stretch_1, stretch_2;
 
         min = 2000000000;
         max = 0;
