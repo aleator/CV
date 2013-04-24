@@ -11,6 +11,7 @@ module CV.Image (
 , withClone
 , withCloneValue
 , CreateImage
+, Save(..)
 
 -- * Colour spaces
 , ChannelOf
