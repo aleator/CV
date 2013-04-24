@@ -17,6 +17,7 @@ module CV.Image (
 , ChannelOf
 , GrayScale
 , Complex
+, BGR
 , RGB
 , RGBA
 , RGB_Channel(..)
