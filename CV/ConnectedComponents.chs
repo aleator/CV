@@ -18,6 +18,7 @@ module CV.ConnectedComponents
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
        ,Contours
+       ,ContourFunctionUS
        ,getContours
        ,contourArea
        ,contourPerimeter
