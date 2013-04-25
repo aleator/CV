@@ -2184,22 +2184,22 @@ int blobCount(const IplImage *src1)
 
 //@-node:aleator.20060727102514:blobCount
 //@+node:aleator.20060413093124.1:sizeFilter
-IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize)
+IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize, int mode)
 {
     IplImage* dst = cvCreateImage( cvGetSize(src1), IPL_DEPTH_8U, 1 );
     IplImage* src = cvCloneImage(src1);
     CvMemStorage* storage = cvCreateMemStorage(0);
+    CvScalar color = cvScalar(255,255,255,255);
+    CvScalar zeroColor = cvScalar(0,0,0,0);
     CvSeq* contour = 0;
 
-    cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
+    cvFindContours( src, storage, &contour, sizeof(CvContour), mode, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
     cvZero( dst );
 
     for( ; contour != NULL; contour = contour->h_next )
     {
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
-        CvScalar color = cvScalar(255,255,255,255);
-        CvScalar zeroColor = cvScalar(0,0,0,0);
         cvDrawContours( dst, contour, color, zeroColor, -1, CV_FILLED, 8,
             cvPoint(0,0));
     }
