@@ -7,7 +7,7 @@ module CV.ConnectedComponents
         fillConnectedComponents
        ,maskConnectedComponent
        ,selectSizedComponents
-       ,contourMode
+       ,ContourMode(..)
        ,countBlobs
        -- * Working with Image moments
        -- |Note that these functions should probably go to a different module, since
