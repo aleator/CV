@@ -155,7 +155,7 @@ void get_weighted_histogram(IplImage *src, IplImage *weights,
 void eigenValsViaSVD(double *A, int size, double *eVals
                     ,double *eVects);
 
-IplImage* sizeFilter(IplImage *src, double minSize, double maxSize);
+IplImage* sizeFilter(const IplImage *src, double minSize, double maxSize);
 int blobCount(const IplImage *src);
 
 

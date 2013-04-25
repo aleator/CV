@@ -2184,9 +2184,10 @@ int blobCount(const IplImage *src1)
 
 //@-node:aleator.20060727102514:blobCount
 //@+node:aleator.20060413093124.1:sizeFilter
-IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
+IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize)
 {
-    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1 );
+    IplImage* dst = cvCreateImage( cvGetSize(src1), IPL_DEPTH_8U, 1 );
+    IplImage* src = cvCloneImage(src1);
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contour = 0;
 
@@ -2202,6 +2203,7 @@ IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
             cvPoint(0,0));
     }
     cvReleaseMemStorage(&storage);
+    cvReleaseImage(&src);
     return dst;
 }
 //@-node:aleator.20060413093124.1:sizeFilter
