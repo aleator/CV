@@ -1,6 +1,9 @@
 {-#LANGUAGE ForeignFunctionInterface#-}
 #include "cvWrapLEO.h"
-module CV.Histogram where
+module CV.Histogram
+    ( module CV.Histogram
+    , I.Histogram
+    ) where
 
 import CV.Image
 {#import CV.Image#}
