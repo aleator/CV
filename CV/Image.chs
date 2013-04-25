@@ -13,6 +13,7 @@ module CV.Image (
 , emptyCopy'
 , cloneImage
 , withClone
+, withMutableClone
 , withCloneValue
 , CreateImage
 
@@ -65,7 +66,7 @@ module CV.Image (
 , resetROI
 , getRegion
 , withIOROI
-, withROI
+--, withROI
 
 -- * Blitting
 , blendBlit
@@ -846,6 +847,14 @@ cloneBareImage :: BareImage -> IO BareImage
 cloneBareImage img = withGenBareImage img $ \image ->
                     creatingBareImage ({#call cvCloneImage #} image)
 
+withMutableClone
+  :: Image channels depth
+     -> (MutableImage channels depth -> IO a)
+     -> IO a
+withMutableClone img fun = do
+                result <- toMutable img
+                fun result
+
 withClone
   :: Image channels depth
      -> (Image channels depth -> IO ())
@@ -940,10 +949,10 @@ getImageInfo x = do
 -- Manipulating regions of interest:
 setROI (fromIntegral -> x,fromIntegral -> y)
        (fromIntegral -> w,fromIntegral -> h)
-       image = withImage image $ \i ->
+       image = withMutableImage image $ \i ->
                             {#call wrapSetImageROI#} i x y w h
 
-resetROI image = withImage image $ \i ->
+resetROI image = withMutableImage image $ \i ->
                   {#call cvResetImageROI#} i
 
 setCOI :: (Enum a) => a -> MutableImage (ChannelOf a) d -> IO ()
@@ -967,18 +976,19 @@ getChannel no image = unsafePerformIO $ creatingImage $ do
     resetCOI mut
     return cres
 
+withIOROI :: (Int,Int) -> (Int,Int) -> MutableImage c d -> IO a -> IO a
 withIOROI pos size image op = do
             setROI pos size image
             x <- op
             resetROI image
             return x
 
-withROI :: (Int, Int) -> (Int, Int) -> Image c d -> (Image c d -> a) -> a
-withROI pos size image op = unsafePerformIO $ do
-                        setROI pos size image
-                        let x = op image -- BUG
-                        resetROI image
-                        return x
+--withROI :: (Int, Int) -> (Int, Int) -> Image c d -> (MutableImage c d -> a) -> a
+--withROI pos size image op = unsafePerformIO $ do
+--                        setROI pos size image
+--                        let x = op image -- BUG
+--                        resetROI image
+--                        return x
 
 class SetPixel a where
    type SP a :: *
