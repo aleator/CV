@@ -15,11 +15,13 @@ module CV.Image (
 , withClone
 , withCloneValue
 , CreateImage
+, Save(..)
 
 -- * Colour spaces
 , ChannelOf
 , GrayScale
 , Complex
+, BGR
 , RGB
 , RGBA
 , RGB_Channel(..)
