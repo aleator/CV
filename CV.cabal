@@ -57,6 +57,10 @@ Flag opencv24
   Description: Compatability for opencv 2.4
   Default:     False
 
+Flag gpu
+  Description: Include OpenCV GPU modules
+  Default:     False
+
 Library
     Build-Tools:       c2hs >= 0.16.3
     Include-dirs:      cbits/
@@ -87,12 +91,13 @@ Library
     if flag(opencv24)
         cpp-options: -DOpenCV24 -U__BLOCKS__
         cc-options: -DOpenCV24 -std=gnu99 -U__BLOCKS__
+    if flag(gpu)
+        extra-libraries:   opencv_gpu
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
                        opencv_core,
                        opencv_features2d,
                        opencv_flann,
-                       opencv_gpu,
                        opencv_highgui,
                        opencv_imgproc,
                        opencv_legacy,
