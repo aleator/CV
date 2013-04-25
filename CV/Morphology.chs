@@ -89,17 +89,21 @@ isGoodSE s@(w,h) d@(x,y) | x>=0 && y>=0
                          | otherwise = False 
 
 
--- Create a structuring element for morphological operations
+-- |Create a structuring element for morphological operations
+-- The first pair is @(width,height)@ while the second is the origin @(x,y)@
+structuringElement :: (Int, Int) -> (Int, Int) -> KernelShape -> StructuringElement
 structuringElement s d | isGoodSE s d = createSE s d 
                        | otherwise = error "Bad values in structuring element"
 
 -- Create SE with custom shape that is taken from flat list shape.
-createSE (w,h) (x,y) shape = unsafePerformIO $ do
+createSE :: (Int, Int) -> (Int, Int) -> KernelShape -> StructuringElement
+createSE (fromIntegral -> w,fromIntegral -> h) (fromIntegral -> x,fromIntegral -> y) shape = unsafePerformIO $ do
     iptr <- {#call cvCreateStructuringElementEx#}
              w h x y (fromIntegral . fromEnum $ shape) nullPtr
     fptr <- newForeignPtr releaseSE iptr
     return (ConvKernel fptr)
 
+customSE :: (CInt, CInt) -> (CInt, CInt) -> [CInt] -> ConvKernel
 customSE s@(w,h) o shape | isGoodSE s o 
                          && length shape == fromIntegral (w*h)
                             = createCustomSE s o shape
