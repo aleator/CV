@@ -946,21 +946,25 @@ setROI (fromIntegral -> x,fromIntegral -> y)
 resetROI image = withImage image $ \i ->
                   {#call cvResetImageROI#} i
 
-setCOI chnl image = withImage image $ \i ->
-                            {#call cvSetImageCOI#} i (fromIntegral chnl)
-resetCOI image = withImage image $ \i ->
+setCOI :: (Enum a) => a -> MutableImage (ChannelOf a) d -> IO ()
+setCOI chnl image = withMutableImage image $ \i ->
+                            {#call cvSetImageCOI#} i (fromIntegral . (+1) . fromEnum $ chnl) 
+                            -- CV numbers channels starting from 1. 0 means all channels
+
+resetCOI :: MutableImage a d -> IO ()
+resetCOI image = withMutableImage image $ \i ->
                   {#call cvSetImageCOI#} i 0
 
 
--- #TODO: Replace the Int below with proper channel identifier
 getChannel :: (Enum a) => a -> Image (ChannelOf a) d -> Image GrayScale d
 getChannel no image = unsafePerformIO $ creatingImage $ do
     let (w,h) = getSize image
-    setCOI (1+fromEnum no) image
+    mut <- toMutable image
+    setCOI no mut
     cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
     withGenImage image $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
-    resetCOI image
+    resetCOI mut
     return cres
 
 withIOROI pos size image op = do
