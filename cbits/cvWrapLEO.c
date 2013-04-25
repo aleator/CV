@@ -2194,7 +2194,7 @@ IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize)
     cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
     cvZero( dst );
 
-    for( ; contour != 0; contour = contour->h_next )
+    for( ; contour != NULL; contour = contour->h_next )
     {
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
