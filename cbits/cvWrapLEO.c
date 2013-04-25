@@ -2199,7 +2199,8 @@ IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize)
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
         CvScalar color = cvScalar(255,255,255,255);
-        cvDrawContours( dst, contour, color, color, -1, CV_FILLED, 8,
+        CvScalar zeroColor = cvScalar(0,0,0,0);
+        cvDrawContours( dst, contour, color, zeroColor, -1, CV_FILLED, 8,
             cvPoint(0,0));
     }
     cvReleaseMemStorage(&storage);
