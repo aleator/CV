@@ -10,6 +10,7 @@ module CV.Morphology (StructuringElement
                   ,erode,dilate
                   ,blackTopHat,whiteTopHat
                   ,dilateOp,erodeOp,KernelShape(EllipseShape,CrossShape,RectShape) 
+                  , ConvKernel
                   )
 where
 
