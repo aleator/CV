@@ -156,7 +156,7 @@ void eigenValsViaSVD(double *A, int size, double *eVals
                     ,double *eVects);
 
 IplImage* sizeFilter(IplImage *src, double minSize, double maxSize);
-int blobCount(IplImage *src);
+int blobCount(const IplImage *src);
 
 
 IplImage *acquireImage(int w, int h, double *d);
@@ -225,7 +225,7 @@ int reset_contour(FoundContours *f);
 void free_found_contours(FoundContours *f);
 void get_next_contour(FoundContours *fc);
 void print_contour(FoundContours *fc);
-FoundContours* get_contours(IplImage *src);
+FoundContours* get_contours(const IplImage *src);
 
 double juliaF(double a, double b,double x, double y);
 void simpleMatchTemplate(const IplImage* target, const IplImage* template, int* x, int* y, double *val, int type);

@@ -2096,7 +2096,7 @@ void print_contour(FoundContours *fc)
 } */
 
 
-FoundContours* get_contours(IplImage *src1)
+FoundContours* get_contours(const IplImage *src1)
 {
  CvSize size;
  IplImage *src = ensure8U(src1);
@@ -2131,8 +2131,8 @@ FoundContours* get_contours(IplImage *src1)
 
  cvReleaseImage(&src);
  return result;
+}
 
- }
 //@-node:aleator.20071016114634:Contours
 //@+node:aleator.20070814123008:moments
 CvMoments* getMoments(IplImage *src, int isBinary)
@@ -2168,15 +2168,17 @@ void freeCvHuMoments(CvHuMoments *x)
 }
 //@-node:aleator.20070814123008:moments
 //@+node:aleator.20060727102514:blobCount
-int blobCount(IplImage *src)
+int blobCount(const IplImage *src1)
 {
     int contourCount=0;
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contour = 0;
+    IplImage *src = cvCloneImage(src1);
 
     contourCount = cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
 
     cvReleaseMemStorage(&storage);
+    cvReleaseImage(&src);
     return contourCount;
 }
 
