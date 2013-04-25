@@ -1,5 +1,5 @@
 Name:				 CV
-Version:             0.3.7.0
+Version:             0.4.0.0
 Description:         OpenCV Bindings
 License:             GPL
 License-file:        LICENSE
@@ -82,11 +82,11 @@ Library
                        cbits/cvProjection.h,
                        cbits/cvFiles.h
     if flag(opencv23)
-        cpp-options: -DOpenCV23
-        cc-options: -DOpenCV23 -std=gnu99
+        cpp-options: -DOpenCV23 -U__BLOCKS__
+        cc-options: -DOpenCV23 -std=gnu99 -U__BLOCKS__
     if flag(opencv24)
-        cpp-options: -DOpenCV24
-        cc-options: -DOpenCV24 -std=gnu99
+        cpp-options: -DOpenCV24 -U__BLOCKS__
+        cc-options: -DOpenCV24 -std=gnu99 -U__BLOCKS__
     extra-libraries:   opencv_calib3d,
                        opencv_contrib,
                        opencv_core,

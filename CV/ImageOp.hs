@@ -35,7 +35,7 @@ newtype IOP a b = IOP (a -> IO b)
 
 instance Category IOP where
     id = IOP return
-    (IOP f) . (IOP g)  = IOP $ g >=> (f >>= return)
+    (IOP f) . (IOP g)  = IOP $ g >=> f
 
 (&#&) :: IOP (Image c d) e -> IOP (Image c d) f -> IOP (Image c d) (Image c d,Image c d)
 (IOP f) &#& (IOP g) = IOP $ op

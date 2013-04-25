@@ -1,12 +1,12 @@
 -- | This module is an applicative wrapper for images. It introduces Pixelwise type that
 --   can be converted from and to grayscale images and which has an applicative and functor
 --   instances.
-{-#LANGUAGE TypeFamilies, FlexibleContexts, RankNTypes#-}
+{-#LANGUAGE TypeFamilies, FlexibleContexts, RankNTypes, ScopedTypeVariables#-}
 module CV.Pixelwise (Pixelwise(..)
                     ,fromImage
                     ,fromFunction
                     ,toImage
-                    ,toImagePar
+--                    ,toImagePar
                     ,remap
                     ,remapImage
                     ,mapImage
@@ -78,32 +78,36 @@ fromImage i = MkP size getP
         getP (x,y) | x>=0 && x<w && y>=0 && y<h = getPixel (x,y) i
                    | otherwise = 0
 
--- | Convert a pixelwise construct to image.
-toImagePar :: (SetPixel (Image a b), CreateImage (Image a b))
-           => Int -> Pixelwise (SP (Image a b)) -> Image a b
-toImagePar n (MkP (w,h) e) = unsafePerformIO $ withPool n $ \pool -> do
-        img <- create (w,h)
-        parallel_ pool [sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
-                       |j <- [0..h-1]]
-        return img
+---- | Convert a pixelwise construct to image.
+--toImagePar :: (SetPixel (Image a b), CreateImage (Image a b))
+--           => Int -> Pixelwise (SP (Image a b)) -> Image a b
+--toImagePar n (MkP (w,h) e) = unsafePerformIO $ withPool n $ \pool -> do
+--        img <- create (w,h)
+--        parallel_ pool [sequence_ [setPixel (i,j) (e (i,j)) img | i <- [0..w-1]]
+--                       |j <- [0..h-1]]
+--        return img
 
 -- | Convert a pixelwise construct to image.
-toImage :: (SetPixel (Image a b), CreateImage (Image a b))
-           => Pixelwise (SP (Image a b)) -> Image a b
-toImage (MkP (w,h) e) = unsafePerformIO $ do
-        img <- create (w,h)
-        sequence_ [setPixel (i,j) (e (i,j)) img
+toImage :: forall a b. 
+           (SetPixel (MutableImage a b)
+           , CreateImage (Image a b))
+           => Pixelwise (SP (MutableImage a b)) -> Image a b
+toImage (MkP (w,h) e) = unsafePerformIO $ createWith (w,h) op
+    where 
+     op :: (MutableImage a b) -> IO (MutableImage a b)
+     op mut = do
+        sequence_ [setPixel (i,j) (e (i,j)) mut
                   | i <- [0..w-1]
                   , j <- [0..h-1]
                   ]
-        return img
+        return mut
 
-remapImage ::
-     (CreateImage (Image a b),
-      SetPixel (Image a b),
-      Num (P (Image  a b)),
-      GetPixel (Image a b)) =>
-     (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
+--remapImage ::
+--     (CreateImage (Image a b),
+--      SetPixel (MutableImage a b),
+--      Num (P (MutableImage  a b)),
+--      GetPixel (Image a b)) =>
+--     (((Int, Int) -> P (Image a b)) -> (Int, Int) -> SP (Image a b)) -> Image a b -> Image a b
 
 remapImage f i = toImage . remap f $ fromImage i
 
@@ -118,12 +122,12 @@ mapNeighbourhood f (MkP s e) = MkP s (\(i,j) -> f $ n e (i,j))
     n f (u,v) (x,y) = f (x+u,y+v)
 
 -- | Map over pixels of an image.
-mapImage ::
-     (CreateImage (Image c d),
-      SetPixel (Image c d),
-      Num (P (Image a b)),
-      GetPixel (Image a b)) =>
-     (P (Image a b) -> SP (Image c d)) -> Image a b -> Image c d
+-- mapImage ::
+--      (CreateImage (Image c d),
+--       SetPixel (Image c d),
+--       Num (P (Image a b)),
+--       GetPixel (Image a b)) =>
+--      (P (Image a b) -> SP (Image c d)) -> Image a b -> Image c d
 mapImage f = toImage . mapPixels f . fromImage
 
 
@@ -131,8 +135,8 @@ mapImage f = toImage . mapPixels f . fromImage
 fromFunction :: (Int, Int) -> ((Int, Int) -> x) -> Pixelwise x
 fromFunction size f = MkP size f
 
-imageFromFunction :: (SetPixel (Image a b), CreateImage (Image a b)) =>
-                     (Int,Int) -> ((Int,Int) -> (SP (Image a b))) -> Image a b
+--imageFromFunction :: (SetPixel (Image a b), CreateImage (Image a b)) =>
+--                     (Int,Int) -> ((Int,Int) -> (SP (Image a b))) -> Image a b
 imageFromFunction size = toImage . fromFunction size
 
 

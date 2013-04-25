@@ -3,8 +3,12 @@
 module CV.Image (
 -- * Basic types
  Image(..)
+, MutableImage
 , create
+, createWith
 , empty
+, toMutable
+, fromMutable
 , emptyCopy
 , emptyCopy'
 , cloneImage
@@ -94,6 +98,7 @@ module CV.Image (
 , creatingBareImage
 , withGenImage
 , withImage
+, withMutableImage
 , withRawImageData
 , imageFPTR
 , ensure32F
@@ -137,6 +142,7 @@ import Data.Data
 import Data.Typeable
 
 import Utils.GeometryClass
+import Control.Applicative hiding (empty)
 
 
 
@@ -167,6 +173,7 @@ type D64 = Double
 
 -- | The type for Images
 newtype Image channels depth = S BareImage
+newtype MutableImage channels depth = Mutable (Image channels depth)
 
 -- | Remove typing info from an image
 unS (S i) = i -- Unsafe and ugly
@@ -189,6 +196,7 @@ withUniPtr with x fun = with x $ \y ->
                     fun (castPtr y)
 
 withGenImage = withUniPtr withImage
+withMutableImage (Mutable i) o = withGenImage i o
 withGenBareImage = withUniPtr withBareImage
 
 {#pointer *IplImage as BareImage foreign newtype#}
@@ -666,6 +674,14 @@ class CreateImage a where
     -- | Create an image from size
     create :: (Int,Int) -> IO a
 
+createWith :: CreateImage (Image c d) => (Int,Int) -> (MutableImage c d -> IO (MutableImage c d)) -> IO (Image c d)
+createWith s f = do
+    c <- create s
+    Mutable r <- f (Mutable c)
+    return r
+
+
+
 
 instance CreateImage (Image GrayScale D32) where
     create (w,h) = creatingImage $ {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
@@ -818,6 +834,13 @@ cloneImage :: Image a b -> IO (Image a b)
 cloneImage img = withGenImage img $ \image ->
                     creatingImage ({#call cvCloneImage #} image)
 
+toMutable :: Image a b -> IO (MutableImage a b)
+toMutable img = withGenImage img $ \image ->
+                    Mutable <$> creatingImage ({#call cvCloneImage #} image)
+
+fromMutable :: MutableImage a b -> IO (Image a b)
+fromMutable (Mutable img) = cloneImage img 
+
 -- | Create a copy of a non-types image
 cloneBareImage :: BareImage -> IO BareImage
 cloneBareImage img = withGenBareImage img $ \image ->
@@ -957,30 +980,30 @@ class SetPixel a where
    type SP a :: *
    setPixel :: (Int,Int) -> SP a -> a -> IO ()
 
-instance SetPixel (Image GrayScale D32) where
-   type SP (Image GrayScale D32) = D32
+instance SetPixel (MutableImage GrayScale D32) where
+   type SP (MutableImage GrayScale D32) = D32
    {-#INLINE setPixel#-}
-   setPixel (x,y) v image = withGenImage image $ \c_i -> do
+   setPixel (x,y) v (image) = withMutableImage image $ \c_i -> do
                                   d <- {#get IplImage->imageData#} c_i
                                   s <- {#get IplImage->widthStep#} c_i
                                   poke (castPtr (d`plusPtr` (y*(fromIntegral s)
                                        + x*sizeOf (0::Float))):: Ptr Float)
                                        v
 
-instance SetPixel (Image GrayScale D8) where
-   type SP (Image GrayScale D8) = D8
+instance SetPixel (MutableImage GrayScale D8) where
+   type SP (MutableImage GrayScale D8) = D8
    {-#INLINE setPixel#-}
-   setPixel (x,y) v image = withGenImage image $ \c_i -> do
+   setPixel (x,y) v (image) = withMutableImage image $ \c_i -> do
                              d <- {#get IplImage->imageData#} c_i
                              s <- {#get IplImage->widthStep#} c_i
                              poke (castPtr (d`plusPtr` (y*(fromIntegral s)
                                   + x*sizeOf (0::Word8))):: Ptr Word8)
                                   v
 
-instance SetPixel (Image RGB D8) where
-    type SP (Image RGB D8) = (D8,D8,D8)
+instance SetPixel (MutableImage RGB D8) where
+    type SP (MutableImage RGB D8) = (D8,D8,D8)
     {-#INLINE setPixel#-}
-    setPixel (x,y) (r,g,b) image = withGenImage image $ \c_i -> do
+    setPixel (x,y) (r,g,b) (image) = withMutableImage image $ \c_i -> do
                                          d <- {#get IplImage->imageData#} c_i
                                          s <- {#get IplImage->widthStep#} c_i
                                          let cs = fromIntegral s
@@ -989,10 +1012,10 @@ instance SetPixel (Image RGB D8) where
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
-instance SetPixel (Image RGB D32) where
-    type SP (Image RGB D32) = (D32,D32,D32)
+instance SetPixel (MutableImage RGB D32) where
+    type SP (MutableImage RGB D32) = (D32,D32,D32)
     {-#INLINE setPixel#-}
-    setPixel (x,y) (r,g,b) image = withGenImage image $ \c_i -> do
+    setPixel (x,y) (r,g,b) (image) = withMutableImage image $ \c_i -> do
                                          d <- {#get IplImage->imageData#} c_i
                                          s <- {#get IplImage->widthStep#} c_i
                                          let cs = fromIntegral s
@@ -1001,10 +1024,10 @@ instance SetPixel (Image RGB D32) where
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+1)*fs))) g
                                          poke (castPtr (d`plusPtr` (y*cs +(x*3+2)*fs))) r
 
-instance SetPixel (Image Complex D32) where
-    type SP (Image Complex D32) = C.Complex D32
+instance SetPixel (MutableImage Complex D32) where
+    type SP (MutableImage Complex D32) = C.Complex D32
     {-#INLINE setPixel#-}
-    setPixel (x,y) (re C.:+ im) image = withGenImage image $ \c_i -> do
+    setPixel (x,y) (re C.:+ im) (image) = withMutableImage image $ \c_i -> do
                              d <- {#get IplImage->imageData#} c_i
                              s <- {#get IplImage->widthStep#} c_i
                              let cs = fromIntegral s

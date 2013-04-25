@@ -28,7 +28,7 @@ constImage = do
 noisyImage :: Gen (Image GrayScale D32)
 noisyImage = do
               f <- arbitrary
-              return $ toImage $ MkP {sizeOf = (10,10), eltOf = unZo . f} 
+              return $ toImage $ MkP {sizeOf = (10,10), eltOf = unZo . f} 
 
 -- | Generate 10x10 smoothly varying image
 smoothImage :: Gen (Image GrayScale D32)
