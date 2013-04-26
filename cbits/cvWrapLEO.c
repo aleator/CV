@@ -2096,7 +2096,7 @@ void print_contour(FoundContours *fc)
 } */
 
 
-FoundContours* get_contours(IplImage *src1)
+FoundContours* get_contours(const IplImage *src1)
 {
  CvSize size;
  IplImage *src = ensure8U(src1);
@@ -2131,8 +2131,8 @@ FoundContours* get_contours(IplImage *src1)
 
  cvReleaseImage(&src);
  return result;
+}
 
- }
 //@-node:aleator.20071016114634:Contours
 //@+node:aleator.20070814123008:moments
 CvMoments* getMoments(IplImage *src, int isBinary)
@@ -2168,38 +2168,43 @@ void freeCvHuMoments(CvHuMoments *x)
 }
 //@-node:aleator.20070814123008:moments
 //@+node:aleator.20060727102514:blobCount
-int blobCount(IplImage *src)
+int blobCount(const IplImage *src1)
 {
     int contourCount=0;
     CvMemStorage* storage = cvCreateMemStorage(0);
     CvSeq* contour = 0;
+    IplImage *src = cvCloneImage(src1);
 
     contourCount = cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
 
     cvReleaseMemStorage(&storage);
+    cvReleaseImage(&src);
     return contourCount;
 }
 
 //@-node:aleator.20060727102514:blobCount
 //@+node:aleator.20060413093124.1:sizeFilter
-IplImage* sizeFilter(IplImage *src, double minSize, double maxSize)
+IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize, int mode)
 {
-    IplImage* dst = cvCreateImage( cvGetSize(src), IPL_DEPTH_8U, 1 );
+    IplImage* dst = cvCreateImage( cvGetSize(src1), IPL_DEPTH_8U, 1 );
+    IplImage* src = cvCloneImage(src1);
     CvMemStorage* storage = cvCreateMemStorage(0);
+    CvScalar color = cvScalar(255,255,255,255);
+    CvScalar zeroColor = cvScalar(0,0,0,0);
     CvSeq* contour = 0;
 
-    cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
+    cvFindContours( src, storage, &contour, sizeof(CvContour), mode, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
     cvZero( dst );
 
-    for( ; contour != 0; contour = contour->h_next )
+    for( ; contour != NULL; contour = contour->h_next )
     {
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
-        CvScalar color = cvScalar(255,255,255,255);
-        cvDrawContours( dst, contour, color, color, -1, CV_FILLED, 8,
+        cvDrawContours( dst, contour, color, zeroColor, -1, CV_FILLED, 8,
             cvPoint(0,0));
     }
     cvReleaseMemStorage(&storage);
+    cvReleaseImage(&src);
     return dst;
 }
 //@-node:aleator.20060413093124.1:sizeFilter

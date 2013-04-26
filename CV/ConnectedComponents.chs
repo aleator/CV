@@ -7,6 +7,7 @@ module CV.ConnectedComponents
         fillConnectedComponents
        ,maskConnectedComponent
        ,selectSizedComponents
+       ,ContourMode(..)
        ,countBlobs
        -- * Working with Image moments
        -- |Note that these functions should probably go to a different module, since
@@ -70,10 +71,21 @@ countBlobs image = fromIntegral $ unsafePerformIO $ do
      {#call blobCount#} i
 
 -- |Remove all connected components that fall outside of given size range from the image.
-selectSizedComponents :: Double -> Double -> Image GrayScale D8 -> Image GrayScale D8
-selectSizedComponents minSize maxSize image = unsafePerformIO $ do
+selectSizedComponents :: Double -> Double -> ContourMode -> Image GrayScale D8 -> Image GrayScale D8
+selectSizedComponents minSize maxSize mode image = unsafePerformIO $ do
     withGenImage image $ \i ->
-     creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize))
+     creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize) (fromIntegral $ fromEnum mode))
+
+#c
+enum ContourMode {
+    ContourExternal = CV_RETR_EXTERNAL
+    , ContourAll    = CV_RETR_LIST
+    , ContourBasicHeirarchy = CV_RETR_CCOMP
+    , ContourFullHeirarchy  = CV_RETR_TREE
+    };
+#endc
+
+{#enum ContourMode {} #}
 
 -- * Working with Image moments. 
 
