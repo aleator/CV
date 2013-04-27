@@ -18,13 +18,11 @@ module CV.ConnectedComponents
        ,huMoments
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
-       ,Contours
-       ,ContourFunctionUS
+       ,Contour
        ,getContours
        ,contourArea
        ,contourPerimeter
        ,contourPoints
-       ,mapContours
        ,contourHuMoments) 
 where
 #include "cvWrapLEO.h"
@@ -152,61 +150,46 @@ readHu m = do
    return hu'
 
 -- |Structure that contains the opencv sequence holding the contour data.
-{#pointer *FoundContours as Contours foreign newtype#}
-foreign import ccall "& free_found_contours" releaseContours 
-    :: FinalizerPtr Contours
-
--- | This function maps an opencv contour calculation over all
---   contours of the image. 
-mapContours :: ContourFunctionUS a -> Contours -> [a]
-mapContours (CFUS op) contours = unsafePerformIO $ do
-    let loop acc cp = do
-        more <- withContours cp {#call more_contours#}
-        if more < 1 
-            then return acc 
-            else do
-                x <- op cp
-                (i::CInt) <- withContours cp {#call next_contour#}
-                loop (x:acc) cp
-         
-    acc <- loop [] contours
-    withContours contours ({#call reset_contour#})
-    return acc
+{#pointer *FoundContour as Contour foreign newtype#}
+foreign import ccall "& free_found_contour" releaseContour
+    :: FinalizerPtr Contour
 
 -- |Extract contours of connected components of the image.
-getContours :: Image GrayScale D8 -> Contours
+getContours :: Image GrayScale D8 -> [Contour]
 getContours img = unsafePerformIO $ do
         withImage img $ \i -> do
-          ptr <- {#call get_contours#} i
-          fptr <- newForeignPtr releaseContours ptr
-          return $ Contours fptr 
+          ptrCS <- {#call get_contours#} i
+          let loop = do
+                ptrNew <- {#call get_contour#} ptrCS
+                if nullPtr == ptrNew
+                    then return []
+                    else do cptr <- newForeignPtr releaseContour ptrNew
+                            (Contour cptr :) `fmap` loop
+          loop
 
-newtype ContourFunctionUS a = CFUS (Contours -> IO a)
-newtype ContourFunctionIO a = CFIO (Contours -> IO a)
+wContour :: (Ptr a -> IO b) -> Contour -> IO b
+wContour o c = withContour c (\p -> o (castPtr p))
 
-rawContourOpUS op = CFUS $ \c -> withContours c op
-rawContourOp op = CFIO $ \c -> withContours c op
+printContour :: Contour -> IO ()
+printContour = wContour {#call print_contour#}
 
-printContour = rawContourOp {#call print_contour#}
-
-contourArea :: ContourFunctionUS Double
-contourArea = rawContourOpUS ({#call contour_area#} >=> return.realToFrac)
+contourArea :: Contour -> Double
+contourArea = unsafePerformIO . wContour ({#call contour_area#} >=> return.realToFrac)
 -- ^The area of a contour.
 
-contourPerimeter :: ContourFunctionUS Double
-contourPerimeter = rawContourOpUS $ {#call contour_perimeter#} >=> return.realToFrac
+contourPerimeter :: Contour -> Double
+contourPerimeter = unsafePerformIO . wContour ({#call contour_perimeter#} >=> return.realToFrac)
 -- ^Get the perimeter of a contour.
 
 -- |Get a list of the points in the contour.
-contourPoints :: ContourFunctionUS [(Double,Double)]
-contourPoints = rawContourOpUS getContourPoints'
-getContourPoints' f = do
-     count <- {#call cur_contour_size#} f
-     let count' = fromIntegral count 
+contourPoints :: Contour -> [(Double,Double)]
+contourPoints c = unsafePerformIO $ withContour c $ \ptr -> do
+     count <- {#call cur_contour_size#} (castPtr ptr)
+     let count' = fromIntegral count
      ----print count
-     xs <- mallocArray count'     
+     xs <- mallocArray count'
      ys <- mallocArray count'
-     {#call contour_points#} f xs ys
+     {#call contour_points#} (castPtr ptr) xs ys
      xs' <- peekArray count' xs
      ys' <- peekArray count' ys
      free xs
@@ -214,28 +197,13 @@ getContourPoints' f = do
      return $ zip (map fromIntegral xs') (map fromIntegral ys')
 
 -- | Operation for extracting Hu-moments from a contour
-contourHuMoments :: ContourFunctionUS [Double]
-contourHuMoments = rawContourOpUS $ getContourHuMoments' >=> return.map realToFrac
-getContourHuMoments' f = do
-   m <- {#call contour_moments#} f     
-   hu <- readHu m 
+contourHuMoments :: Contour -> [Double]
+contourHuMoments = unsafePerformIO . (getContourHuMoments' >=> return.map realToFrac)
+getContourHuMoments' = wContour (\c -> do
+   m <- {#call contour_moments#} c
+   hu <- readHu m
    {#call freeCvMoments#} m
-   return hu
+   return hu)
 
-
-mapContoursIO :: ContourFunctionIO a -> Contours -> IO [a]
-mapContoursIO (CFIO op) contours = do
-    let loop acc cp = do
-        more <- withContours cp {#call more_contours#}
-        if more < 1 
-            then return acc 
-            else do
-                x <- op cp
-                (i::CInt) <- withContours cp {#call next_contour#}
-                loop (x:acc) cp
-         
-    acc <- loop [] contours
-    withContours contours ({#call reset_contour#})
-    return acc
 
 {#pointer *CvMoments as Moments foreign newtype#}

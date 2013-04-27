@@ -210,22 +210,28 @@ typedef struct {
   CvMemStorage *storage;
   CvSeq *contour;
   CvSeq *start;
-
+  int refCount;
 } FoundContours;
 
-CvMoments* contour_moments(FoundContours *f);
-void contour_points(FoundContours *f, int *xs, int *ys);
-CvMoments* contour_Moments(FoundContours *f);
-int cur_contour_size(FoundContours *f);
-double contour_area(FoundContours *f);
-double contour_perimeter(FoundContours *f);
+typedef struct {
+  FoundContours * fc;
+  CvSeq *thisContour;
+} FoundContour;
+
+CvMoments* contour_moments(const FoundContour *c);
+void contour_points(const FoundContour *f, int *xs, int *ys);
+double contour_area(const FoundContour *c);
+int cur_contour_size(const FoundContour *c);
+double contour_perimeter(const FoundContour *c);
 int more_contours(FoundContours *f);
 int next_contour(FoundContours *f);
 int reset_contour(FoundContours *f);
 void free_found_contours(FoundContours *f);
 void get_next_contour(FoundContours *fc);
-void print_contour(FoundContours *fc);
+void print_contour(const FoundContour *fc);
 FoundContours* get_contours(const IplImage *src);
+FoundContour* get_contour(FoundContours *);
+void free_found_contour(FoundContour *f);
 
 double juliaF(double a, double b,double x, double y);
 void simpleMatchTemplate(const IplImage* target, const IplImage* template, int* x, int* y, double *val, int type);

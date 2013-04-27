@@ -2011,39 +2011,42 @@ void exportImageSlowF(IplImage *img, float *d)
 //@+node:aleator.20060413093124:Connected components
 //@+node:aleator.20071016114634:Contours
 
+void free_found_contour(FoundContour *c)
+{
+    int cnt;
+    c->thisContour = NULL;
+    if(c->fc) {
+        cnt = __sync_add_and_fetch(&(c->fc->refCount),-1);
+        // It is only safe to free this now because we _know_
+        // the count is never incremented after the initial allocation.
+        if(0 == cnt)
+            free_found_contours(c->fc);
+        c->fc = NULL;
+    }
+    free(c);
+}
 
 void free_found_contours(FoundContours *f)
 {
  cvReleaseMemStorage(&(f->storage));
  free(f);
-
 }
 
-int reset_contour(FoundContours *f)
+double contour_area(const FoundContour *c)
 {
- f->contour = f->start;
+ return cvContourArea(c->thisContour,CV_WHOLE_SEQ,0);
 }
 
-int cur_contour_size(FoundContours *f)
-{
- return f->contour->total;
-}
-
-double contour_area(FoundContours *f)
-{
- return cvContourArea(f->contour,CV_WHOLE_SEQ,0);
-}
-
-CvMoments* contour_moments(FoundContours *f)
+CvMoments* contour_moments(const FoundContour *c)
 {
  CvMoments* moments = (CvMoments*) malloc(sizeof(CvMoments));
- cvMoments(f->contour,moments,0);
+ cvMoments(c->thisContour,moments,0);
  return moments;
 }
 
-double contour_perimeter(FoundContours *f)
+double contour_perimeter(const FoundContour *c)
 {
- return cvContourPerimeter(f->contour);
+ return cvContourPerimeter(c->thisContour);
 }
 
 int more_contours(FoundContours *f)
@@ -2060,58 +2063,60 @@ int next_contour(FoundContours *f)
   {return 0;} // no more contours
 }
 
-void contour_points(FoundContours *f, int *xs, int *ys)
+void contour_points(const FoundContour *c, int *xs, int *ys)
 {
- if (f->contour==0) {printf("unavailable contour\n"); exit(1);}
+ if (NULL == c->thisContour) {printf("unavailable contour\n"); exit(1);}
 
  CvPoint *pt=0;
  int total,i=0;
- total = f->contour->total;
+ total = c->thisContour->total;
  for (i=0; i<total;i++)
-  {
-   pt = (CvPoint*)cvGetSeqElem(f->contour,i);
-   if (pt==0) {printf("point out of contour\n"); exit(1);}
+ {
+   pt = (CvPoint*)cvGetSeqElem(c->thisContour,i);
+   if (NULL==pt) {printf("point out of contour\n"); exit(1);}
    xs[i] = pt->x;
    ys[i] = pt->y;
-  }
+ }
 
 }
 
-void print_contour(FoundContours *fc)
+void print_contour(const FoundContour *c)
 {
-  int i=0;
-  CvPoint *pt=0;
-   for (i=0; i<fc->contour->total;++i)
+    int i=0;
+    CvPoint *pt=NULL;
+    for (i=0; i<c->thisContour->total; ++i)
     {
-     pt = (CvPoint*)cvGetSeqElem(fc->contour,i);
-     printf("PT=%d,%d\n",pt->x,pt->y);
+       pt = (CvPoint*)cvGetSeqElem(c->thisContour, i);
+       printf("PT=%d,%d\n",pt->x,pt->y);
     }
 }
 
-/* void draw_contour(FoundContours *fc,double color
-                 , IplImage *img, IplImage *dst)
+FoundContour *get_contour(FoundContours *fc)
 {
- cvDrawContours( dst, fc->start, color, color, -1, 0, 8
-               , cvPoint(0,0));
-} */
+    FoundContour *result=NULL;
+    if(NULL != fc && NULL != fc->contour) {
+        result = (FoundContour *)malloc(sizeof(FoundContour));
+        result->thisContour = fc->contour;
+        result->fc = fc;
+        fc->contour = fc->contour->h_next;
+        // This only works because we know all increments will
+        // happen in batch at creation,
+        // prior to decrement operations
+        __sync_add_and_fetch(&(fc->refCount),1);
+    }
+    return result;
+}
 
-
-FoundContours* get_contours(const IplImage *src1)
+FoundContours *get_contours(const IplImage *src1)
 {
  CvSize size;
  IplImage *src = ensure8U(src1);
- //int dstDepth = IPL_DEPTH_8U;
- //size = cvGetSize(src1);
- //src = cvCreateImage(size,dstDepth,1);
- //cvCopy(src1,src,NULL);
-
-
- CvPoint* pt=0;
+ CvPoint* pt=NULL;
  int i=0;
+ CvMemStorage *storage=NULL;
+ CvSeq *contour=NULL;
+ FoundContours *result = (FoundContours*)malloc(sizeof(FoundContours));
 
- CvMemStorage *storage=0;
- CvSeq *contour=0;
- FoundContours* result = (FoundContours*)malloc(sizeof(FoundContours));
  storage = cvCreateMemStorage(0);
 
  cvFindContours( src,storage
@@ -2122,15 +2127,18 @@ FoundContours* get_contours(const IplImage *src1)
                ,CV_CHAIN_APPROX_NONE
                ,cvPoint(0,0) );
 
-// result->contour = cvApproxPoly( result->contour, sizeof(CvContour)
-//                                , result->storage, CV_POLY_APPROX_DP
-//                                , 3, 1 );
- result->start = contour;
- result->contour = contour;
- result->storage = storage;
+ result->start    = contour;
+ result->contour  = contour;
+ result->storage  = storage;
+ result->refCount = 0;
 
  cvReleaseImage(&src);
  return result;
+}
+
+int cur_contour_size(const FoundContour *c)
+{
+    return c->thisContour->total;
 }
 
 //@-node:aleator.20071016114634:Contours
@@ -2200,7 +2208,7 @@ IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize, int m
     {
         double area=fabs(cvContourArea(contour,CV_WHOLE_SEQ,0));
         if (area <=minSize || area >= maxSize) continue;
-        cvDrawContours( dst, contour, color, zeroColor, -1, CV_FILLED, 8,
+        cvDrawContours( dst, contour, color, zeroColor, 0, CV_FILLED, 8,
             cvPoint(0,0));
     }
     cvReleaseMemStorage(&storage);
