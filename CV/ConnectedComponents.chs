@@ -19,6 +19,8 @@ module CV.ConnectedComponents
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
        ,Contour
+       ,Level(..)
+       ,Thickness(..)
        ,drawContour
        ,getContours
        ,contourArea
@@ -78,61 +80,75 @@ selectSizedComponents minSize maxSize mode image = unsafePerformIO $ do
 
 data Level = Immediate | Nested | RecursivelyNested
     deriving (Eq, Ord, Show, Read, Enum)
+#c
+enum CVThick {
+    CvFill = CV_FILLED
+    };
+#endc
+{#enum CVThick {} #}
 
-drawContour :: D8       -- ^ Outer color
-            -> D8       -- ^ Hole color
-            -> Level    -- ^ Nesting level
-            -- -> Thickness
+data Thickness = Filled | LineOf Int
+    deriving (Eq, Ord, Show, Read)
+
+thicknessToCInt :: Thickness -> CInt
+thicknessToCInt Filled = fromIntegral $ fromEnum CvFill
+thicknessToCInt (LineOf x) = fromIntegral x
+
+drawContour :: D8                       -- ^ Outer color
+            -> D8                       -- ^ Hole color
+            -> Level                    -- ^ Nesting level
+            -> Thickness
             -- -> LineType
             -> Image GrayScale D8
-            -> Contour  -- ^ Contour to draw
+            -> Contour                  -- ^ Contour to draw
             -> Image GrayScale D8
-drawContour color holeColor level image contour = unsafePerformIO $ do
+drawContour color holeColor level thickness image contour = unsafePerformIO $ do
     res <- cloneImage image
     withGenImage res $ \i ->
       withContour contour $ \c ->
         {#call draw_contour#} i (castPtr c) (fromIntegral color)
                                   (fromIntegral holeColor)
                                   (fromIntegral $ fromEnum level)
-                                  0 -- Thickness
-                                  0 -- Line type
+                                  (thicknessToCInt thickness)
+                                  8 -- Line type
     return res
 
 {-# RULES
     "foldl/drawContour"
-        forall c hc l. foldl (drawContour c hc l) = drawContours c hc l
+        forall c hc l t. foldl (drawContour c hc l t) = drawContours c hc l t
   #-}
 
 {-# RULES
     "foldl'/drawContour"
-        forall c hc l. foldl' (drawContour c hc l) = drawContours c hc l
+        forall c hc l t. foldl' (drawContour c hc l t) = drawContours c hc l t
   #-}
 
 drawContours :: D8               -- ^ Outer color
              -> D8               -- ^ Hole color
              -> Level            -- ^ Nesting level
-             -- -> Thickness
+             -> Thickness
              -- -> LineType
              -> Image GrayScale D8
              -> [Contour]        -- ^ Contour to draw
              -> Image GrayScale D8
-drawContours color holeColor level image cs = unsafePerformIO $ do
+drawContours color holeColor level thickness image cs =
+  unsafePerformIO $ do
     res <- cloneImage image
     withGenImage res $ \i -> do
       let ap ctr = do
             withContour ctr $ \cp ->
              {#call draw_contour#} i (castPtr cp) (fromIntegral color)
-                                        (fromIntegral holeColor)
-                                        (fromIntegral $ fromEnum level)
-                                        0 -- Thickness
-                                        0 -- Line type
+                                  (fromIntegral holeColor)
+                                  (fromIntegral $ fromEnum level)
+                                  (thicknessToCInt thickness)
+                                  8 -- Line type
       mapM_ ap cs
     return res
 
 #c
 enum ContourMode {
-    ContourExternal = CV_RETR_EXTERNAL
-    , ContourAll    = CV_RETR_LIST
+      ContourExternal = CV_RETR_EXTERNAL
+    , ContourAll      = CV_RETR_LIST
     , ContourBasicHeirarchy = CV_RETR_CCOMP
     , ContourFullHeirarchy  = CV_RETR_TREE
     };
@@ -210,17 +226,17 @@ foreign import ccall "& free_found_contour" releaseContour
     :: FinalizerPtr Contour
 
 -- |Extract contours of connected components of the image.
-getContours :: Image GrayScale D8 -> [Contour]
-getContours img = unsafePerformIO $ do
+getContours :: ContourMode -> Image GrayScale D8 -> [Contour]
+getContours mode img = unsafePerformIO $ do
         withImage img $ \i -> do
-          ptrCS <- {#call get_contours#} i
+          ptrCS <- {#call get_contours#} i (fromIntegral $ fromEnum mode)
           let loop = do
                 ptrNew <- {#call get_contour#} ptrCS
                 if nullPtr == ptrNew
                     then return []
                     else do cptr <- newForeignPtr releaseContour ptrNew
                             (Contour cptr :) `fmap` loop
-          loop
+          reverse `fmap` loop
 
 wContour :: (Ptr a -> IO b) -> Contour -> IO b
 wContour o c = withContour c (\p -> o (castPtr p))

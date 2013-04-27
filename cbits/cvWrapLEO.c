@@ -2040,11 +2040,17 @@ double contour_area(const FoundContour *c)
 void draw_contour(IplImage *src, FoundContour *contour, int color
                  , int holeColor, int level, int thickness, int linetype)
 {
-    CvScalar c = cvScalar(color,0,0,0);
+    CvScalar c = cvScalar(color,color,color,color);
     CvScalar hc = cvScalar(holeColor,0,0,0);
     CvPoint pnt = cvPoint(0,0);
-    cvDrawContours( src, contour->thisContour, c
-                  , hc, level, thickness, linetype, pnt);
+    cvDrawContours( src
+                  , contour->thisContour
+                  , c
+                  , hc
+                  , -1 // level
+                  , thickness
+                  , linetype
+                  , pnt);
 }
 
 CvMoments* contour_moments(const FoundContour *c)
@@ -2117,33 +2123,33 @@ FoundContour *get_contour(FoundContours *fc)
     return result;
 }
 
-FoundContours *get_contours(const IplImage *src1)
+FoundContours *get_contours(const IplImage *src1, int mode)
 {
- CvSize size;
- IplImage *src = ensure8U(src1);
- CvPoint* pt=NULL;
- int i=0;
- CvMemStorage *storage=NULL;
- CvSeq *contour=NULL;
- FoundContours *result = (FoundContours*)malloc(sizeof(FoundContours));
+    CvSize size;
+    IplImage *src = ensure8U(src1);
+    CvPoint* pt=NULL;
+    int i=0;
+    CvMemStorage *storage=NULL;
+    CvSeq *contour=NULL;
+    FoundContours *result = (FoundContours*)malloc(sizeof(FoundContours));
 
- storage = cvCreateMemStorage(0);
+    storage = cvCreateMemStorage(0);
 
- cvFindContours( src,storage
-               , &contour
-               , sizeof(CvContour)
-               ,CV_RETR_EXTERNAL
-            //,CV_RETR_CCOMP
-               ,CV_CHAIN_APPROX_NONE
-               ,cvPoint(0,0) );
+    cvFindContours( src
+                  , storage
+                  , &contour
+                  , sizeof(CvContour)
+                  , mode
+                  , CV_CHAIN_APPROX_SIMPLE
+                  , cvPoint(0,0) );
 
- result->start    = contour;
- result->contour  = contour;
- result->storage  = storage;
- result->refCount = 0;
+    result->start    = contour;
+    result->contour  = contour;
+    result->storage  = storage;
+    result->refCount = 0;
 
- cvReleaseImage(&src);
- return result;
+    cvReleaseImage(&src);
+    return result;
 }
 
 int cur_contour_size(const FoundContour *c)
@@ -2193,7 +2199,13 @@ int blobCount(const IplImage *src1)
     CvSeq* contour = 0;
     IplImage *src = cvCloneImage(src1);
 
-    contourCount = cvFindContours( src, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
+    contourCount = cvFindContours( src
+                                 , storage
+                                 , &contour
+                                 , sizeof(CvContour)
+                                 , CV_RETR_EXTERNAL
+                                 , CV_CHAIN_APPROX_SIMPLE
+                                 , cvPoint(0,0) );
 
     cvReleaseMemStorage(&storage);
     cvReleaseImage(&src);
@@ -2211,7 +2223,13 @@ IplImage* sizeFilter(const IplImage *src1, double minSize, double maxSize, int m
     CvScalar zeroColor = cvScalar(0,0,0,0);
     CvSeq* contour = 0;
 
-    cvFindContours( src, storage, &contour, sizeof(CvContour), mode, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0) );
+    cvFindContours( src
+                  , storage
+                  , &contour
+                  , sizeof(CvContour)
+                  , mode
+                  , CV_CHAIN_APPROX_SIMPLE
+                  , cvPoint(0,0) );
     cvZero( dst );
 
     for( ; contour != NULL; contour = contour->h_next )

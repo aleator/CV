@@ -229,7 +229,7 @@ int reset_contour(FoundContours *f);
 void free_found_contours(FoundContours *f);
 void get_next_contour(FoundContours *fc);
 void print_contour(const FoundContour *fc);
-FoundContours* get_contours(const IplImage *src);
+FoundContours* get_contours(const IplImage *src, int mode);
 FoundContour* get_contour(FoundContours *);
 void draw_contour( IplImage *src, FoundContour *con, int color
                  , int holeColor, int level, int thinkness, int linetype);
