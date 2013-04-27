@@ -19,11 +19,12 @@ module CV.ConnectedComponents
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
        ,Contour
+       ,drawContour
        ,getContours
        ,contourArea
        ,contourPerimeter
        ,contourPoints
-       ,contourHuMoments) 
+       ,contourHuMoments)
 where
 #include "cvWrapLEO.h"
 
@@ -38,6 +39,7 @@ import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+import Data.List (foldl')
 {#import CV.Image#}
 
 import CV.ImageOp
@@ -73,6 +75,59 @@ selectSizedComponents :: Double -> Double -> ContourMode -> Image GrayScale D8 -
 selectSizedComponents minSize maxSize mode image = unsafePerformIO $ do
     withGenImage image $ \i ->
      creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize) (fromIntegral $ fromEnum mode))
+
+data Level = Immediate | Nested | RecursivelyNested
+    deriving (Eq, Ord, Show, Read, Enum)
+
+drawContour :: D8       -- ^ Outer color
+            -> D8       -- ^ Hole color
+            -> Level    -- ^ Nesting level
+            -- -> Thickness
+            -- -> LineType
+            -> Image GrayScale D8
+            -> Contour  -- ^ Contour to draw
+            -> Image GrayScale D8
+drawContour color holeColor level image contour = unsafePerformIO $ do
+    res <- cloneImage image
+    withGenImage res $ \i ->
+      withContour contour $ \c ->
+        {#call draw_contour#} i (castPtr c) (fromIntegral color)
+                                  (fromIntegral holeColor)
+                                  (fromIntegral $ fromEnum level)
+                                  0 -- Thickness
+                                  0 -- Line type
+    return res
+
+{-# RULES
+    "foldl/drawContour"
+        forall c hc l. foldl (drawContour c hc l) = drawContours c hc l
+  #-}
+
+{-# RULES
+    "foldl'/drawContour"
+        forall c hc l. foldl' (drawContour c hc l) = drawContours c hc l
+  #-}
+
+drawContours :: D8               -- ^ Outer color
+             -> D8               -- ^ Hole color
+             -> Level            -- ^ Nesting level
+             -- -> Thickness
+             -- -> LineType
+             -> Image GrayScale D8
+             -> [Contour]        -- ^ Contour to draw
+             -> Image GrayScale D8
+drawContours color holeColor level image cs = unsafePerformIO $ do
+    res <- cloneImage image
+    withGenImage res $ \i -> do
+      let ap ctr = do
+            withContour ctr $ \cp ->
+             {#call draw_contour#} i (castPtr cp) (fromIntegral color)
+                                        (fromIntegral holeColor)
+                                        (fromIntegral $ fromEnum level)
+                                        0 -- Thickness
+                                        0 -- Line type
+      mapM_ ap cs
+    return res
 
 #c
 enum ContourMode {

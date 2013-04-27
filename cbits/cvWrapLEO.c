@@ -2037,6 +2037,16 @@ double contour_area(const FoundContour *c)
  return cvContourArea(c->thisContour,CV_WHOLE_SEQ,0);
 }
 
+void draw_contour(IplImage *src, FoundContour *contour, int color
+                 , int holeColor, int level, int thickness, int linetype)
+{
+    CvScalar c = cvScalar(color,0,0,0);
+    CvScalar hc = cvScalar(holeColor,0,0,0);
+    CvPoint pnt = cvPoint(0,0);
+    cvDrawContours( src, contour->thisContour, c
+                  , hc, level, thickness, linetype, pnt);
+}
+
 CvMoments* contour_moments(const FoundContour *c)
 {
  CvMoments* moments = (CvMoments*) malloc(sizeof(CvMoments));
