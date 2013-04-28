@@ -232,7 +232,8 @@ void print_contour(const FoundContour *fc);
 FoundContours* get_contours(const IplImage *src, int mode);
 FoundContour* get_contour(FoundContours *);
 void draw_contour( IplImage *src, FoundContour *con, int color
-                 , int holeColor, int level, int thinkness, int linetype);
+                 , int holeColor, int level, int thinkness, int linetype
+                 , int dx, int dy);
 void free_found_contour(FoundContour *f);
 
 double juliaF(double a, double b,double x, double y);

@@ -98,11 +98,13 @@ drawContour :: D8                       -- ^ Outer color
             -> D8                       -- ^ Hole color
             -> Level                    -- ^ Nesting level
             -> Thickness
+            -> (Int, Int)               -- ^ Offset
             -- -> LineType
             -> Image GrayScale D8
             -> Contour                  -- ^ Contour to draw
             -> Image GrayScale D8
-drawContour color holeColor level thickness image contour = unsafePerformIO $ do
+drawContour color holeColor level thickness pnt image contour =
+  unsafePerformIO $ do
     res <- cloneImage image
     withGenImage res $ \i ->
       withContour contour $ \c ->
@@ -111,27 +113,30 @@ drawContour color holeColor level thickness image contour = unsafePerformIO $ do
                                   (fromIntegral $ fromEnum level)
                                   (thicknessToCInt thickness)
                                   8 -- Line type
+                                  (fromIntegral $ fst pnt)
+                                  (fromIntegral $ snd pnt)
     return res
 
 {-# RULES
     "foldl/drawContour"
-        forall c hc l t. foldl (drawContour c hc l t) = drawContours c hc l t
+        forall c hc l t dxdy. foldl (drawContour c hc l t dxdy) = drawContours c hc l t dxdy
   #-}
 
 {-# RULES
     "foldl'/drawContour"
-        forall c hc l t. foldl' (drawContour c hc l t) = drawContours c hc l t
+        forall c hc l t dxdy. foldl' (drawContour c hc l t dxdy) = drawContours c hc l t dxdy
   #-}
 
 drawContours :: D8               -- ^ Outer color
              -> D8               -- ^ Hole color
              -> Level            -- ^ Nesting level
              -> Thickness
+             -> (Int, Int)       -- ^ Offset
              -- -> LineType
              -> Image GrayScale D8
              -> [Contour]        -- ^ Contour to draw
              -> Image GrayScale D8
-drawContours color holeColor level thickness image cs =
+drawContours color holeColor level thickness (dx,dy) image cs =
   unsafePerformIO $ do
     res <- cloneImage image
     withGenImage res $ \i -> do
@@ -142,6 +147,8 @@ drawContours color holeColor level thickness image cs =
                                   (fromIntegral $ fromEnum level)
                                   (thicknessToCInt thickness)
                                   8 -- Line type
+                                  (fromIntegral dx)
+                                  (fromIntegral dy)
       mapM_ ap cs
     return res
 

@@ -2038,11 +2038,12 @@ double contour_area(const FoundContour *c)
 }
 
 void draw_contour(IplImage *src, FoundContour *contour, int color
-                 , int holeColor, int level, int thickness, int linetype)
+                 , int holeColor, int level, int thickness, int linetype
+                 , int dx, int dy)
 {
     CvScalar c = cvScalar(color,color,color,color);
     CvScalar hc = cvScalar(holeColor,0,0,0);
-    CvPoint pnt = cvPoint(0,0);
+    CvPoint pnt = cvPoint(dx,dy);
     cvDrawContours( src
                   , contour->thisContour
                   , c
