@@ -11,10 +11,10 @@ convexHull lst =
     in case frst of
         Nothing -> []
         Just f ->
-            let sorted = sortBy (comparing (heading f)) lst
+            let sorted = sortBy (comparing (heading f)) (filter (/=f) lst)
             in case sorted of
                    (a:b:cs) -> grahamScan (b:a:f:[]) cs
-                   cs       -> f : cs
+                   cs       -> f:cs
   where
     grahamScan [] _  = []
     grahamScan ps [] = ps
@@ -22,7 +22,7 @@ convexHull lst =
     grahamScan (p2:p1:ps) (x:xs) =
         case turn p1 p2 x of
             LeftTurn -> grahamScan (x:p2:p1:ps) xs
-            Straight -> grahamScan (x:p2:p1:ps) xs
+            -- Straight -> grahamScan (x:p2:p1:ps) xs
             _        -> grahamScan (p1:ps) (x:xs)
 
 heading :: (Double,Double) -> (Double,Double) -> Double
