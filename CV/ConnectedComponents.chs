@@ -7,6 +7,7 @@ module CV.ConnectedComponents
         fillConnectedComponents
        ,maskConnectedComponent
        ,selectSizedComponents
+       ,ContourMode(..)
        ,countBlobs
        -- * Working with Image moments
        -- |Note that these functions should probably go to a different module, since
@@ -17,14 +18,15 @@ module CV.ConnectedComponents
        ,huMoments
        -- * Working with component contours aka. object boundaries.
        -- |This part is really old code and probably could be improved a lot.
-       ,Contours
-       ,ContourFunctionUS
+       ,Contour
+       ,Level(..)
+       ,Thickness(..)
+       ,drawContour
        ,getContours
        ,contourArea
        ,contourPerimeter
        ,contourPoints
-       ,mapContours
-       ,contourHuMoments) 
+       ,contourHuMoments)
 where
 #include "cvWrapLEO.h"
 
@@ -39,6 +41,7 @@ import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+import Data.List (foldl')
 {#import CV.Image#}
 
 import CV.ImageOp
@@ -70,10 +73,95 @@ countBlobs image = fromIntegral $ unsafePerformIO $ do
      {#call blobCount#} i
 
 -- |Remove all connected components that fall outside of given size range from the image.
-selectSizedComponents :: Double -> Double -> Image GrayScale D8 -> Image GrayScale D8
-selectSizedComponents minSize maxSize image = unsafePerformIO $ do
+selectSizedComponents :: Double -> Double -> ContourMode -> Image GrayScale D8 -> Image GrayScale D8
+selectSizedComponents minSize maxSize mode image = unsafePerformIO $ do
     withGenImage image $ \i ->
-     creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize))
+     creatingImage ({#call sizeFilter#} i (realToFrac minSize) (realToFrac maxSize) (fromIntegral $ fromEnum mode))
+
+data Level = Immediate | Nested | RecursivelyNested
+    deriving (Eq, Ord, Show, Read, Enum)
+#c
+enum CVThick {
+    CvFill = CV_FILLED
+    };
+#endc
+{#enum CVThick {} #}
+
+data Thickness = Filled | LineOf Int
+    deriving (Eq, Ord, Show, Read)
+
+thicknessToCInt :: Thickness -> CInt
+thicknessToCInt Filled = fromIntegral $ fromEnum CvFill
+thicknessToCInt (LineOf x) = fromIntegral x
+
+drawContour :: D8                       -- ^ Outer color
+            -> D8                       -- ^ Hole color
+            -> Level                    -- ^ Nesting level
+            -> Thickness
+            -> (Int, Int)               -- ^ Offset
+            -- -> LineType
+            -> Image GrayScale D8
+            -> Contour                  -- ^ Contour to draw
+            -> Image GrayScale D8
+drawContour color holeColor level thickness pnt image contour =
+  unsafePerformIO $ do
+    res <- cloneImage image
+    withGenImage res $ \i ->
+      withContour contour $ \c ->
+        {#call draw_contour#} i (castPtr c) (fromIntegral color)
+                                  (fromIntegral holeColor)
+                                  (fromIntegral $ fromEnum level)
+                                  (thicknessToCInt thickness)
+                                  8 -- Line type
+                                  (fromIntegral $ fst pnt)
+                                  (fromIntegral $ snd pnt)
+    return res
+
+{-# RULES
+    "foldl/drawContour"
+        forall c hc l t dxdy. foldl (drawContour c hc l t dxdy) = drawContours c hc l t dxdy
+  #-}
+
+{-# RULES
+    "foldl'/drawContour"
+        forall c hc l t dxdy. foldl' (drawContour c hc l t dxdy) = drawContours c hc l t dxdy
+  #-}
+
+drawContours :: D8               -- ^ Outer color
+             -> D8               -- ^ Hole color
+             -> Level            -- ^ Nesting level
+             -> Thickness
+             -> (Int, Int)       -- ^ Offset
+             -- -> LineType
+             -> Image GrayScale D8
+             -> [Contour]        -- ^ Contour to draw
+             -> Image GrayScale D8
+drawContours color holeColor level thickness (dx,dy) image cs =
+  unsafePerformIO $ do
+    res <- cloneImage image
+    withGenImage res $ \i -> do
+      let ap ctr = do
+            withContour ctr $ \cp ->
+             {#call draw_contour#} i (castPtr cp) (fromIntegral color)
+                                  (fromIntegral holeColor)
+                                  (fromIntegral $ fromEnum level)
+                                  (thicknessToCInt thickness)
+                                  8 -- Line type
+                                  (fromIntegral dx)
+                                  (fromIntegral dy)
+      mapM_ ap cs
+    return res
+
+#c
+enum ContourMode {
+      ContourExternal = CV_RETR_EXTERNAL
+    , ContourAll      = CV_RETR_LIST
+    , ContourBasicHeirarchy = CV_RETR_CCOMP
+    , ContourFullHeirarchy  = CV_RETR_TREE
+    };
+#endc
+
+{#enum ContourMode {} #}
 
 -- * Working with Image moments. 
 
@@ -140,61 +228,46 @@ readHu m = do
    return hu'
 
 -- |Structure that contains the opencv sequence holding the contour data.
-{#pointer *FoundContours as Contours foreign newtype#}
-foreign import ccall "& free_found_contours" releaseContours 
-    :: FinalizerPtr Contours
-
--- | This function maps an opencv contour calculation over all
---   contours of the image. 
-mapContours :: ContourFunctionUS a -> Contours -> [a]
-mapContours (CFUS op) contours = unsafePerformIO $ do
-    let loop acc cp = do
-        more <- withContours cp {#call more_contours#}
-        if more < 1 
-            then return acc 
-            else do
-                x <- op cp
-                (i::CInt) <- withContours cp {#call next_contour#}
-                loop (x:acc) cp
-         
-    acc <- loop [] contours
-    withContours contours ({#call reset_contour#})
-    return acc
+{#pointer *FoundContour as Contour foreign newtype#}
+foreign import ccall "& free_found_contour" releaseContour
+    :: FinalizerPtr Contour
 
 -- |Extract contours of connected components of the image.
-getContours :: Image GrayScale D8 -> Contours
-getContours img = unsafePerformIO $ do
+getContours :: ContourMode -> Image GrayScale D8 -> [Contour]
+getContours mode img = unsafePerformIO $ do
         withImage img $ \i -> do
-          ptr <- {#call get_contours#} i
-          fptr <- newForeignPtr releaseContours ptr
-          return $ Contours fptr 
+          ptrCS <- {#call get_contours#} i (fromIntegral $ fromEnum mode)
+          let loop = do
+                ptrNew <- {#call get_contour#} ptrCS
+                if nullPtr == ptrNew
+                    then return []
+                    else do cptr <- newForeignPtr releaseContour ptrNew
+                            (Contour cptr :) `fmap` loop
+          reverse `fmap` loop
 
-newtype ContourFunctionUS a = CFUS (Contours -> IO a)
-newtype ContourFunctionIO a = CFIO (Contours -> IO a)
+wContour :: (Ptr a -> IO b) -> Contour -> IO b
+wContour o c = withContour c (\p -> o (castPtr p))
 
-rawContourOpUS op = CFUS $ \c -> withContours c op
-rawContourOp op = CFIO $ \c -> withContours c op
+printContour :: Contour -> IO ()
+printContour = wContour {#call print_contour#}
 
-printContour = rawContourOp {#call print_contour#}
-
-contourArea :: ContourFunctionUS Double
-contourArea = rawContourOpUS ({#call contour_area#} >=> return.realToFrac)
+contourArea :: Contour -> Double
+contourArea = unsafePerformIO . wContour ({#call contour_area#} >=> return.realToFrac)
 -- ^The area of a contour.
 
-contourPerimeter :: ContourFunctionUS Double
-contourPerimeter = rawContourOpUS $ {#call contour_perimeter#} >=> return.realToFrac
+contourPerimeter :: Contour -> Double
+contourPerimeter = unsafePerformIO . wContour ({#call contour_perimeter#} >=> return.realToFrac)
 -- ^Get the perimeter of a contour.
 
 -- |Get a list of the points in the contour.
-contourPoints :: ContourFunctionUS [(Double,Double)]
-contourPoints = rawContourOpUS getContourPoints'
-getContourPoints' f = do
-     count <- {#call cur_contour_size#} f
-     let count' = fromIntegral count 
+contourPoints :: Contour -> [(Double,Double)]
+contourPoints c = unsafePerformIO $ withContour c $ \ptr -> do
+     count <- {#call cur_contour_size#} (castPtr ptr)
+     let count' = fromIntegral count
      ----print count
-     xs <- mallocArray count'     
+     xs <- mallocArray count'
      ys <- mallocArray count'
-     {#call contour_points#} f xs ys
+     {#call contour_points#} (castPtr ptr) xs ys
      xs' <- peekArray count' xs
      ys' <- peekArray count' ys
      free xs
@@ -202,28 +275,13 @@ getContourPoints' f = do
      return $ zip (map fromIntegral xs') (map fromIntegral ys')
 
 -- | Operation for extracting Hu-moments from a contour
-contourHuMoments :: ContourFunctionUS [Double]
-contourHuMoments = rawContourOpUS $ getContourHuMoments' >=> return.map realToFrac
-getContourHuMoments' f = do
-   m <- {#call contour_moments#} f     
-   hu <- readHu m 
+contourHuMoments :: Contour -> [Double]
+contourHuMoments = unsafePerformIO . (getContourHuMoments' >=> return.map realToFrac)
+getContourHuMoments' = wContour (\c -> do
+   m <- {#call contour_moments#} c
+   hu <- readHu m
    {#call freeCvMoments#} m
-   return hu
+   return hu)
 
-
-mapContoursIO :: ContourFunctionIO a -> Contours -> IO [a]
-mapContoursIO (CFIO op) contours = do
-    let loop acc cp = do
-        more <- withContours cp {#call more_contours#}
-        if more < 1 
-            then return acc 
-            else do
-                x <- op cp
-                (i::CInt) <- withContours cp {#call next_contour#}
-                loop (x:acc) cp
-         
-    acc <- loop [] contours
-    withContours contours ({#call reset_contour#})
-    return acc
 
 {#pointer *CvMoments as Moments foreign newtype#}

@@ -198,8 +198,13 @@ withRawImageData (S i) op = withBareImage i $ \pp-> do
 withUniPtr with x fun = with x $ \y ->
                     fun (castPtr y)
 
+withGenImage :: Image c d -> (Ptr b -> IO a) -> IO a
 withGenImage = withUniPtr withImage
+
+withMutableImage :: MutableImage c d -> (Ptr b -> IO a) -> IO a
 withMutableImage (Mutable i) o = withGenImage i o
+
+withGenBareImage :: BareImage -> (Ptr b -> IO a) -> IO a
 withGenBareImage = withUniPtr withBareImage
 
 {#pointer *IplImage as BareImage foreign newtype#}
@@ -763,6 +768,7 @@ primitiveSave filename fpi = do
         withGenBareImage fpi    $ \cvArr ->
          alloca (\defs -> poke defs 0 >> {#call cvSaveImage #} name cvArr defs >> return ())
 
+-- |Save an image as 8 bit gray scale
 saveImage :: (Save (Image c d)) => FilePath -> Image c d ->  IO ()
 saveImage = save
 
@@ -912,9 +918,9 @@ unsafeImageTo32F img = unsafePerformIO $ withGenImage img $ \image ->
 -- Note: this function is named unsafe because it will lose information
 -- from the image. 
 unsafeImageTo8Bit :: Image cspace a -> Image cspace D8
-unsafeImageTo8Bit img = unsafePerformIO $ withGenImage img $ \image ->
-                creatingImage
-                 ({#call ensure8U #} image)
+unsafeImageTo8Bit img =
+    unsafePerformIO $ withGenImage img $ \image ->
+              creatingImage ({#call ensure8U #} image)
 
 --toD32 :: Image c d -> Image c D32
 --toD32 i =

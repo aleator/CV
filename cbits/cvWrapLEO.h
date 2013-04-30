@@ -155,8 +155,8 @@ void get_weighted_histogram(IplImage *src, IplImage *weights,
 void eigenValsViaSVD(double *A, int size, double *eVals
                     ,double *eVects);
 
-IplImage* sizeFilter(IplImage *src, double minSize, double maxSize);
-int blobCount(IplImage *src);
+IplImage* sizeFilter(const IplImage *src, double minSize, double maxSize, int mode);
+int blobCount(const IplImage *src);
 
 
 IplImage *acquireImage(int w, int h, double *d);
@@ -210,22 +210,31 @@ typedef struct {
   CvMemStorage *storage;
   CvSeq *contour;
   CvSeq *start;
-
+  int refCount;
 } FoundContours;
 
-CvMoments* contour_moments(FoundContours *f);
-void contour_points(FoundContours *f, int *xs, int *ys);
-CvMoments* contour_Moments(FoundContours *f);
-int cur_contour_size(FoundContours *f);
-double contour_area(FoundContours *f);
-double contour_perimeter(FoundContours *f);
+typedef struct {
+  FoundContours * fc;
+  CvSeq *thisContour;
+} FoundContour;
+
+CvMoments* contour_moments(const FoundContour *c);
+void contour_points(const FoundContour *f, int *xs, int *ys);
+double contour_area(const FoundContour *c);
+int cur_contour_size(const FoundContour *c);
+double contour_perimeter(const FoundContour *c);
 int more_contours(FoundContours *f);
 int next_contour(FoundContours *f);
 int reset_contour(FoundContours *f);
 void free_found_contours(FoundContours *f);
 void get_next_contour(FoundContours *fc);
-void print_contour(FoundContours *fc);
-FoundContours* get_contours(IplImage *src);
+void print_contour(const FoundContour *fc);
+FoundContours* get_contours(const IplImage *src, int mode);
+FoundContour* get_contour(FoundContours *);
+void draw_contour( IplImage *src, FoundContour *con, int color
+                 , int holeColor, int level, int thinkness, int linetype
+                 , int dx, int dy);
+void free_found_contour(FoundContour *f);
 
 double juliaF(double a, double b,double x, double y);
 void simpleMatchTemplate(const IplImage* target, const IplImage* template, int* x, int* y, double *val, int type);
