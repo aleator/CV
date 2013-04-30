@@ -3,7 +3,7 @@
 module CV.Image (
 -- * Basic types
  Image(..)
-, MutableImage
+, MutableImage(..)
 , create
 , createWith
 , empty
@@ -330,6 +330,12 @@ loadColorImage8 :: FilePath -> IO (Maybe (Image BGR D8))
 loadColorImage8 = unsafeloadUsing imageTo8Bit 1
 
 
+instance Sized (MutableImage a b) where
+    type Size (MutableImage a b) = IO (Int,Int)
+   -- getSize :: (Integral a, Integral b) => Image c d -> (a,b)
+    getSize (Mutable i) = evaluate (deep (getSize i))
+
+deep a = a `deepseq` a
 
 instance Sized BareImage where
     type Size BareImage = (Int,Int)
@@ -640,13 +646,13 @@ instance GetPixel (Image LAB D32) where
 -- | Perform (a destructive) inplace map of the image. This should be wrapped inside
 -- withClone or an image operation
 mapImageInplace :: (P (Image GrayScale D32) -> P (Image GrayScale D32))
-            -> Image GrayScale D32
+            -> MutableImage GrayScale D32
             -> IO ()
-mapImageInplace f image = withGenImage image $ \c_i -> do
+mapImageInplace f image = withMutableImage image $ \c_i -> do
              d <- {#get IplImage->imageData#} c_i
              s <- {#get IplImage->widthStep#} c_i
-             let (w,h) = getSize image
-                 cs = fromIntegral s
+             (w,h) <- getSize image
+             let cs = fromIntegral s
                  fs = sizeOf (undefined :: Float)
              forM_ [(x,y) | x<-[0..w-1], y <- [0..h-1]] $ \(x,y) -> do
                    v <- peek (castPtr (d `plusPtr` (y*cs+x*fs)))
@@ -715,6 +721,8 @@ instance CreateImage (Image RGB D8) where
 instance CreateImage (Image RGBA D8) where
     create (w,h) = creatingImage $ {#call wrapCreateImage8U#} (fromIntegral w) (fromIntegral h) 4
 
+instance CreateImage (Image c d) => CreateImage (MutableImage c d) where
+    create s = Mutable <$> create s
 
 
 -- | Allocate a new empty image
@@ -783,49 +791,50 @@ tileImages image1 image2 (x,y) = unsafePerformIO $
                                  creatingImage ({#call simpleMergeImages#}
                                                 i1 i2 x y)
 -- | Blit image2 onto image1.
-blitFix = blit
-blit :: Image GrayScale D32 -> Image GrayScale D32 -> (Int,Int) -> IO ()
-blit image1 image2 (x,y)
-    | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
-    | otherwise = withImage image1 $ \i1 ->
-                   withImage image2 $ \i2 ->
+blit :: MutableImage GrayScale D32 -> Image GrayScale D32 -> (Int,Int) -> IO ()
+blit image1 image2 (x,y) = do
+    (w1,h1) <- getSize image1
+    let ((w2,h2)) = getSize image2
+    if x+w2>w1 || y+h2>h1 || x<0 || y<0
+            then error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
+            else withMutableImage image1 $ \i1 ->
+                   withImage image2 $ \i2 -> 
                     ({#call plainBlit#} i1 i2 (fromIntegral y) (fromIntegral x))
-    where
-     ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
-     badSizes = x+w2>w1 || y+h2>h1 || x<0 || y<0
 
--- blitM :: (CreateImage (Image c d)) => (Int,Int) -> [((Int,Int),Image c d)] -> Image c d
-blitM (rw,rh) imgs = resultPic
+-- | Create an image by blitting multiple images onto an empty image.
+blitM :: (CreateImage (MutableImage GrayScale D32)) => 
+    (Int,Int) -> [((Int,Int),Image GrayScale D32)] -> Image GrayScale D32
+blitM (rw,rh) imgs = unsafePerformIO $ resultPic >>= fromMutable 
     where
-     resultPic = unsafePerformIO $ do
+     resultPic = do
                     r <- create (fromIntegral rw,fromIntegral rh)
                     sequence_ [blit r i (fromIntegral x, fromIntegral y)
                               | ((x,y),i) <- imgs ]
                     return r
 
 
-subPixelBlit
-  :: Image c d -> Image c d -> (CDouble, CDouble) -> IO ()
-
-subPixelBlit (image1) (image2) (x,y)
-    | badSizes  = error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
-    | otherwise = withImage image1 $ \i1 ->
+subPixelBlit :: MutableImage c d -> Image c d -> (CDouble, CDouble) -> IO ()
+subPixelBlit (image1) (image2) (x,y) = do
+    (w1,h1) <- getSize image1
+    let ((w2,h2)) = getSize image2
+    if ceiling x+w2>w1 || ceiling y+h2>h1 || x<0 || y<0
+     then error $ "Bad blit sizes: " ++ show [(w1,h1),(w2,h2)]++"<-"++show (x,y)
+     else withMutableImage image1 $ \i1 ->
                    withImage image2 $ \i2 ->
                     ({#call subpixel_blit#} i1 i2 y x)
-    where
-     ((w1,h1),(w2,h2)) = (getSize image1,getSize image2)
-     badSizes = ceiling x+w2>w1 || ceiling y+h2>h1 || x<0 || y<0
 
 safeBlit i1 i2 (x,y) = unsafePerformIO $ do
-                  res <- cloneImage i1-- createImage32F (getSize i1) 1
+                  res <- toMutable i1-- createImage32F (getSize i1) 1
                   blit res i2 (x,y)
                   return res
 
 -- | Blit image2 onto image1.
 --   This uses an alpha channel bitmap for determining the regions where the image should be "blended" with
 --   the base image.
+blendBlit :: MutableImage c d -> Image c1 d1 -> Image c3 d3 -> Image c2 d2
+                      -> (CInt, CInt) -> IO ()
 blendBlit image1 image1Alpha image2 image2Alpha (x,y) =
-                               withImage image1 $ \i1 ->
+                               withMutableImage image1 $ \i1 ->
                                 withImage image1Alpha $ \i1a ->
                                  withImage image2Alpha $ \i2a ->
                                   withImage image2 $ \i2 ->
@@ -948,12 +957,15 @@ getImageInfo x = do
     return (s,d,c)
 
 
--- Manipulating regions of interest:
+-- | Set the region of interest for a mutable image
+setROI :: (Integral a) => (a,a) -> (a,a) -> MutableImage c d -> IO ()
 setROI (fromIntegral -> x,fromIntegral -> y)
        (fromIntegral -> w,fromIntegral -> h)
        image = withMutableImage image $ \i ->
                             {#call wrapSetImageROI#} i x y w h
 
+-- | Set the region of interest to cover the entire image.
+resetROI :: MutableImage c d -> IO ()
 resetROI image = withMutableImage image $ \i ->
                   {#call cvResetImageROI#} i
 
@@ -1068,7 +1080,7 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
-montage :: (CreateImage (Image GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
+montage :: (CreateImage (MutableImage GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
 montage (u',v') space' imgs
     | u'*v' < (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
     | otherwise              = resultPic
@@ -1084,7 +1096,8 @@ montage (u',v') space' imgs
                     sequence_ [blit r i (edge +  x*xstep, edge + y*ystep)
                                | y <- [0..v-1] , x <- [0..u-1]
                                | i <- imgs ]
-                    return r
+                    let (Mutable i) = r 
+                    i `seq` return i
 
 data CvException = CvException Int String String String Int
      deriving (Show, Typeable)

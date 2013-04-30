@@ -12,6 +12,7 @@ import System.IO.Unsafe
 import CV.ImageMathOp
 import qualified CV.Matrix as M
 import CV.Matrix (Matrix,withMatPtr)
+import Control.DeepSeq
 
 -- |Since DCT is valid only for even sized images, we provide a
 -- function to crop images to even sizes.
@@ -278,7 +279,8 @@ enlarge :: Int -> Image GrayScale D32 -> Image GrayScale D32
 enlarge n img =  unsafePerformIO $ do
                    i <- I.create (w2,h2)
                    blit i img (0,0)
-                   return i
+                   let (Mutable im) = i
+                   im `deepseq` return im
     where
      (w,h) = getSize img
      (w2,h2) = (pad w, pad h)
