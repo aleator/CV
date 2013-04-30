@@ -542,6 +542,10 @@ safeGetPixel (x,y) i | x<0 || x>= w || y<0 || y>=h = getPixel (x',y') i
 clamp :: Ord a => (a, a) -> a -> a
 clamp (a,b) x = max a (min b x)
 
+instance (NFData (P (Image a b)), GetPixel (Image a b)) => GetPixel (MutableImage a b) where
+    type P (MutableImage a b) = IO (P (Image a b))
+    getPixel xy (Mutable i) = let p = getPixel xy i
+                              in p `deepseq` return p
 
 class GetPixel a where
     type P a :: *
