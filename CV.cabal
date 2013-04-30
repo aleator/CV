@@ -1,7 +1,7 @@
 Name:				 CV
 Version:             0.4.0.0
 Description:         OpenCV Bindings
-License:             GPL
+License:             BSD3
 License-file:        LICENSE
 Category:            AI, Graphics, Machine Vision
 Synopsis:            OpenCV based machine vision library
