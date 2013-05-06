@@ -312,12 +312,13 @@ moreThan = mkCmpOp cmpGT
 --   @(less2Than A B)@ has white pixels where value of A is less than value of
 --   B. Notice that these functions follow the intuitive order of operands,
 --   unlike 'lessThan' and 'moreThan'.
-less2Than,lessEq2Than,more2Than :: (CreateImage (Image GrayScale d)) => Image GrayScale d
-                                    -> Image GrayScale d -> Image GrayScale D8
+less2Than,lessEq2Than,more2Than, moreEq2Than
+     :: (CreateImage (Image GrayScale d)) => Image GrayScale d -> Image GrayScale d -> Image GrayScale D8
 
 less2Than = mkCmp2Op cmpLT
 lessEq2Than = mkCmp2Op cmpLE
 more2Than = mkCmp2Op cmpGT
+moreEq2Than = mkCmp2Op cmpGE
 
 -- Statistics
 
