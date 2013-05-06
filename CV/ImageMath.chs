@@ -37,6 +37,8 @@ module CV.ImageMath(
 , moreThan
 , less2Than
 , more2Than
+, lessEq2Than 
+, moreEq2Than
   -- * Image statistics
 , CV.ImageMath.sum
 , average
@@ -317,8 +319,8 @@ less2Than,lessEq2Than,more2Than, moreEq2Than
 
 less2Than = mkCmp2Op cmpLT
 lessEq2Than = mkCmp2Op cmpLE
-more2Than = mkCmp2Op cmpGT
 moreEq2Than = mkCmp2Op cmpGE
+more2Than = mkCmp2Op cmpGT
 
 -- Statistics
 
