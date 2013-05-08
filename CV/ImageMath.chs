@@ -49,6 +49,7 @@ module CV.ImageMath(
   -- * Image statistics
 , CV.ImageMath.sum
 , average
+, countNonZero
 , averageMask
 , stdDeviation
 , stdDeviationMask
@@ -360,6 +361,12 @@ more2Than = mkCmp2Op cmpGT
 average' :: Image GrayScale D32 -> IO D32
 average' img = withGenImage img $ \image -> 
                 {#call wrapAvg#} image nullPtr >>= return . realToFrac
+
+-- | Calculate number of nonzero pixels
+countNonZero :: Image GrayScale a -> Int
+countNonZero img = unsafePerformIO $ withGenImage img $ \cImg -> fromIntegral <$> {#call cvCountNonZero#} cImg 
+
+
 
 -- | Calculates the average pixel value in whole image.
 average :: Image GrayScale D32 -> D32
