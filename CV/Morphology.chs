@@ -9,6 +9,7 @@ module CV.Morphology (StructuringElement
                   ,open,close
                   ,erode,dilate
                   ,blackTopHat,whiteTopHat
+                  ,skeletonize
                   ,dilateOp,erodeOp,KernelShape(EllipseShape,CrossShape,RectShape) 
                   , ConvKernel
                   )
@@ -147,3 +148,13 @@ dilate' se count img = withImage img $ \image ->
              {#call cvDilate#} (castPtr image) 
                               (castPtr image) 
                               ck count
+
+skeletonize :: Image GrayScale D8 -> Image GrayScale D8
+skeletonize i = fst . snd . head . dropWhile (\x -> fst x > 0) . iterate (skeletonize'.snd)
+                $ (1,(CV.Image.empty (getSize i),i))
+skeletonize' :: (Image GrayScale D8, Image GrayScale D8) -> (Int, (Image GrayScale D8, Image GrayScale D8))
+skeletonize' (skel,img) = (countNonZero tmp, (tmp, erode se 1 img))
+    where 
+       tmp = unsafeOperateOn img $ openOp se #> IM.notOp #> IM.andOp img Nothing #> IM.orOp skel Nothing
+       se = structuringElement (3,3) (1,1) CrossShape 
+
