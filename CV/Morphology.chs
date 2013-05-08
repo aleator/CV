@@ -28,7 +28,7 @@ import qualified CV.ImageMath as IM
 import System.IO.Unsafe
 
 -- Morphological opening
-openOp :: StructuringElement -> ImageOperation GrayScale D32
+openOp :: StructuringElement -> ImageOperation GrayScale d
 openOp se = erodeOp se 1 #> dilateOp se 1                    
 open se = unsafeOperate (openOp se) 
 a ○ b = open b a
@@ -36,12 +36,12 @@ a ○ b = open b a
 
 
 -- Morphological closing
-closeOp :: StructuringElement -> ImageOperation GrayScale D32
+closeOp :: StructuringElement -> ImageOperation GrayScale d
 closeOp se = dilateOp se 1 #> erodeOp se 1                    
 close se = unsafeOperate (closeOp se) 
 a ● b = close b a
 
-geodesic :: Image GrayScale D32 -> ImageOperation GrayScale D32 -> ImageOperation GrayScale D32
+geodesic :: Image GrayScale D32 -> ImageOperation GrayScale d -> ImageOperation GrayScale d
 geodesic mask op = op #> IM.limitToOp mask
 
 -- | Perform a black tophat filtering of size
