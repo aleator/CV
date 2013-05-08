@@ -195,6 +195,32 @@ subMeanAbs = unsafeOperate subtractMeanAbsOp
 --   multiply by @-1@ and add @1@).
 invert i = addS 1 $ mulS (-1) i
 
+notOp :: ImageOperation GrayScale D8
+notOp =  ImgOp $ \image -> withGenImage image $ \i -> {#call cvNot#} i i
+
+not :: Image GrayScale D8 -> Image GrayScale D8
+not = unsafeOperate notOp
+
+andOp :: Image GrayScale D8 -> Mask -> ImageOperation GrayScale D8
+andOp image0 mask = ImgOp $ \image1 -> 
+                  withGenImage image0 $ \ci0 ->
+                  withGenImage image1 $ \ci1 -> 
+                  withMask     mask   $ \cmask -> 
+                  {#call cvAnd#} ci0 ci1 ci1 cmask
+
+and :: Image GrayScale D8 -> Image GrayScale D8 -> Mask -> Image GrayScale D8 
+and i j mask = unsafeOperate (andOp i mask) j
+
+orOp :: Image GrayScale D8 -> Mask -> ImageOperation GrayScale D8
+orOp image0 mask = ImgOp $ \image1 -> 
+                  withGenImage image0 $ \ci0 ->
+                  withGenImage image1 $ \ci1 -> 
+                  withMask     mask   $ \cmask -> 
+                  {#call cvOr#} ci0 ci1 ci1 cmask
+
+or :: Image GrayScale D8 -> Image GrayScale D8 -> Mask -> Image GrayScale D8 
+or i j mask = unsafeOperate (orOp i mask) j
+
 absOp = ImgOp $ \image -> do
                       withGenImage image $ \i ->
                         {#call wrapAbsDiffS#} i 0 i

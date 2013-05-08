@@ -99,9 +99,9 @@ enum SmoothType {
 
 -- | Image operation which applies gaussian or unifarm smoothing with a given window size to the image.
 gaussianOp,blurOp,blurNSOp :: (Int, Int) -> ImageOperation GrayScale D32
-gaussianOp m =  withMask m $ \(w,h) img -> smooth' img img (fromEnum Gaussian) w h 0 0
-blurOp m = withMask m $ \(w,h) img -> smooth' img img (fromEnum Blur) w h 0 0
-blurNSOp m = withMask m $ \(w,h) img -> smooth' img img (fromEnum BlurNoScale) w h 0 0
+gaussianOp m =  usingMask m $ \(w,h) img -> smooth' img img (fromEnum Gaussian) w h 0 0
+blurOp m = usingMask m $ \(w,h) img -> smooth' img img (fromEnum Blur) w h 0 0
+blurNSOp m = usingMask m $ \(w,h) img -> smooth' img img (fromEnum BlurNoScale) w h 0 0
 
 -- | Create a new image by applying gaussian, or uniform smoothing.
 gaussian,blur,blurNS :: (Int, Int) -> Image GrayScale D32 -> Image GrayScale D32
@@ -109,7 +109,7 @@ gaussian = unsafeOperate . gaussianOp
 blur     = unsafeOperate . blurOp
 blurNS   = unsafeOperate . blurNSOp
 
-withMask (w,h) op 
+usingMask (w,h) op 
     | maskIsOk (w,h) = ImgOp $ op (w,h)
     | otherwise = error "One of aperture dimensions is incorrect (should be >=1 and odd))"
 

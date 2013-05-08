@@ -55,10 +55,10 @@ getMSER image mask (MP params) = unsafePerformIO $
 #endif
 
 -- TODO: Move this to some utility module
-withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α
-withMask m f = case m of
-               Just m  -> withImage m (f.castPtr)
-               Nothing -> f nullPtr
+-- withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α
+-- withMask m f = case m of
+--                Just m  -> withImage m (f.castPtr)
+--                Nothing -> f nullPtr
 
 -- | Parameters for SURF feature extraction
 newtype SURFParams = SP C'CvSURFParams deriving Show
