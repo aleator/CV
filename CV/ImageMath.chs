@@ -32,6 +32,13 @@ module CV.ImageMath(
 -- , divS
 , minS
 , maxS
+  -- * Pixelwise logical operations
+, CV.ImageMath.not
+, CV.ImageMath.and
+, CV.ImageMath.or
+, CV.ImageMath.notOp
+, CV.ImageMath.andOp
+, CV.ImageMath.orOp
   -- * Comparison operations
 , lessThan
 , moreThan
