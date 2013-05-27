@@ -25,7 +25,11 @@ module CV.Calibration
     -- * Visualization
     ,drawChessboardCorners
     -- * Camera calibration
-    ,calibrateCamera2) where
+    ,calibrateCamera2
+    -- * Rectification
+    ,stereoRectifyUncalibrated
+    ,findFundamentalMat
+    ) where
 {-#OPTIONS-GHC -fwarn-unused-imports #-}
 
 import Foreign.C.Types
@@ -174,3 +178,31 @@ calibrateCamera2 views (w,h) = do
     -- print ( objectPoints, imagePoints, pointCounts,cameraMatrix, distCoeffs, rvecs, tvecs )
     return (err, transpose cameraMatrix, toCols distCoeffs, toCols rvecs, toCols tvecs)
 
+stereoRectifyUncalibrated :: Matrix (Float,Float) -> Matrix (Float,Float) -> Matrix Float -> (Int,Int) -> Double
+                             -> (Matrix Float, Matrix Float)
+stereoRectifyUncalibrated pts1 pts2 fund (w,h) threshold = unsafePerformIO $
+    let h1 = emptyMatrix (4,4)
+        h2 = emptyMatrix (4,4)
+    in withMatPtr pts1     $ \c_pts1 -> 
+       withMatPtr pts2     $ \c_pts2 ->
+       withMatPtr fund     $ \c_fund -> 
+       withMatPtr h1       $ \c_h1 -> 
+       withMatPtr h2       $ \c_h2 -> 
+       with (C'CvSize (fromIntegral w) (fromIntegral h)) $ \c_size -> do
+        r <- c'wrapStereoRectifyUncalibrated c_pts1 c_pts2 c_fund c_size c_h1 c_h2 (realToFrac threshold)
+        return (h1, h2)
+
+findFundamentalMat :: Matrix (Float,Float) -> Matrix (Float,Float) -> CInt -> Double -> Double
+                             -> (Matrix Float, Matrix Float)
+findFundamentalMat pts1 pts2 method p1 p2 = unsafePerformIO $
+    let fund = emptyMatrix (3,3)
+        status = emptyMatrix (dim,1)
+        (w,h)  = getSize pts1
+        dim = max w h
+    in withMatPtr pts1     $ \c_pts1 -> 
+       withMatPtr pts2     $ \c_pts2 ->
+       withMatPtr fund     $ \c_fund -> 
+       withMatPtr fund     $ \c_status -> 
+        do
+         r <- c'cvFindFundamentalMat c_pts1 c_pts2 c_fund method (realToFrac p1) (realToFrac p2) c_status
+         return (fund, status)
