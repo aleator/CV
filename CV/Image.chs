@@ -80,6 +80,7 @@ module CV.Image (
 , tileImages
 
 -- * Conversions
+, convertTo
 , rgbToGray
 , rgbToGray8
 , grayToRGB
@@ -161,13 +162,16 @@ data RGB_Channel = Red | Green | Blue deriving (Eq,Ord,Enum)
 data BGR
 
 data LAB
+data YUV
 data RGBA
 data LAB_Channel = LAB_L | LAB_A | LAB_B deriving (Eq,Ord,Enum)
+data YUV_Channel = YUV_Y | YUV_U | YUV_V deriving (Eq,Ord,Enum)
 
 -- | Type family for expressing which channels a colorspace contains. This needs to be fixed wrt. the BGR color space.
 type family ChannelOf a :: *
 type instance ChannelOf RGB_Channel = RGB
 type instance ChannelOf LAB_Channel = LAB
+type instance ChannelOf YUV_Channel = YUV
 
 -- Bit Depths
 type D8  = Word8
@@ -355,10 +359,6 @@ instance Sized (Image c d) where
     getSize = getSize . unS
 
 
-cvRGBtoGRAY = 7 :: CInt-- NOTE: This will break.
-cvRGBtoLAB = 45 :: CInt-- NOTE: This will break.
-
-
 #c
 enum CvtFlags {
     CvtFlip   = CV_CVTIMG_FLIP,
@@ -368,134 +368,134 @@ enum CvtFlags {
 
 #c
 enum CvtCodes {
-    CV_BGR2BGRA    =0,
-    CV_RGB2RGBA    =CV_BGR2BGRA,
+    BGR2BGRA    =0,
+    RGB2RGBA    =BGR2BGRA,
 
-    CV_BGRA2BGR    =1,
-    CV_RGBA2RGB    =CV_BGRA2BGR,
+    BGRA2BGR    =1,
+    RGBA2RGB    =BGRA2BGR,
 
-    CV_BGR2RGBA    =2,
-    CV_RGB2BGRA    =CV_BGR2RGBA,
+    BGR2RGBA    =2,
+    RGB2BGRA    =BGR2RGBA,
 
-    CV_RGBA2BGR    =3,
-    CV_BGRA2RGB    =CV_RGBA2BGR,
+    RGBA2BGR    =3,
+    BGRA2RGB    =RGBA2BGR,
 
-    CV_BGR2RGB     =4,
-    CV_RGB2BGR     =CV_BGR2RGB,
+    BGR2RGB     =4,
+    RGB2BGR     =BGR2RGB,
 
-    CV_BGRA2RGBA   =5,
-    CV_RGBA2BGRA   =CV_BGRA2RGBA,
+    BGRA2RGBA   =5,
+    RGBA2BGRA   =BGRA2RGBA,
 
-    CV_BGR2GRAY    =6,
-    CV_RGB2GRAY    =7,
-    CV_GRAY2BGR    =8,
-    CV_GRAY2RGB    =CV_GRAY2BGR,
-    CV_GRAY2BGRA   =9,
-    CV_GRAY2RGBA   =CV_GRAY2BGRA,
-    CV_BGRA2GRAY   =10,
-    CV_RGBA2GRAY   =11,
+    BGR2GRAY    =6,
+    RGB2GRAY    =7,
+    GRAY2BGR    =8,
+    GRAY2RGB    =GRAY2BGR,
+    GRAY2BGRA   =9,
+    GRAY2RGBA   =GRAY2BGRA,
+    BGRA2GRAY   =10,
+    RGBA2GRAY   =11,
 
-    CV_BGR2BGR565  =12,
-    CV_RGB2BGR565  =13,
-    CV_BGR5652BGR  =14,
-    CV_BGR5652RGB  =15,
-    CV_BGRA2BGR565 =16,
-    CV_RGBA2BGR565 =17,
-    CV_BGR5652BGRA =18,
-    CV_BGR5652RGBA =19,
+    BGR2BGR565  =12,
+    RGB2BGR565  =13,
+    BGR5652BGR  =14,
+    BGR5652RGB  =15,
+    BGRA2BGR565 =16,
+    RGBA2BGR565 =17,
+    BGR5652BGRA =18,
+    BGR5652RGBA =19,
 
-    CV_GRAY2BGR565 =20,
-    CV_BGR5652GRAY =21,
+    GRAY2BGR565 =20,
+    BGR5652GRAY =21,
 
-    CV_BGR2BGR555  =22,
-    CV_RGB2BGR555  =23,
-    CV_BGR5552BGR  =24,
-    CV_BGR5552RGB  =25,
-    CV_BGRA2BGR555 =26,
-    CV_RGBA2BGR555 =27,
-    CV_BGR5552BGRA =28,
-    CV_BGR5552RGBA =29,
+    BGR2BGR555  =22,
+    RGB2BGR555  =23,
+    BGR5552BGR  =24,
+    BGR5552RGB  =25,
+    BGRA2BGR555 =26,
+    RGBA2BGR555 =27,
+    BGR5552BGRA =28,
+    BGR5552RGBA =29,
 
-    CV_GRAY2BGR555 =30,
-    CV_BGR5552GRAY =31,
+    GRAY2BGR555 =30,
+    BGR5552GRAY =31,
 
-    CV_BGR2XYZ     =32,
-    CV_RGB2XYZ     =33,
-    CV_XYZ2BGR     =34,
-    CV_XYZ2RGB     =35,
+    BGR2XYZ     =32,
+    RGB2XYZ     =33,
+    XYZ2BGR     =34,
+    XYZ2RGB     =35,
 
-    CV_BGR2YCrCb   =36,
-    CV_RGB2YCrCb   =37,
-    CV_YCrCb2BGR   =38,
-    CV_YCrCb2RGB   =39,
+    BGR2YCrCb   =36,
+    RGB2YCrCb   =37,
+    YCrCb2BGR   =38,
+    YCrCb2RGB   =39,
 
-    CV_BGR2HSV     =40,
-    CV_RGB2HSV     =41,
+    BGR2HSV     =40,
+    RGB2HSV     =41,
 
-    CV_BGR2Lab     =44,
-    CV_RGB2Lab     =45,
+    BGR2Lab     =44,
+    RGB2Lab     =45,
 
-    CV_BayerBG2BGR =46,
-    CV_BayerGB2BGR =47,
-    CV_BayerRG2BGR =48,
-    CV_BayerGR2BGR =49,
+    BayerBG2BGR =46,
+    BayerGB2BGR =47,
+    BayerRG2BGR =48,
+    BayerGR2BGR =49,
 
-    CV_BayerBG2RGB =CV_BayerRG2BGR,
-    CV_BayerGB2RGB =CV_BayerGR2BGR,
-    CV_BayerRG2RGB =CV_BayerBG2BGR,
-    CV_BayerGR2RGB =CV_BayerGB2BGR,
+    BayerBG2RGB =BayerRG2BGR,
+    BayerGB2RGB =BayerGR2BGR,
+    BayerRG2RGB =BayerBG2BGR,
+    BayerGR2RGB =BayerGB2BGR,
 
-    CV_BGR2Luv     =50,
-    CV_RGB2Luv     =51,
-    CV_BGR2HLS     =52,
-    CV_RGB2HLS     =53,
+    BGR2Luv     =50,
+    RGB2Luv     =51,
+    BGR2HLS     =52,
+    RGB2HLS     =53,
 
-    CV_HSV2BGR     =54,
-    CV_HSV2RGB     =55,
+    HSV2BGR     =54,
+    HSV2RGB     =55,
 
-    CV_Lab2BGR     =56,
-    CV_Lab2RGB     =57,
-    CV_Luv2BGR     =58,
-    CV_Luv2RGB     =59,
-    CV_HLS2BGR     =60,
-    CV_HLS2RGB     =61,
+    Lab2BGR     =56,
+    Lab2RGB     =57,
+    Luv2BGR     =58,
+    Luv2RGB     =59,
+    HLS2BGR     =60,
+    HLS2RGB     =61,
 
-    CV_BayerBG2BGR_VNG =62,
-    CV_BayerGB2BGR_VNG =63,
-    CV_BayerRG2BGR_VNG =64,
-    CV_BayerGR2BGR_VNG =65,
+    BayerBG2BGR_VNG =62,
+    BayerGB2BGR_VNG =63,
+    BayerRG2BGR_VNG =64,
+    BayerGR2BGR_VNG =65,
 
-    CV_BayerBG2RGB_VNG =CV_BayerRG2BGR_VNG,
-    CV_BayerGB2RGB_VNG =CV_BayerGR2BGR_VNG,
-    CV_BayerRG2RGB_VNG =CV_BayerBG2BGR_VNG,
-    CV_BayerGR2RGB_VNG =CV_BayerGB2BGR_VNG,
+    BayerBG2RGB_VNG =BayerRG2BGR_VNG,
+    BayerGB2RGB_VNG =BayerGR2BGR_VNG,
+    BayerRG2RGB_VNG =BayerBG2BGR_VNG,
+    BayerGR2RGB_VNG =BayerGB2BGR_VNG,
 
-    CV_BGR2HSV_FULL = 66,
-    CV_RGB2HSV_FULL = 67,
-    CV_BGR2HLS_FULL = 68,
-    CV_RGB2HLS_FULL = 69,
+    BGR2HSV_FULL = 66,
+    RGB2HSV_FULL = 67,
+    BGR2HLS_FULL = 68,
+    RGB2HLS_FULL = 69,
 
-    CV_HSV2BGR_FULL = 70,
-    CV_HSV2RGB_FULL = 71,
-    CV_HLS2BGR_FULL = 72,
-    CV_HLS2RGB_FULL = 73,
+    HSV2BGR_FULL = 70,
+    HSV2RGB_FULL = 71,
+    HLS2BGR_FULL = 72,
+    HLS2RGB_FULL = 73,
 
-    CV_LBGR2Lab     = 74,
-    CV_LRGB2Lab     = 75,
-    CV_LBGR2Luv     = 76,
-    CV_LRGB2Luv     = 77,
+    LBGR2Lab     = 74,
+    LRGB2Lab     = 75,
+    LBGR2Luv     = 76,
+    LRGB2Luv     = 77,
 
-    CV_Lab2LBGR     = 78,
-    CV_Lab2LRGB     = 79,
-    CV_Luv2LBGR     = 80,
-    CV_Luv2LRGB     = 81,
+    Lab2LBGR     = 78,
+    Lab2LRGB     = 79,
+    Luv2LBGR     = 80,
+    Luv2LRGB     = 81,
 
-    CV_BGR2YUV      = 82,
-    CV_RGB2YUV      = 83,
-    CV_YUV2BGR      = 84,
-    CV_YUV2RGB      = 85,
+    BGR2YUV      = 82,
+    RGB2YUV      = 83,
+    YUV2BGR      = 84,
+    YUV2RGB      = 85,
 
-    CV_COLORCVT_MAX  =100
+    COLORCVT_MAX  =100
 };
 #endc
 
@@ -503,19 +503,20 @@ enum CvtCodes {
 
 {#enum CvtFlags {}#}
 
-
 rgbToLab :: Image RGB D32 -> Image LAB D32
-rgbToLab = S . convertTo cvRGBtoLAB 3 . unS
+rgbToLab = S . convertTo RGB2Lab 3 . unS
+
+rgbToYUV :: Image RGB D32 -> Image YUV D32
+rgbToYUV = S . convertTo RGB2YUV 3 . unS
 
 rgbToGray :: Image RGB D32 -> Image GrayScale D32
-rgbToGray = S . convertTo cvRGBtoGRAY 1 . unS
+rgbToGray = S . convertTo RGB2GRAY 1 . unS
 
 rgbToGray8 :: Image RGB D8 -> Image GrayScale D8
-rgbToGray8 = S . convert8UTo cvRGBtoGRAY 1 . unS
+rgbToGray8 = S . convert8UTo RGB2GRAY 1 . unS
 
 grayToRGB :: Image GrayScale D32 -> Image RGB D32
-grayToRGB = S . convertTo (fromIntegral . fromEnum $ CV_GRAY2BGR) 3 . unS
-
+grayToRGB = S . convertTo GRAY2BGR 3 . unS
 
 bgrToRgb :: Image BGR D8 -> Image RGB D8
 bgrToRgb = S . swapRB . unS
@@ -670,20 +671,20 @@ mapImageInplace f image = withMutableImage image $ \c_i -> do
 
 
 
-convert8UTo :: CInt -> CInt -> BareImage -> BareImage
+convert8UTo :: CvtCodes -> CInt -> BareImage -> BareImage
 convert8UTo code channels img = unsafePerformIO $ creatingBareImage $ do
     res <- {#call wrapCreateImage8U#} w h channels
     withBareImage img $ \cimg ->
-        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) (fromIntegral . fromEnum $ code)
     return res
  where
     (fromIntegral -> w,fromIntegral -> h) = getSize img
 
-convertTo :: CInt -> CInt -> BareImage -> BareImage
+convertTo :: CvtCodes -> CInt -> BareImage -> BareImage
 convertTo code channels img = unsafePerformIO $ creatingBareImage $ do
     res <- {#call wrapCreateImage32F#} w h channels
     withBareImage img $ \cimg ->
-        {#call cvCvtColor#} (castPtr cimg) (castPtr res) code
+        {#call cvCvtColor#} (castPtr cimg) (castPtr res) (fromIntegral . fromEnum $ code)
     return res
  where
     (fromIntegral -> w,fromIntegral -> h) = getSize img
