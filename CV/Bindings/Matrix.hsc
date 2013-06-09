@@ -31,6 +31,7 @@ import Foreign.C.Types
 
 #ccall cvRodrigues2  , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> IO Int
 
+
 -- Matrix inversions
 #num CV_LU 
 #num CV_SVD 

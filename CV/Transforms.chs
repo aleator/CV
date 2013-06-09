@@ -320,7 +320,19 @@ enum LabelType {
 #endif
 
 -- |Mask sizes accepted by distanceTransform
-data MaskSize = M3 | M5 deriving (Eq,Ord,Enum,Show)
+#c
+enum MaskSize {
+     M3 = 3
+    ,M5 = 5
+    ,MPrecise = CV_DIST_MASK_PRECISE
+};
+#endc
+{#enum MaskSize {}#}
+
+
+-- |Mask sizes accepted by distanceTransform
+-- data MaskSize = M3 | M5 | MPrecise deriving (Eq,Ord,Enum,Show)
+
 
 -- |Perform a distance transform on the image
 distanceTransform :: DistanceType -> MaskSize -> Image GrayScale D8 -> Image GrayScale D32 --TODO: Input should be a black and white image

@@ -1,4 +1,4 @@
-{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable, UndecidableInstances #-}
+{-#LANGUAGE ForeignFunctionInterface, ViewPatterns,ParallelListComp, FlexibleInstances, FlexibleContexts, TypeFamilies, EmptyDataDecls, ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable, UndecidableInstances, MultiParamTypeClasses #-}
 #include "cvWrapLEO.h"
 module CV.Image (
 -- * Basic types
@@ -814,7 +814,11 @@ tileImages image1 image2 (x,y) = unsafePerformIO $
                                  creatingImage ({#call simpleMergeImages#}
                                                 i1 i2 x y)
 -- | Blit image2 onto image1.
-blit :: MutableImage GrayScale D32 -> Image GrayScale D32 -> (Int,Int) -> IO ()
+class Blittable channels depth 
+instance Blittable GrayScale D32
+instance Blittable RGB D32
+
+blit :: Blittable c d => MutableImage c d -> Image c d -> (Int,Int) -> IO ()
 blit image1 image2 (x,y) = do
     (w1,h1) <- getSize image1
     let ((w2,h2)) = getSize image2
@@ -1103,7 +1107,7 @@ getAllPixelsRowMajor image =  [getPixel (i,j) image
 
 -- |Create a montage form given images (u,v) determines the layout and space the spacing
 --  between images. Images are assumed to be the same size (determined by the first image)
-montage :: (CreateImage (MutableImage GrayScale D32)) => (Int,Int) -> Int -> [Image GrayScale D32] -> Image GrayScale D32
+montage :: (Blittable c d) => (CreateImage (MutableImage c d)) => (Int,Int) -> Int -> [Image c d] -> Image c d
 montage (u',v') space' imgs
     | u'*v' < (length imgs) = error ("Montage mismatch: "++show (u,v, length imgs))
     | otherwise              = resultPic
