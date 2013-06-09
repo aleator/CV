@@ -4,6 +4,7 @@ module CV.Image (
 -- * Basic types
  Image(..)
 , MutableImage(..)
+, Mask
 , create
 , createWith
 , empty
@@ -13,6 +14,7 @@ module CV.Image (
 , emptyCopy'
 , cloneImage
 , withClone
+, withMask
 , withMutableClone
 , withCloneValue
 , CreateImage
@@ -182,6 +184,9 @@ type D64 = Double
 newtype Image channels depth = S BareImage
 newtype MutableImage channels depth = Mutable (Image channels depth)
 
+-- | Alias for images used as masks
+type Mask = Maybe (Image GrayScale D8)
+
 -- | Remove typing info from an image
 unS (S i) = i -- Unsafe and ugly
 
@@ -204,6 +209,12 @@ withUniPtr with x fun = with x $ \y ->
 
 withGenImage :: Image c d -> (Ptr b -> IO a) -> IO a
 withGenImage = withUniPtr withImage
+
+-- | This function converts masks to pointers. Masks which are nothing are converted
+--   to null pointers.
+withMask :: Mask -> (Ptr b -> IO a) -> IO a
+withMask (Just i) op = withUniPtr withImage i op
+withMask Nothing  op = op nullPtr
 
 withMutableImage :: MutableImage c d -> (Ptr b -> IO a) -> IO a
 withMutableImage (Mutable i) o = withGenImage i o
