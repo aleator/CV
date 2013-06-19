@@ -208,3 +208,55 @@ findFundamentalMat pts1 pts2  method p1 p2 = unsafePerformIO $
         do
          r <- c'cvFindFundamentalMat c_pts1 c_pts2 c_fund method (realToFrac p1) (realToFrac p2) nullPtr
          return (fund)
+
+
+stereoCalibrate ::  Matrix (Float,Float,Float) -- ^ Object points
+                 -> Matrix (Float,Float)       -- ^ ImagePoints 1
+                 -> Matrix (Float,Float)       -- ^ ImagePoints 2
+                 -> Matrix (Int)               -- ^ point counts
+                 -> Matrix Float               -- ^ camera matrix 1 
+                 -> Matrix Float               -- ^ camera matrix 2 
+                 -> Matrix Float               -- ^ dist coeffs 1
+                 -> Matrix Float               -- ^ dist coeffs 2
+                 -> (Int,Int)                  -- ^ image size
+                 -> C'CvTermCriteria           -- ^ stopping condition
+                 -> CInt                       -- ^ Flags
+                 -> (Double, Matrix Float, Matrix Float ,Matrix Float, Matrix Float)
+stereoCalibrate obj im1 im2 counts cam1 cam2 dist1 dist2 (w,h) tc flags =  unsafePerformIO $ do 
+    r <- CV.Matrix.create (3,3)
+    e <- CV.Matrix.create (3,3)
+    t <- CV.Matrix.create (3,1)
+    f <- CV.Matrix.create (3,3)
+    
+    withMatPtr obj     $ \c_obj ->
+       withMatPtr im1     $ \c_im1 ->
+       withMatPtr im2     $ \c_im2 ->
+       withMatPtr counts     $ \c_counts ->
+       withMatPtr cam1     $ \c_cam1 ->
+       withMatPtr cam2     $ \c_cam2 ->
+       withMatPtr dist1     $ \c_dist1 ->
+       withMatPtr dist2     $ \c_dist2 ->
+       withMatPtr r     $ \c_r ->
+       withMatPtr t     $ \c_t ->
+       withMatPtr e     $ \c_e ->
+       withMatPtr f     $ \c_f ->
+       with tc          $ \c_tc ->
+       with (CV.Bindings.Types.C'CvSize (fromIntegral w) (fromIntegral h)) $ \c_size -> do
+        pr <- c'wrapStereoCalibrate 
+            c_obj 
+            c_im1 
+            c_im2 
+            c_counts 
+            c_cam1 
+            c_dist1 
+            c_cam2 
+            c_dist2 
+            c_size
+            c_r 
+            c_t 
+            c_e 
+            c_f 
+            c_tc 
+            flags
+        return (realToFrac pr,r,t,e,f)
+    
