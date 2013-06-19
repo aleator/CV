@@ -16,3 +16,4 @@ import CV.Bindings.Matrix
 
 #ccall cvProjectPoints2, Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> CDouble -> IO ()
 
+#ccall cvTriangulatePoints, Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> IO ()

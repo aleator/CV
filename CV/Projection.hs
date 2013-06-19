@@ -47,3 +47,19 @@ projectPoints obj rot tra cam dist = unsafePerformIO $ do
                             nullPtr nullPtr
                             nullPtr 0
          return im
+
+triangulatePoints :: Matrix Float  -- ^ 3x4 projection
+                   -> Matrix Float -- ^ 3x4 projection
+                   -> Matrix Float -- ^ 2xN points
+                   -> Matrix Float -- ^ 2xN points
+                   -> Matrix Float -- ^ 4xN reconstructedPoints
+triangulatePoints proj1 proj2 pts1 pts2 = unsafePerformIO $ do 
+    res <- CV.Matrix.create (4, snd $ getSize pts1)
+    withMatPtr proj1 $ \c_proj1 ->
+     withMatPtr proj2 $ \c_proj2 ->
+     withMatPtr pts1 $ \c_pts1 ->
+     withMatPtr pts2 $ \c_pts2 ->
+     withMatPtr res $ \c_res -> do
+         c'cvTriangulatePoints c_proj1 c_proj2 c_pts1 c_pts2 c_res
+         return res
+    
