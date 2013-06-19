@@ -14,3 +14,5 @@ import CV.Bindings.Matrix
 #ccall project_polar , Ptr BareImage -> IO (Ptr BareImage)
 #ccall cvComputeCorrespondEpilines , Ptr <CvMat> -> CInt -> Ptr <CvMat> -> Ptr <CvMat> -> IO ()
 
+#ccall cvProjectPoints2, Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> CDouble -> IO ()
+
