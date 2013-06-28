@@ -145,7 +145,7 @@ calibrateCamera2 ::
 calibrateCamera2 views (w,h) = do
     let 
         pointCounts :: Matrix Int
-        pointCounts  = fromList (1,length views) (map (length) views)
+        pointCounts  = fromList (length views,1) (map (length) views)
         m = length views
         totalPts = length (concat views)
         objectPoints :: Matrix Float
