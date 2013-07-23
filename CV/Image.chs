@@ -1010,7 +1010,7 @@ getChannel no image = unsafePerformIO $ creatingImage $ do
     mut <- toMutable image
     setCOI no mut
     cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
-    withGenImage image $ \cimage ->
+    withMutableImage mut $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
     resetCOI mut
     return cres
