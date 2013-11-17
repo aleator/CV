@@ -547,7 +547,6 @@ swapRB img = unsafePerformIO $ do
 safeGetPixel :: (Sized image, Size image ~ (Int,Int), GetPixel image) => (P image) -> (Int,Int) -> image -> P image
 safeGetPixel def (x,y) i | x<0 || x>= w || y<0 || y>=h = def
                      | otherwise = getPixel (x,y) i
-                    -- | otherwise = def
                 where
                     (w,h) = getSize i
                     -- (x',y') = (clamp (0,w-1) x, clamp (0,h-1) y)
@@ -1012,7 +1011,7 @@ getChannel no image = unsafePerformIO $ creatingImage $ do
     mut <- toMutable image
     setCOI no mut
     cres <- {#call wrapCreateImage32F#} (fromIntegral w) (fromIntegral h) 1
-    withGenImage image $ \cimage ->
+    withMutableImage mut $ \cimage ->
       {#call cvCopy#} cimage (castPtr cres) (nullPtr)
     resetCOI mut
     return cres

@@ -20,6 +20,9 @@ import CV.Bindings.Types
 #ccall wrapStereoRectifyUncalibrated , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvSize> -> Ptr <CvMat> -> Ptr <CvMat> -> Double -> IO Int
 
 #ccall cvFindFundamentalMat , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> CInt -> CDouble -> CDouble -> Ptr <CvMat> -> IO Int
+
+#ccall wrapStereoCalibrate  , Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvSize> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvMat> -> Ptr <CvTermCriteria> -> CInt -> IO CDouble
+
 #num CV_FM_7POINT 
 #num CV_FM_8POINT 
 #num CV_FM_RANSAC 
