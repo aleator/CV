@@ -105,7 +105,7 @@ scaleToSize tpe retainRatio (w,h) img = unsafePerformIO $ do
                     return target
             where
              (ow,oh) = getSize img
-             (w',h') = if retainRatio 
+             (w',h') = if retainRatio
                          then (floor $ fromIntegral ow*ratio,floor $ fromIntegral oh*ratio)
                          else (w,h)
              ratio  = max (fromIntegral w/fromIntegral ow)
@@ -309,7 +309,6 @@ enum DistanceType {
 };
 #endc
 {#enum DistanceType {}#}
-#ifdef OpenCV24
 #c
 enum LabelType {
      CCOMP = CV_DIST_LABEL_CCOMP
@@ -317,7 +316,6 @@ enum LabelType {
 };
 #endc
 {#enum LabelType {}#}
-#endif
 
 -- |Mask sizes accepted by distanceTransform
 #c
@@ -344,9 +342,7 @@ distanceTransform dtype maskSize source = unsafePerformIO $ do
                                   (fromIntegral . fromEnum $ dtype) 
                                   (fromIntegral . fromEnum $ maskSize)
                                    nullPtr nullPtr
-#ifdef OpenCV24
                                   (fromIntegral . fromEnum $ CCOMP)
-#endif
     return result
 
     -- TODO: Add handling for labels

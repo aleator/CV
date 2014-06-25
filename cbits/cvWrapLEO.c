@@ -2446,11 +2446,7 @@ int wrapDrawChessBoardCorners(void* image, int pw, int ph, CvPoint2D32f* corners
 
 double wrapCalibrateCamera2(const CvMat* objectPoints, const CvMat* imagePoints, const CvMat* pointCounts, CvSize *imageSize, CvMat* cameraMatrix, CvMat* distCoeffs, CvMat* rvecs, CvMat* tvecs, int flags)
 {
-#ifdef OpenCV24
     return cvCalibrateCamera2(objectPoints, imagePoints, pointCounts, *imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags, cvTermCriteria(CV_TERMCRIT_ITER+CV_TERMCRIT_EPS,30,DBL_EPSILON));
-#else
-    return cvCalibrateCamera2(objectPoints, imagePoints, pointCounts, *imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags);
-#endif
 };
 
 void wrapFindCornerSubPix(const CvArr* image, CvPoint2D32f* corners, int count, int winW, int winH, int zeroW, int zeroH, int tType, int maxIter, double epsilon) {
@@ -2483,12 +2479,6 @@ void extractCVSeq(const CvSeq* seq,void *dest){
         CV_NEXT_SEQ_ELEM( seq->elem_size, reader );
     }}
 
-
-#ifndef OpenCV24
-void wrapExtractMSER( CvArr* _img, CvArr* _mask, CvSeq** contours, CvMemStorage* storage, CvMSERParams *params ){
-    cvExtractMSER( _img, _mask, contours, storage, *params );
-};
-#endif
 //
 //@-node:aleator.20051220091717:Matrix multiplication
 //@-all

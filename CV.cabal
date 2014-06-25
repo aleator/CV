@@ -49,14 +49,6 @@ Extra-Source-Files:
                      examples/fuse2.png
                      examples/smallLena.jpg
                      examples/elaine.jpg
-Flag opencv23
-  Description: Compatability for opencv 2.3.1
-  Default:     True
-
-Flag opencv24
-  Description: Compatability for opencv 2.4
-  Default:     False
-
 Flag gpu
   Description: Include OpenCV GPU modules
   Default:     False
@@ -87,12 +79,8 @@ Library
                        cbits/cvIterators.h,
                        cbits/cvProjection.h,
                        cbits/cvFiles.h
-    if flag(opencv23)
-        cpp-options: -DOpenCV23 -U__BLOCKS__
-        cc-options: -DOpenCV23 -std=gnu99 -U__BLOCKS__
-    if flag(opencv24)
-        cpp-options: -DOpenCV24 -U__BLOCKS__
-        cc-options: -DOpenCV24 -std=gnu99 -U__BLOCKS__
+    cpp-options: -U__BLOCKS__
+    cc-options: -std=gnu99 -U__BLOCKS__
     if flag(gpu)
         extra-libraries:   opencv_gpu
     extra-libraries:   opencv_calib3d,
