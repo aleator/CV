@@ -1,8 +1,5 @@
 {-#LANGUAGE RecordWildCards, ScopedTypeVariables, TypeFamilies#-}
 module CV.Features (SURFParams, defaultSURFParams, mkSURFParams, getSURF
-#ifndef OpenCV24
-                   ,getMSER, MSERParams, mkMSERParams, defaultMSERParams
-#endif
                    ,moments,Moments,getSpatialMoment,getCentralMoment,getNormalizedCentralMoment) where
 import CV.Image
 import CV.Bindings.Types
@@ -14,45 +11,6 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import Utils.GeometryClass
 import System.IO.Unsafe
-
-#ifndef OpenCV24
-newtype MSERParams = MP C'CvMSERParams deriving (Show)
-
--- | Create parameters for getMSER.
-mkMSERParams :: Int            -- ^ Delta
-                -> Int         -- ^ prune the area which bigger than maxArea
-                -> Int         -- ^ prune the area which smaller than minArea
-                -> Float       -- ^ prune the area have similar size to its children
-                -> Float       -- ^ trace back to cut off mser with diversity < min_diversity
-                -> Int         -- ^ for color image, the evolution steps
-                -> Double      -- ^ the area threshold to cause re-initialize
-                -> Double      -- ^ ignore too small margin
-                -> Int         -- ^ the aperture size for edge blur
-                -> MSERParams
-
-mkMSERParams a b c d e f g h i= MP $ C'CvMSERParams a b c d e f g h i
-defaultMSERParams = mkMSERParams 5 14400 60 0.25 0.2 200 1.01 0.003 5
-
--- | The function encapsulates all the parameters of the MSER extraction algorithm (see
---   <http://en.wikipedia.org/wiki/Maximally_stable_extremal_regions>
-getMSER :: (Point2D a, ELP a~Int)
-   => Image GrayScale D8 -> Maybe (Image GrayScale D8) -> MSERParams -> [[a]]
-getMSER image mask (MP params) = unsafePerformIO $
-   withMask mask $ \ptr_mask ->
-   with nullPtr $ \ptr_ptr_contours ->
-   withNewMemory $ \ptr_mem ->
-   with params  $ \ptr_params ->
-   withImage image $ \ptr_image -> do
-    c'wrapExtractMSER (castPtr ptr_image) ptr_mask ptr_ptr_contours
-                      ptr_mem ptr_params
-    ptr_contours <- peek ptr_ptr_contours
-    forM [0..10] $ \ix -> do
-      ptr_ctr <- c'cvGetSeqElem ptr_contours ix
-      ctr <- peek (castPtr ptr_ctr)
-      pts :: [C'CvPoint] <- cvSeqToList ctr
-      return (map convertPt pts)
-
-#endif
 
 -- TODO: Move this to some utility module
 -- withMask :: Maybe (Image GrayScale D8) -> (Ptr C'CvArr -> IO α) -> IO α

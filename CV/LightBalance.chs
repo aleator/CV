@@ -3,7 +3,7 @@
 module CV.LightBalance where
 
 import Foreign.C.Types
-import Foreign.Ptr
+import Foreign.Ptr as C2HSImp
 
 import System.IO.Unsafe
 {#import CV.Image#}

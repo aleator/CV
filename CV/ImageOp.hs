@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module CV.ImageOp where
 
 import System.IO.Unsafe (unsafePerformIO)

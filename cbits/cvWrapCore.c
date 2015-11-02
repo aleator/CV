@@ -14,32 +14,32 @@ IplImage* wrapCreateImage(int width, int height, int depth, int channels)
 
 void wrapSet(CvArr* arr, CvScalar *value, CvArr* mask)
 {
-  cvSet(arr, *value, mask);
+    cvSet(arr, *value, mask);
 }
 
 void wrapSetAll(CvArr* arr, double value, CvArr* mask)
 {
-  cvSet(arr, cvScalarAll(value), mask);
+    cvSet(arr, cvScalarAll(value), mask);
 }
 
 void wrapSet1(CvArr* arr, double value, CvArr* mask)
 {
-  cvSet(arr, cvRealScalar(value), mask);
+    cvSet(arr, cvRealScalar(value), mask);
 }
 
 void wrapSet2(CvArr* arr, double value1, double value2, CvArr* mask)
 {
-  cvSet(arr, cvScalar(value1, value2, 0, 0), mask);
+    cvSet(arr, cvScalar(value1, value2, 0, 0), mask);
 }
 
 void wrapSet3(CvArr* arr, double value1, double value2, double value3, CvArr* mask)
 {
-  cvSet(arr, cvScalar(value1, value2, value3, 0), mask);
+    cvSet(arr, cvScalar(value1, value2, value3, 0), mask);
 }
 
 void wrapSet4(CvArr* arr, double value1, double value2, double value3, double value4, CvArr* mask)
 {
-  cvSet(arr, cvScalar(value1, value2, value3, value4), mask);
+    cvSet(arr, cvScalar(value1, value2, value3, value4), mask);
 }
 
 void swapQuadrants(CvArr *src)

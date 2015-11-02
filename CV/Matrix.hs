@@ -142,7 +142,7 @@ invert :: (Exists (Matrix a), Args (Matrix a) ~ Size (Matrix a)) => Matrix a ->
 invert m@(Matrix f_m) = unsafePerformIO $ do
                  res@(Matrix f_c) <- create (getSize m)
                  withForeignPtr f_m $ \c_m ->
-                  withForeignPtr f_c $ \c_c -> c'cvInvert c_m c_c (fromIntegral . fromEnum $ c'CV_LU)
+                  withForeignPtr f_c $ \c_c -> c'cvInvert c_m c_c c'CV_LU
                  return res
 
 
