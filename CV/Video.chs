@@ -3,6 +3,7 @@
 module CV.Video where
 {#import CV.Image#}
 
+import Data.Char (ord)
 import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
@@ -121,18 +122,19 @@ frameNumber cap = unsafePerformIO $
 
 -- Video Writing
 
-data Codec = MPG4 deriving (Eq,Show)
-
 createVideoWriter filename codec framerate frameSize = 
     withCString filename $ \cfilename -> do
-        ptr <- {#call wrapCreateVideoWriter#} cfilename fourcc 
+        ptr <- {#call wrapCreateVideoWriter#} cfilename
+                                              cc1 cc2 cc3 cc4
                                               framerate w h 0
         if ptr == nullPtr then error "Could not create video writer" else return ()
         fptr <- newForeignPtr releaseVideoWriter ptr
         return . VideoWriter $ fptr
   where
     (fromIntegral -> w, fromIntegral -> h) = frameSize
-    fourcc | codec == MPG4 = 0x4d504734 -- This is so wrong..
+    [cc1, cc2, cc3, cc4]
+        | 4 == length codec = fmap (fromIntegral . ord) codec
+        | otherwise = error "Video writer codec must be a four-character string, eg. \"MPEG\""
 
 writeFrame :: VideoWriter -> Image RGB D32 -> IO ()
 writeFrame writer img = withVideoWriter writer $ \cwriter ->
