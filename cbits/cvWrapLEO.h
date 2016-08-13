@@ -284,7 +284,7 @@ void exportImageSlowComplex(IplImage *img, complex double *d);
 void subpixel_blit(IplImage *a, IplImage *b, double offset_y, double offset_x);
 double bicubicInterp(IplImage *tex, double u, double v);
 
-CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc, double fps,int w, int h, int color);
+CvVideoWriter* wrapCreateVideoWriter(char *fn, char cc1, char cc2, char cc3, char cc4, double fps,int w, int h, int color);
 
 double wrapGet32F2DC(CvArr *arr, int x, int y,int c);
 void maximal_covering_circle(int ox,int oy, double or, IplImage *distmap

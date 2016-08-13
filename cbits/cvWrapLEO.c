@@ -2423,11 +2423,13 @@ double juliaF(double a, double b,double x, double y) {
     return 0;
 }
 
-CvVideoWriter* wrapCreateVideoWriter(char *fn, int fourcc,
+CvVideoWriter* wrapCreateVideoWriter(char *fn,
+        char cc1, char cc2, char cc3, char cc4,
         double fps,int w, int h,
         int color)
 {
-    CvVideoWriter *res = cvCreateVideoWriter(fn,CV_FOURCC('M','P','G','4'),fps,cvSize(w,h), color);
+    int fourcc = CV_FOURCC(cc1,cc2,cc3,cc4);
+    CvVideoWriter *res = cvCreateVideoWriter(fn,fourcc,fps,cvSize(w,h), color);
     return res;
 }
 
