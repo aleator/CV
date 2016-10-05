@@ -1,0 +1,9 @@
+flags: {}
+extra-package-dbs: []
+packages:
+- '.'
+extra-deps:
+- lazysmallcheck-0.6
+- storable-record-0.0.3.1
+- storable-tuple-0.0.3.2
+resolver: lts-6.6
